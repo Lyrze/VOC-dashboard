@@ -1354,7 +1354,11 @@ async function loadAllData(manifest) {
   const total = entries.reduce((s, [, info]) => s + (info.brands || []).length, 0);
 
   for (const [monthKey, info] of entries) {
-    for (const brand of (info.brands || [])) {
+    // brands may be string (PS serialization bug) or array — normalize to array
+    const brandList = Array.isArray(info.brands)
+      ? info.brands
+      : (typeof info.brands === 'string' && info.brands.length < 50 ? [info.brands] : []);
+    for (const brand of brandList) {
       loaded++;
       setLoading(true, `데이터 로딩 중... (${loaded}/${total}) ${brand}`);
       try {

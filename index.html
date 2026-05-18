@@ -3,363 +3,1717 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VOC 대시보드</title>
+<title>VOC STUDIO</title>
+<!-- 프리텐다드 폰트 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<!-- XLSX 파싱 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, 'Pretendard', 'Noto Sans KR', sans-serif; background: #f4f6fa; color: #1a1a2e; font-size: 13px; display: flex; height: 100vh; overflow: hidden; }
+/* ── AI 탭 ── */
+.ai-panel { max-width: 860px; margin: 0 auto; }
+.ai-panel-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
+.ai-gen-btn { display:flex; align-items:center; gap:5px; padding:8px 16px; background:#6366f1; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:background 0.15s; }
+.ai-gen-btn:hover { background:#4f46e5; }
+.ai-gen-btn:disabled { background:#c7d2fe; cursor:not-allowed; }
+.ai-gen-btn-secondary { background:#fff; color:#6366f1; border:1.5px solid #c7d2fe; }
+.ai-gen-btn-secondary:hover { background:#eff0fe; }
+.ai-output { background:#fff; border:1px solid #e8eaf0; border-radius:10px; padding:20px; min-height:280px; font-size:13px; line-height:1.8; color:#334155; }
+.ai-output h1,.ai-output h2,.ai-output h3 { color:#1e293b; margin:14px 0 6px; font-size:14px; }
+.ai-output h2 { font-size:13.5px; }
+.ai-output ul,.ai-output ol { padding-left:20px; }
+.ai-output li { margin-bottom:4px; }
+.ai-output strong { color:#1e293b; }
+.ai-output hr { border:none; border-top:1px solid #f1f5f9; margin:12px 0; }
+.ai-output p { margin-bottom:8px; }
+.ai-placeholder { text-align:center; padding:48px 20px; color:#94a3b8; }
+.ai-placeholder p { font-size:13px; margin-top:8px; }
+.ai-thinking { display:flex; align-items:center; gap:8px; color:#6366f1; font-size:13px; padding:20px; }
+.ai-thinking-dot { width:8px; height:8px; border-radius:50%; background:#6366f1; animation:ai-pulse 1.2s ease-in-out infinite; }
+.ai-thinking-dot:nth-child(2) { animation-delay:0.2s; }
+.ai-thinking-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes ai-pulse { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+.ai-chart-section { background:#fff; border:1px solid #e8eaf0; border-radius:10px; padding:16px; margin-bottom:14px; }
+.ai-error { background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:14px; color:#dc2626; font-size:13px; }
 
-/* ── 사이드바 ── */
-#sidebar { width: 220px; min-width: 220px; background: #fff; border-right: 1px solid #e8eaf0; display: flex; flex-direction: column; overflow: hidden; }
-.sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid #e8eaf0; }
-.sidebar-logo span { font-size: 15px; font-weight: 700; color: #4f46e5; letter-spacing: -0.5px; }
-.sidebar-logo small { display: block; font-size: 10px; color: #94a3b8; margin-top: 2px; }
+/* 차트 탭 그리드 */
+.chart-extra-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:900px) { .chart-extra-grid { grid-template-columns:1fr; } }
+.chart-extra-card { background:#fff; border:1px solid #e8eaf0; border-radius:10px; padding:16px; }
+.chart-extra-card h4 { font-size:13px; font-weight:600; color:#1e293b; margin-bottom:12px; }
+.chart-extra-card .chart-wrap { height:200px; position:relative; }
 
-.sidebar-nav { padding: 10px 8px 6px; border-bottom: 1px solid #e8eaf0; }
-.sidebar-nav button { width: 100%; text-align: left; padding: 7px 10px; border: none; background: none; cursor: pointer; border-radius: 6px; font-size: 12.5px; color: #475569; display: flex; align-items: center; gap: 6px; }
-.sidebar-nav button.active { background: #eff0fe; color: #4f46e5; font-weight: 600; }
-.sidebar-nav button:hover:not(.active) { background: #f8fafc; }
-.nav-icon { width: 16px; height: 16px; opacity: 0.7; }
+/* 사이드바 하단 AI 버튼 영역 */
+#sidebar { display:flex; flex-direction:column; }
+.sidebar-tabs { flex-shrink:0; }
+.sidebar-list { flex:1; overflow-y:auto; }
 
-.sidebar-brands { flex: 1; overflow-y: auto; padding: 10px 8px; }
-.sidebar-brands h4 { font-size: 10px; color: #94a3b8; font-weight: 600; padding: 4px 8px 6px; letter-spacing: 0.5px; text-transform: uppercase; }
-.brand-btn { width: 100%; text-align: left; padding: 6px 10px; border: none; background: none; cursor: pointer; border-radius: 6px; font-size: 12px; color: #475569; display: flex; align-items: center; justify-content: space-between; }
-.brand-btn.active { background: #eff0fe; color: #4f46e5; font-weight: 600; }
-.brand-btn:hover:not(.active) { background: #f8fafc; }
-.brand-badge { font-size: 9px; padding: 1px 5px; border-radius: 10px; background: #e8eaf0; color: #64748b; }
-.brand-badge.has-data { background: #d1fae5; color: #059669; }
+/* ── 리셋 & 기본 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Pretendard', -apple-system, 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  background: #f4f6fa;
+  color: #1e293b;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
 
-/* ── 메인 영역 ── */
-#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+/* ── CSS 변수 ── */
+:root {
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #eff0fe;
+  --sidebar-bg: #ffffff;
+  --main-bg: #f4f6fa;
+  --card-bg: #ffffff;
+  --border: #e8eaf0;
+  --text-main: #1e293b;
+  --text-sub: #64748b;
+  --text-mute: #94a3b8;
+  --green: #10b981;
+  --red: #ef4444;
+  --chart-responded: #818cf8;
+  --chart-missed: #e2e8f0;
+}
 
-/* 상단 툴바 */
-#toolbar { background: #fff; border-bottom: 1px solid #e8eaf0; padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-.toolbar-title { font-size: 14px; font-weight: 600; color: #1e293b; flex: 1; }
-.toolbar-sub { font-size: 11px; color: #94a3b8; font-weight: 400; margin-left: 6px; }
-.period-group { display: flex; align-items: center; gap: 6px; }
-.period-type-btns { display: flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
-.period-type-btns button { padding: 5px 12px; border: none; background: none; cursor: pointer; font-size: 12px; color: #64748b; }
-.period-type-btns button.active { background: #4f46e5; color: #fff; }
-.nav-btn { width: 28px; height: 28px; border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; }
-.nav-btn:hover { background: #f8fafc; }
-.period-label { font-size: 12px; color: #334155; font-weight: 500; min-width: 140px; text-align: center; }
-.upload-btn { padding: 6px 14px; background: #4f46e5; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
-.upload-btn:hover { background: #4338ca; }
-input[type=file] { display: none; }
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   사이드바
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 10;
+}
 
-/* 스크롤 영역 */
-#content { flex: 1; overflow-y: auto; padding: 16px 20px; }
+/* 로고 */
+.sidebar-logo {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-logo .logo-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sidebar-logo .logo-icon {
+  width: 20px;
+  height: 20px;
+  background: var(--primary);
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.sidebar-logo small {
+  display: block;
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-top: 3px;
+}
 
-/* KPI 카드 */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.kpi-card { background: #fff; border-radius: 10px; padding: 14px 16px; border: 1px solid #e8eaf0; cursor: pointer; transition: box-shadow 0.15s; }
-.kpi-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.kpi-label { font-size: 11px; color: #64748b; margin-bottom: 6px; line-height: 1.3; }
-.kpi-date { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
-.kpi-value { font-size: 20px; font-weight: 700; color: #1e293b; }
-.kpi-delta { font-size: 11px; margin-top: 4px; }
-.delta-up { color: #ef4444; }
-.delta-down { color: #10b981; }
-.delta-up-good { color: #10b981; }
-.delta-down-bad { color: #ef4444; }
-.delta-neutral { color: #94a3b8; }
+/* 상단 탭 */
+.sidebar-tabs {
+  padding: 8px 8px 6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-tab-btn {
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  margin-bottom: 2px;
+}
+.sidebar-tab-btn:hover:not(.active) { background: #f8fafc; }
+.sidebar-tab-btn.active {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+.tab-icon { width: 14px; height: 14px; opacity: 0.75; flex-shrink: 0; }
 
-/* 차트 영역 */
-.chart-section { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; padding: 16px; margin-bottom: 16px; }
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.section-title { font-size: 13px; font-weight: 600; color: #1e293b; }
-.chart-legend { display: flex; gap: 12px; font-size: 11px; color: #64748b; }
-.legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; }
-.chart-wrap { height: 200px; position: relative; }
+/* 대시보드 목록 */
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 8px 16px;
+}
+.sidebar-list::-webkit-scrollbar { width: 4px; }
+.sidebar-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
 
-/* 테이블 */
-.table-section { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; padding: 16px; margin-bottom: 16px; }
-.table-sub { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.table-sub button { padding: 4px 10px; border: 1px solid #e2e8f0; background: none; border-radius: 5px; cursor: pointer; font-size: 11px; color: #64748b; }
-.table-sub button.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
-.excel-btn { padding: 5px 10px; border: 1px solid #e2e8f0; background: #fff; border-radius: 5px; cursor: pointer; font-size: 11px; color: #64748b; margin-left: auto; }
+.sidebar-group-label {
+  font-size: 10px;
+  color: var(--text-mute);
+  font-weight: 700;
+  padding: 8px 8px 4px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
 
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-thead th { background: #f8fafc; color: #64748b; font-weight: 600; padding: 8px 10px; text-align: right; border-bottom: 2px solid #e8eaf0; white-space: nowrap; cursor: pointer; }
-thead th:first-child { text-align: left; }
-thead th:hover { color: #4f46e5; }
-tbody tr:hover { background: #f8fafc; }
-tbody td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #334155; }
-tbody td:first-child { text-align: left; color: #1e293b; font-weight: 500; }
-.td-main { font-weight: 600; }
-.td-delta { font-size: 10px; color: #94a3b8; }
-.td-delta.up { color: #ef4444; }
-.td-delta.down { color: #10b981; }
-.td-delta.up-good { color: #10b981; }
-.td-delta.down-bad { color: #ef4444; }
+/* 대시보드 아이템 */
+.dashboard-item {
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px 7px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 0 6px 6px 0;
+  border-left: 3px solid transparent;
+  font-size: 11.5px;
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  line-height: 1.35;
+  margin-bottom: 1px;
+  transition: background 0.1s, color 0.1s;
+}
+.dashboard-item:hover:not(.active) {
+  background: #f8fafc;
+  color: var(--text-main);
+}
+.dashboard-item.active {
+  border-left: 3px solid var(--primary);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+.item-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+.dashboard-item.active .item-dot {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   메인 영역
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* 툴바 */
+#toolbar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 9px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-height: 48px;
+}
+.toolbar-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.toolbar-sub {
+  font-size: 11px;
+  color: var(--text-mute);
+  font-weight: 400;
+  margin-left: 5px;
+}
+
+/* 새로고침 버튼 */
+.refresh-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-sub);
+  font-size: 13px;
+  transition: background 0.1s;
+}
+.refresh-btn:hover { background: #f8fafc; }
+
+/* 주/월 토글 */
+.period-type-btns {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.period-type-btns button {
+  padding: 5px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--text-sub);
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.period-type-btns button.active {
+  background: var(--primary-dark);
+  color: #fff;
+}
+.period-type-btns button:hover:not(.active) { background: #f8fafc; }
+
+/* 이전/다음 내비 */
+.nav-arrow {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-sub);
+  font-size: 15px;
+  line-height: 1;
+  transition: background 0.1s;
+}
+.nav-arrow:hover { background: #f8fafc; }
+
+.period-label {
+  font-size: 12px;
+  color: #334155;
+  font-weight: 500;
+  min-width: 130px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 필터/옵션 버튼 */
+.toolbar-btn {
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--text-sub);
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.toolbar-btn:hover { background: #f8fafc; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   콘텐츠 영역
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  background: var(--main-bg);
+}
+#content::-webkit-scrollbar { width: 6px; }
+#content::-webkit-scrollbar-track { background: transparent; }
+#content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
 
 /* 빈 상태 */
-.empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
-.empty-state h3 { font-size: 15px; margin-bottom: 8px; color: #64748b; }
-.empty-state p { font-size: 12px; line-height: 1.6; }
-.empty-upload-btn { margin-top: 16px; padding: 8px 20px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-mute);
+}
+.empty-state h3 {
+  font-size: 15px;
+  color: var(--text-sub);
+  margin: 12px 0 8px;
+}
+.empty-state p { font-size: 12px; line-height: 1.7; }
 
-/* 드래그앤드롭 오버레이 */
-#drop-overlay { display: none; position: fixed; inset: 0; background: rgba(79,70,229,0.15); border: 3px dashed #4f46e5; border-radius: 12px; z-index: 100; justify-content: center; align-items: center; font-size: 18px; color: #4f46e5; font-weight: 600; }
-#drop-overlay.active { display: flex; }
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   채팅 응대 현황 차트 섹션
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.chart-section {
+  background: var(--card-bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.channel-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+.channel-badge.phone { background: #fef3c7; color: #92400e; }
 
-/* 로딩 */
-.loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #fff; border-radius: 10px; padding: 24px 32px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); text-align: center; z-index: 200; }
-.loading.active { display: block; }
-.spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.chart-wrap { height: 200px; position: relative; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   KPI 카드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.kpi-scroll-wrap {
+  overflow-x: auto;
+  margin-bottom: 14px;
+  padding-bottom: 4px;
+}
+.kpi-scroll-wrap::-webkit-scrollbar { height: 4px; }
+.kpi-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+.kpi-scroll-wrap::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+
+.kpi-row {
+  display: flex;
+  gap: 10px;
+  min-width: max-content;
+}
+
+.kpi-card {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  min-width: 150px;
+  flex-shrink: 0;
+}
+.kpi-label {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-bottom: 4px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.kpi-date {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+.kpi-delta {
+  font-size: 11px;
+  margin-top: 5px;
+  font-weight: 500;
+}
+.delta-green { color: var(--green); }
+.delta-red { color: var(--red); }
+.delta-neutral { color: var(--text-mute); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   테이블 섹션 (담당자 / 상담 태그)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.table-section {
+  background: var(--card-bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.table-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.table-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.table-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.table-date-range {
+  font-size: 10.5px;
+  color: var(--text-mute);
+}
+.icon-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-sub);
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.icon-btn:hover { background: #f8fafc; }
+.icon-btn.active {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-color: var(--primary);
+}
+
+/* 그래프 보기 차트 */
+.table-chart-wrap {
+  height: 180px;
+  position: relative;
+  margin-bottom: 12px;
+  display: none;
+}
+.table-chart-wrap.visible { display: block; }
+
+/* 테이블 */
+.table-overflow { overflow-x: auto; }
+.table-overflow::-webkit-scrollbar { height: 4px; }
+.table-overflow::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+thead th {
+  background: #f8fafc;
+  color: var(--text-sub);
+  font-weight: 600;
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+thead th:first-child { text-align: left; }
+thead th:hover { color: var(--primary); }
+tbody tr:hover { background: #fafbff; }
+tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: right;
+  color: #334155;
+  vertical-align: top;
+}
+tbody td:first-child {
+  text-align: left;
+  color: var(--text-main);
+  font-weight: 500;
+}
+.td-main { font-weight: 600; color: var(--text-main); }
+.td-delta {
+  font-size: 10px;
+  color: var(--text-mute);
+  margin-top: 2px;
+}
+.td-delta.g { color: var(--green); }
+.td-delta.r { color: var(--red); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   로딩 오버레이
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#loading {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.08);
+  z-index: 999;
+  justify-content: center;
+  align-items: center;
+}
+#loading.active { display: flex; }
+.loading-box {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px 36px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  text-align: center;
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 12px; color: var(--text-sub); }
 
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+/* 전화 탭 미수신 테이블 */
+.phone-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+@media (max-width: 900px) {
+  .phone-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
-/* VOC 분석 태그 차트 */
-.tag-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.tag-name { font-size: 11px; color: #334155; min-width: 160px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tag-bar-bg { flex: 1; background: #f1f5f9; border-radius: 4px; height: 14px; overflow: hidden; }
-.tag-bar-fill { height: 100%; background: #818cf8; border-radius: 4px; transition: width 0.4s; }
-.tag-count { font-size: 11px; color: #64748b; min-width: 36px; text-align: right; }
+/* ── 리포트 탭 ── */
+.rpt-subtab {
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-sub);
+  transition: color 0.15s, border-color 0.15s;
+}
+.rpt-subtab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+.rpt-subtab:hover:not(.active) { color: var(--text-main); }
+
+.rpt-period-btn {
+  padding: 4px 10px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-sub);
+  transition: all 0.12s;
+}
+.rpt-period-btn.active {
+  background: var(--primary-light);
+  border-color: #c7d2fe;
+  color: var(--primary);
+  font-weight: 600;
+}
+.rpt-period-btn:hover:not(.active) { background: #f1f5f9; }
+
+.rpt-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.rpt-data-table th {
+  padding: 9px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-sub);
+  white-space: nowrap;
+  position: sticky;
+  top: 49px;
+  z-index: 5;
+}
+.rpt-data-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rpt-data-table tr:hover td { background: #f8fafc; cursor: pointer; }
+
+.rpt-complaint-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rpt-complaint-yes { background: #fef2f2; color: #dc2626; }
+.rpt-complaint-no  { background: #f0fdf4; color: #16a34a; }
+.rpt-complaint-mid { background: #f8fafc; color: #64748b; }
+.rpt-complaint-na  { background: #f8fafc; color: #94a3b8; }
+
+.rpt-stats-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.rpt-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.rpt-summary-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.rpt-summary-num {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+.rpt-summary-label {
+  font-size: 11px;
+  color: var(--text-mute);
+  margin-bottom: 4px;
+}
+.rpt-delta-up { color: var(--green); font-size: 11px; font-weight: 600; }
+.rpt-delta-dn { color: var(--red); font-size: 11px; font-weight: 600; }
+.rpt-delta-eq { color: var(--text-mute); font-size: 11px; }
+
+.rpt-lb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 12px;
+}
+.rpt-lb-row:last-child { border-bottom: none; }
+.rpt-lb-rank {
+  width: 22px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-mute);
+  font-size: 11px;
+}
+.rpt-lb-name { flex: 1; font-weight: 500; color: var(--text-main); }
+.rpt-lb-count { font-weight: 700; color: var(--text-main); min-width: 36px; text-align: right; }
+.rpt-lb-bar-wrap { flex: 1; height: 5px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+.rpt-lb-bar { height: 100%; background: var(--primary); border-radius: 3px; }
+
+.rpt-change-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 3px;
+}
+.rpt-change-up { background: #fef2f2; color: #dc2626; }
+.rpt-change-dn { background: #f0fdf4; color: #16a34a; }
+
+.rpt-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-main);
+  transition: background 0.12s;
+}
+.rpt-sidebar-item:hover { background: #f8fafc; }
+.rpt-sidebar-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+
+.rpt-trend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.rpt-trend-table th {
+  padding: 5px 8px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-sub);
+  font-weight: 600;
+  text-align: right;
+}
+.rpt-trend-table th:first-child { text-align: left; }
+.rpt-trend-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: right;
+  color: var(--text-main);
+}
+.rpt-trend-table td:first-child { text-align: left; color: var(--text-sub); }
 </style>
 </head>
 <body>
 
-<!-- 드롭 오버레이 -->
-<div id="drop-overlay">📂 xlsx 파일을 여기에 놓으세요</div>
-
-<!-- 로딩 -->
-<div class="loading" id="loading">
-  <div class="spinner"></div>
-  <div style="font-size:13px;color:#64748b;">데이터 불러오는 중...</div>
+<!-- 로딩 오버레이 -->
+<div id="loading">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">데이터 불러오는 중...</div>
+  </div>
 </div>
 
-<!-- 숨겨진 파일 인풋 -->
-<input type="file" id="file-input" accept=".xlsx,.xls">
-
-<!-- 사이드바 -->
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━ 사이드바 ━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="sidebar">
+  <!-- 로고 -->
   <div class="sidebar-logo">
-    <span>VOC STUDIO</span>
-    <small>올릿 CX 대시보드</small>
+    <div class="logo-title">
+      <span class="logo-icon">V</span>
+      VOC STUDIO
+    </div>
+    <small>올릿 CX 인텔리전스</small>
   </div>
-  <div class="sidebar-nav">
-    <button class="active" onclick="switchView('productivity')" id="nav-productivity">
-      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
-      상담 생산성
+
+  <!-- 상단 탭 (대시보드 / 차트 / ...) -->
+  <div class="sidebar-tabs">
+    <button class="sidebar-tab-btn active" id="tab-dashboard">
+      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="5" height="5" rx="1"/>
+        <rect x="8" y="1" width="5" height="5" rx="1"/>
+        <rect x="1" y="8" width="5" height="5" rx="1"/>
+        <rect x="8" y="8" width="5" height="5" rx="1"/>
+      </svg>
+      대시보드
     </button>
-    <button onclick="switchView('voc')" id="nav-voc">
-      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
-      VOC 분석
+    <button class="sidebar-tab-btn" id="tab-chart" onclick="switchMainTab('chart')">
+      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <polyline points="1,10 4,6 7,8 10,3 13,5"/>
+      </svg>
+      차트
     </button>
-    <button onclick="switchView('defective')" id="nav-defective">
-      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5"/></svg>
-      불량 VOC
+    <button class="sidebar-tab-btn" id="tab-report" onclick="switchMainTab('report')">
+      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="1" width="10" height="12" rx="1"/>
+        <line x1="4" y1="5" x2="10" y2="5"/>
+        <line x1="4" y1="7.5" x2="10" y2="7.5"/>
+        <line x1="4" y1="10" x2="7" y2="10"/>
+      </svg>
+      리포트
+    </button>
+    <button class="sidebar-tab-btn" id="tab-research" onclick="switchMainTab('research')">
+      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6" cy="6" r="4"/>
+        <line x1="9" y1="9" x2="13" y2="13"/>
+      </svg>
+      리서치
     </button>
   </div>
-  <div class="sidebar-brands">
-    <h4>브랜드</h4>
-    <div id="brand-list"></div>
+  <!-- AI 설정 버튼 (하단) -->
+  <div style="padding:8px;border-top:1px solid var(--border);margin-top:auto;">
+    <button onclick="openAISettings()" style="width:100%;padding:6px 8px;border:1px dashed #c7d2fe;background:#fafafe;border-radius:6px;cursor:pointer;font-size:11px;color:#6366f1;display:flex;align-items:center;gap:5px;">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2"/></svg>
+      <span id="ai-key-status">AI 설정 (API 키 없음)</span>
+    </button>
+  </div>
+
+  <!-- 대시보드 목록 -->
+  <div class="sidebar-list" id="sidebar-list">
+    <!-- buildSidebar()로 동적 생성 -->
+  </div>
+
+  <!-- 리포트 목록 (리포트 탭 활성 시) -->
+  <div class="sidebar-list" id="report-sidebar-list" style="display:none;">
+    <button onclick="rptNewReport()" style="display:flex;align-items:center;gap:6px;width:100%;padding:7px 10px;background:var(--primary-light);border:1.5px dashed #c7d2fe;border-radius:7px;cursor:pointer;font-size:12px;color:var(--primary);font-weight:600;margin-bottom:10px;">
+      + 새 리포트 만들기
+    </button>
+    <div class="sidebar-group-label" style="margin-top:4px;">팀 스페이스</div>
+    <div id="rpt-team-list"></div>
+    <div class="sidebar-group-label" style="margin-top:8px;">개인 스페이스</div>
+    <div id="rpt-personal-list"></div>
   </div>
 </div>
 
-<!-- 메인 -->
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━ 메인 영역 ━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="main">
+  <!-- 툴바 -->
   <div id="toolbar">
-    <div class="toolbar-title" id="toolbar-title">
-      상담 생산성<span class="toolbar-sub" id="toolbar-brand">브랜드를 선택하세요</span>
+    <div class="toolbar-title">
+      <span id="toolbar-title-text">상담 생산성 - 채팅</span>
+      <span class="toolbar-sub" id="toolbar-sub-text"></span>
     </div>
-    <div class="period-group">
-      <div class="period-type-btns">
-        <button class="active" onclick="setPeriodType('week')" id="btn-week">주</button>
-        <button onclick="setPeriodType('month')" id="btn-month">월</button>
-      </div>
-      <button class="nav-btn" onclick="movePeriod(-1)">‹</button>
-      <span class="period-label" id="period-label">-</span>
-      <button class="nav-btn" onclick="movePeriod(1)">›</button>
-      <button class="nav-btn" onclick="goToNow()" title="현재로">●</button>
+
+    <!-- 새로고침 -->
+    <button class="refresh-btn" onclick="refreshData()" title="새로고침">↻</button>
+
+    <!-- 주/월 토글 -->
+    <div class="period-type-btns">
+      <button id="btn-week" class="active" onclick="setPeriodType('week')">주</button>
+      <button id="btn-month" onclick="setPeriodType('month')">월</button>
     </div>
-    <span id="data-range" style="font-size:11px;color:#94a3b8;"></span>
-    <button class="upload-btn" onclick="triggerUpload()">+ xlsx 업로드</button>
+
+    <!-- 기간 내비게이션 -->
+    <button class="nav-arrow" onclick="movePeriod(-1)">&#8249;</button>
+    <span class="period-label" id="period-label">-</span>
+    <button class="nav-arrow" onclick="movePeriod(1)">&#8250;</button>
+    <button class="nav-arrow" onclick="goToNow()" title="현재로" style="font-size:9px;color:#94a3b8;">●</button>
+
+    <!-- 필터/옵션 -->
+    <button class="toolbar-btn">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+        <line x1="1" y1="3" x2="11" y2="3"/><line x1="3" y1="6" x2="9" y2="6"/><line x1="5" y1="9" x2="7" y2="9"/>
+      </svg>
+      필터
+    </button>
+    <button class="toolbar-btn">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6" cy="6" r="1.5"/><circle cx="2" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/>
+      </svg>
+      옵션
+    </button>
   </div>
 
+  <!-- 콘텐츠 -->
   <div id="content">
-    <div class="empty-state" id="empty-state">
-      <h3>📊 데이터를 업로드해주세요</h3>
-      <p>좌측에서 브랜드를 선택한 뒤<br>채널톡에서 내보낸 xlsx 파일을 업로드하세요.</p>
-      <button class="empty-upload-btn" onclick="triggerUpload()">xlsx 파일 업로드</button>
+    <!-- 빈 상태 (데이터 없을 때) -->
+    <div id="empty-state" style="display:none;">
+      <div class="empty-state">
+        <div style="font-size:40px;">📭</div>
+        <h3>아직 업로드된 데이터가 없습니다</h3>
+        <p>upload.bat를 실행하여 데이터를 GitHub에 업로드하세요</p>
+        <p style="font-size:11px; margin-top:8px; color:#94a3b8;">마지막 업데이트: -</p>
+      </div>
     </div>
-    <div id="dashboard-content" style="display:none">
-      <!-- 상담 생산성 뷰 -->
-      <div id="view-productivity">
-        <div class="kpi-grid" id="kpi-grid"></div>
+
+    <!-- 대시보드 콘텐츠 -->
+    <div id="dashboard-content" style="display:none;">
+
+      <!-- ─── 채팅 탭 콘텐츠 ─── -->
+      <div id="view-chat" style="display:none;">
+        <!-- 섹션1: 채팅 응대 현황 차트 -->
         <div class="chart-section">
           <div class="section-header">
-            <span class="section-title" id="chart-title">채팅 응대 현황</span>
+            <span class="section-title">
+              <span class="channel-badge">채팅</span>
+              채팅 응대 현황
+            </span>
             <div class="chart-legend">
-              <span><span class="legend-dot" style="background:#818cf8"></span>응대 채팅</span>
-              <span><span class="legend-dot" style="background:#e2e8f0"></span>미응대 채팅</span>
+              <span><span class="legend-dot" style="background:var(--chart-responded)"></span>응대</span>
+              <span><span class="legend-dot" style="background:var(--chart-missed)"></span>미응대</span>
             </div>
           </div>
-          <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
+          <div class="chart-wrap"><canvas id="chat-bar-chart"></canvas></div>
         </div>
-        <div class="two-col">
-          <div class="table-section">
-            <div class="section-header">
-              <span class="section-title">담당자별 현황</span>
-            </div>
-            <div style="overflow-x:auto"><table id="manager-table"></table></div>
-          </div>
-          <div class="table-section">
-            <div class="section-header">
-              <span class="section-title">상담 태그별 현황</span>
-            </div>
-            <div style="overflow-x:auto"><table id="tag-table"></table></div>
-          </div>
-        </div>
-      </div>
 
-      <!-- VOC 분석 뷰 -->
-      <div id="view-voc" style="display:none">
+        <!-- 섹션2: KPI 카드 9개 -->
+        <div class="kpi-scroll-wrap">
+          <div class="kpi-row" id="chat-kpi-row">
+            <!-- renderChatKPIs()로 생성 -->
+          </div>
+        </div>
+
+        <!-- 섹션3: 담당자(통합) -->
+        <div class="table-section" id="manager-section">
+          <div class="table-section-header">
+            <div class="table-header-left">
+              <span class="section-title">
+                <span class="channel-badge">채팅</span>
+                담당자(통합)
+              </span>
+              <span class="table-date-range" id="manager-date-range"></span>
+            </div>
+            <div class="table-header-right">
+              <button class="icon-btn" onclick="downloadManagerExcel()">📥 엑셀 다운로드</button>
+              <button class="icon-btn" id="manager-graph-btn" onclick="toggleManagerGraph()">🔲 그래프 보기</button>
+            </div>
+          </div>
+          <!-- 그래프 보기 차트 -->
+          <div class="table-chart-wrap" id="manager-chart-wrap">
+            <canvas id="manager-chart"></canvas>
+          </div>
+          <div class="table-overflow">
+            <table id="manager-table"></table>
+          </div>
+        </div>
+
+        <!-- 섹션4: 상담 태그 -->
+        <div class="table-section" id="tag-section">
+          <div class="table-section-header">
+            <div class="table-header-left">
+              <span class="section-title">
+                <span class="channel-badge">채팅</span>
+                상담 태그
+              </span>
+              <span class="table-date-range" id="tag-date-range"></span>
+            </div>
+            <div class="table-header-right">
+              <button class="icon-btn" onclick="downloadTagExcel()">📥 엑셀 다운로드</button>
+              <button class="icon-btn" id="tag-graph-btn" onclick="toggleTagGraph()">🔲 그래프 보기</button>
+            </div>
+          </div>
+          <!-- 그래프 보기 차트 -->
+          <div class="table-chart-wrap" id="tag-chart-wrap">
+            <canvas id="tag-chart"></canvas>
+          </div>
+          <div class="table-overflow">
+            <table id="tag-table"></table>
+          </div>
+        </div>
+      </div><!-- /view-chat -->
+
+      <!-- ─── 전화 탭 콘텐츠 ─── -->
+      <div id="view-phone" style="display:none;">
         <div class="chart-section">
-          <div class="section-header"><span class="section-title">문의 유형별 분포</span></div>
-          <div id="voc-category-chart"></div>
+          <div class="section-header">
+            <span class="section-title">
+              <span class="channel-badge phone">전화</span>
+              전화 응대 현황
+            </span>
+          </div>
+          <div class="chart-wrap"><canvas id="phone-bar-chart"></canvas></div>
         </div>
+
+        <!-- 전화 KPI -->
+        <div class="phone-kpi-grid" id="phone-kpi-grid">
+          <!-- renderPhoneKPIs()로 생성 -->
+        </div>
+
+        <!-- 미수신 사유 테이블 -->
         <div class="table-section">
-          <div class="section-header"><span class="section-title">태그별 상세 현황</span></div>
-          <div style="overflow-x:auto"><table id="voc-tag-table"></table></div>
+          <div class="table-section-header">
+            <span class="section-title">
+              <span class="channel-badge phone">전화</span>
+              미수신 사유 현황
+            </span>
+          </div>
+          <div class="table-overflow">
+            <table id="phone-missed-table"></table>
+          </div>
+        </div>
+      </div><!-- /view-phone -->
+
+      <!-- ─── 전체(채팅+전화 통합) 탭 ─── -->
+      <div id="view-all" style="display:none;">
+        <div class="empty-state" style="padding:60px 20px;">
+          <div style="font-size:32px;">📊</div>
+          <h3>전체 통합 뷰</h3>
+          <p>채팅과 전화 데이터를 통합하여 표시합니다</p>
+        </div>
+      </div><!-- /view-all -->
+
+      <!-- ─── 브랜드별 VOC 분석 탭 ─── -->
+      <div id="view-voc" style="display:none;">
+        <!-- renderVOCView()로 생성 -->
+      </div>
+
+      <!-- ─── 브랜드별 불량 VOC 탭 ─── -->
+      <div id="view-defect" style="display:none;">
+        <!-- renderDefectView()로 생성 -->
+      </div>
+
+      <!-- ─── 차트 탭 ─── -->
+      <div id="view-chart-extra" style="display:none;">
+        <!-- renderChartExtra()로 생성 -->
+      </div>
+
+      <!-- ─── 리포트 탭 ─── -->
+      <div id="view-report" style="display:none;height:100%;overflow:hidden;flex-direction:column;">
+        <!-- 리포트 헤더 -->
+        <div id="rpt-header" style="flex-shrink:0;border-bottom:1px solid var(--border);background:#fff;padding:0 20px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 0 8px;">
+            <button onclick="rptBack()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;color:#64748b;">
+              &#8592; 뒤로
+            </button>
+            <span id="rpt-title" style="font-size:15px;font-weight:700;color:#1e293b;flex:1;"></span>
+            <button onclick="rptResearch()" style="display:flex;align-items:center;gap:5px;padding:6px 13px;background:#fff;border:1.5px solid #c7d2fe;border-radius:7px;cursor:pointer;font-size:12px;color:#6366f1;font-weight:600;">
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><line x1="10" y1="10" x2="13" y2="13"/></svg>
+              리서치로 분석하기
+            </button>
+            <button style="display:flex;align-items:center;gap:5px;padding:6px 13px;background:#fff;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;color:#64748b;">
+              공유
+            </button>
+          </div>
+          <div id="rpt-desc" style="font-size:12px;color:#64748b;padding-bottom:10px;"></div>
+          <!-- 서브탭 + 기간 -->
+          <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:0;">
+            <div style="display:flex;gap:0;">
+              <button id="rpt-subtab-table" class="rpt-subtab active" onclick="rptSwitchSubTab('table')">상담 테이블</button>
+              <button id="rpt-subtab-stats" class="rpt-subtab" onclick="rptSwitchSubTab('stats')">상담 통계</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;padding:8px 0;">
+              <button class="rpt-period-btn active" id="rpt-p-7d" onclick="rptSetPeriod('7d')">7일</button>
+              <button class="rpt-period-btn" id="rpt-p-30d" onclick="rptSetPeriod('30d')">30일</button>
+              <button class="rpt-period-btn" id="rpt-p-60d" onclick="rptSetPeriod('60d')">60일</button>
+              <button class="rpt-period-btn" id="rpt-p-90d" onclick="rptSetPeriod('90d')">90일</button>
+              <button class="rpt-period-btn" id="rpt-p-today" onclick="rptSetPeriod('today')">오늘</button>
+              <button onclick="rptRefreshData()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:#64748b;">
+                &#8635; 새로고침
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 필터 바 -->
+        <div id="rpt-filter-bar" style="flex-shrink:0;background:#f8fafc;border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:#94a3b8;font-weight:600;">필터:</span>
+          <div id="rpt-filter-chips" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;"></div>
+          <button onclick="rptAddFilter()" style="display:flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px dashed #c7d2fe;border-radius:5px;cursor:pointer;font-size:11px;color:#6366f1;">
+            + 필터 추가
+          </button>
+        </div>
+
+        <!-- 뷰 영역 -->
+        <div id="rpt-view-area" style="flex:1;overflow:hidden;position:relative;">
+          <!-- 상담 테이블 뷰 -->
+          <div id="rpt-view-table" style="height:100%;overflow:auto;padding:0;">
+            <div id="rpt-table-toolbar" style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;">
+              <span id="rpt-total-count" style="font-size:13px;font-weight:600;color:#1e293b;"></span>
+              <input id="rpt-search" type="text" placeholder="검색..." oninput="rptApplySearch()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;width:180px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+              <div style="flex:1;"></div>
+              <button onclick="rptAITag()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:#fff;border:1.5px solid #c7d2fe;border-radius:6px;cursor:pointer;font-size:11px;color:#6366f1;font-weight:600;">
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg>
+                AI로 태그 분류하기
+              </button>
+              <button onclick="rptDownload()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:#fff;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:#64748b;">
+                &#8595; 다운로드
+              </button>
+            </div>
+            <div id="rpt-table-wrap" style="overflow:auto;">
+              <table id="rpt-table" class="rpt-data-table">
+                <thead>
+                  <tr>
+                    <th>불만여부</th>
+                    <th>대표 문의유형</th>
+                    <th>제품명</th>
+                    <th>상담 태그</th>
+                    <th>문제 상황</th>
+                    <th>고객명</th>
+                    <th>담당자</th>
+                    <th>인입 경로</th>
+                    <th>날짜</th>
+                  </tr>
+                </thead>
+                <tbody id="rpt-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 상담 통계 뷰 -->
+          <div id="rpt-view-stats" style="display:none;height:100%;overflow:auto;padding:20px;">
+            <!-- 비교기간 -->
+            <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+              <div id="rpt-compare-label" style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:4px 10px;"></div>
+            </div>
+
+            <!-- 요약 카드 -->
+            <div id="rpt-summary-cards" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;margin-bottom:16px;">
+              <!-- 동적 생성 -->
+            </div>
+
+            <!-- 추이 그래프 -->
+            <div class="rpt-stats-card" style="margin-bottom:14px;">
+              <div class="rpt-card-title">추이 그래프</div>
+              <div style="height:200px;position:relative;"><canvas id="rpt-trend-chart"></canvas></div>
+              <div id="rpt-trend-table" style="margin-top:12px;"></div>
+            </div>
+
+            <!-- 태그별 리더보드 -->
+            <div class="rpt-stats-card" style="margin-bottom:14px;">
+              <div class="rpt-card-title">태그별 리더보드</div>
+              <div id="rpt-tag-leaderboard"></div>
+            </div>
+
+            <!-- 담당자별 리더보드 -->
+            <div class="rpt-stats-card" style="margin-bottom:14px;">
+              <div class="rpt-card-title">담당자별 리더보드</div>
+              <div id="rpt-manager-leaderboard"></div>
+            </div>
+
+            <!-- 상담 통계 차트들 -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">만족도 분포</div>
+                <div style="height:180px;position:relative;"><canvas id="rpt-csat-chart"></canvas></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">태그 카테고리 분포</div>
+                <div style="height:180px;position:relative;"><canvas id="rpt-tag-donut"></canvas></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">시간대별 문의 분포</div>
+                <div style="height:180px;position:relative;"><canvas id="rpt-hour-chart"></canvas></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">요일별 문의 분포</div>
+                <div style="height:180px;position:relative;"><canvas id="rpt-dow-chart"></canvas></div>
+              </div>
+            </div>
+
+            <!-- 변화 감지 -->
+            <div class="rpt-stats-card" style="margin-bottom:14px;">
+              <div class="rpt-card-title">변화 감지 대시보드</div>
+              <div id="rpt-change-detect"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 상세 패널 (우측 슬라이드인) -->
+        <div id="rpt-detail-panel" style="display:none;position:absolute;top:0;right:0;bottom:0;width:360px;background:#fff;border-left:1px solid var(--border);overflow:auto;z-index:20;box-shadow:-4px 0 20px rgba(0,0,0,0.08);">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);">
+            <div style="font-size:14px;font-weight:700;color:#1e293b;">상담 상세</div>
+            <button onclick="rptCloseDetail()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:18px;">&#10005;</button>
+          </div>
+          <div id="rpt-detail-content" style="padding:16px;"></div>
+        </div>
+
+        <!-- 리포트 목록 (선택 전) -->
+        <div id="rpt-list-view" style="flex:1;overflow:auto;padding:28px 32px;display:none;">
+          <!-- buildReportList()로 생성 -->
         </div>
       </div>
 
-      <!-- 불량 VOC 뷰 -->
-      <div id="view-defective" style="display:none">
-        <div class="kpi-grid" id="defective-kpi-grid"></div>
-        <div class="table-section">
-          <div class="section-header"><span class="section-title">불량 유형별 현황</span></div>
-          <div style="overflow-x:auto"><table id="defective-table"></table></div>
+      <!-- ─── 리서치 탭 ─── -->
+      <div id="view-research" style="display:none;">
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#1e293b;">VOC 패턴 리서치</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px;">반복 VOC 패턴을 분석하고 개선 방향을 제시합니다</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="ai-gen-btn ai-gen-btn-secondary" onclick="generatePatterns()">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><polyline points="7,4 7,7 9,9"/></svg>
+                패턴 분석
+              </button>
+              <button class="ai-gen-btn" onclick="generateImprovement()">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg>
+                개선 제안
+              </button>
+            </div>
+          </div>
+
+          <!-- 태그 트렌드 차트 (AI 없이도 보임) -->
+          <div class="ai-chart-section">
+            <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px;">📊 문의 유형 트렌드 (최근 4주)</div>
+            <div style="height:220px;position:relative;"><canvas id="research-trend-chart"></canvas></div>
+          </div>
+
+          <!-- AI 분석 결과 -->
+          <div id="research-output" class="ai-output" style="min-height:200px;">
+            <div class="ai-placeholder">
+              <div style="font-size:28px;">🔍</div>
+              <p><strong>패턴 분석</strong>으로 반복 VOC를, <strong>개선 제안</strong>으로 액션 플랜을 받아보세요</p>
+            </div>
+          </div>
         </div>
       </div>
+
+    </div><!-- /dashboard-content -->
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── AI 설정 모달 ── -->
+<div id="ai-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeAISettings()">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">🤖 Gemini AI 설정</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:20px;">무료 API 키로 AI 리포트 기능을 사용합니다</div>
+
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#0369a1;line-height:1.7;">
+      <strong>🔑 API 키 발급 방법 (무료, 5분)</strong><br>
+      1. <a href="https://ai.google.dev" target="_blank" style="color:#6366f1;">ai.google.dev</a> 접속 → <strong>Get API key</strong> 클릭<br>
+      2. Google 계정으로 로그인<br>
+      3. <strong>Create API key</strong> → 키 복사<br>
+      <span style="color:#64748b;">※ 무료 한도: 하루 1,500회 (월 VOC 분석엔 충분)</span>
+    </div>
+
+    <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Gemini API Key</label>
+    <input id="gemini-key-input" type="password"
+      placeholder="AIzaSy..."
+      style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;margin-bottom:16px;"
+      onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'">
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeAISettings()" style="padding:8px 16px;border:1px solid #e2e8f0;background:#fff;border-radius:7px;cursor:pointer;font-size:13px;color:#64748b;">취소</button>
+      <button onclick="saveAIKey()" style="padding:8px 20px;background:#6366f1;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">저장</button>
     </div>
   </div>
 </div>
 
 <script>
-// ── 상수 ─────────────────────────────────────────────────
-const BRANDS = ['슬룸','닥터맨즈','닥터아망','마넬','빌바','셀올로지','심플리케어','얼라인랩','와이브닝','코코다움','12 o\' clock'];
-const DEFECTIVE_TAGS = ['불량/불량확정','불량/불량문의','재불량','불량/불량콜백'];
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   상수 & 설정
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const GITHUB_RAW = 'https://raw.githubusercontent.com/Lyrze/VOC-dashboard/main/';
 
-// ── 상태 ─────────────────────────────────────────────────
-let state = {
-  brandData: {},   // brand -> { chats:[], managers:{} }
-  currentBrand: null,
-  currentView: 'productivity',
-  periodType: 'week',
-  periodOffset: 0,
-  mainChart: null,
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   글로벌 상태
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const store = {
+  // 브랜드별 채팅 데이터: brand -> [row, ...]
+  chatData: {},
+  // 브랜드별 전화 데이터: brand -> [row, ...]
+  phoneData: {},
+  // 매니저 이름 매핑: id -> name
+  managers: {},
+  // manifest 마지막 업데이트
+  lastUpdated: null,
+  // 현재 활성 대시보드 id (AI 탭에서 컨텍스트 파악용)
+  activeDash: '통합-채팅',
+  // Gemini API 키 (메모리에만 저장)
+  geminiKey: null,
 };
 
-// ── 초기화 ─────────────────────────────────────────────────
-function init() {
-  renderBrandList();
-  updatePeriodLabel();
-  setupDragDrop();
-  document.getElementById('file-input').addEventListener('change', e => {
-    if (e.target.files[0]) loadFile(e.target.files[0]);
-    e.target.value = '';
-  });
-}
+// UI 상태
+let currentDashboardId = '통합-채팅'; // 현재 선택된 대시보드 id
+let periodType = 'week';   // 'week' | 'month'
+let periodOffset = 0;      // 현재 기간에서의 오프셋 (0 = 현재)
 
-function renderBrandList() {
-  const el = document.getElementById('brand-list');
-  el.innerHTML = BRANDS.map(b => `
-    <button class="brand-btn ${b === state.currentBrand ? 'active' : ''}" onclick="selectBrand('${b.replace(/'/g,"\\'")}')">
-      <span>${b}</span>
-      <span class="brand-badge ${state.brandData[b] ? 'has-data' : ''}">${state.brandData[b] ? '✓' : '—'}</span>
-    </button>
-  `).join('');
-}
+// 차트 인스턴스 (destroy 호출용)
+const chartInstances = {};
 
-// ── 브랜드 선택 ─────────────────────────────────────────────
-function selectBrand(brand) {
-  state.currentBrand = brand;
-  state.periodOffset = 0;
-  renderBrandList();
-  document.getElementById('toolbar-brand').textContent = ' · ' + brand;
-  if (state.brandData[brand]) {
-    updateDataRange();
-    showDashboard();
-    renderAll();
-  } else {
-    document.getElementById('data-range').textContent = '';
-    showEmpty();
+// 그래프 보기 토글 상태
+let managerGraphVisible = false;
+let tagGraphVisible = false;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   진입점: GitHub에서 데이터 로드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+async function init() {
+  setLoading(true, 'manifest 확인 중...');
+  try {
+    const res = await fetch(GITHUB_RAW + 'data/manifest.json?t=' + Date.now());
+    if (!res.ok) throw new Error('manifest not found');
+    const manifest = await res.json();
+    store.lastUpdated = manifest.lastUpdated || null;
+    await loadAllData(manifest);
+  } catch(e) {
+    console.warn('GitHub 데이터 로드 실패:', e.message);
+    showNoDataState();
+  } finally {
+    setLoading(false);
   }
 }
 
-function showEmpty() {
-  document.getElementById('empty-state').style.display = '';
-  document.getElementById('dashboard-content').style.display = 'none';
+/* manifest에 명시된 브랜드/월별로 xlsx 순차 로드 */
+async function loadAllData(manifest) {
+  const months = manifest.months || {};
+  const entries = Object.entries(months);
+  if (!entries.length) { showNoDataState(); return; }
+
+  let loaded = 0;
+  const total = entries.reduce((s, [, info]) => s + (info.brands || []).length, 0);
+
+  for (const [monthKey, info] of entries) {
+    for (const brand of (info.brands || [])) {
+      loaded++;
+      setLoading(true, `데이터 로딩 중... (${loaded}/${total}) ${brand}`);
+      try {
+        const url = GITHUB_RAW + `data/${monthKey}/${encodeURIComponent(brand)}.xlsx?t=` + Date.now();
+        const res = await fetch(url);
+        if (!res.ok) { console.warn(`파일 없음: ${url}`); continue; }
+        const ab = await res.arrayBuffer();
+        const wb = XLSX.read(ab, { type: 'array' });
+        mergeIntoStore(brand, wb);
+      } catch(e) {
+        console.warn(`${brand} 로드 실패:`, e.message);
+      }
+    }
+  }
+
+  buildSidebar();
+  updatePeriodLabel();
+  selectDashboard('통합-채팅');
 }
-function showDashboard() {
+
+/* xlsx 워크북을 store에 병합 (id 기준 중복 제거) */
+function mergeIntoStore(brand, wb) {
+  // UserChat 시트 -> 채팅 데이터
+  const chatRows = sheetToJson(wb, 'UserChat');
+  if (chatRows.length) {
+    if (!store.chatData[brand]) {
+      store.chatData[brand] = chatRows;
+    } else {
+      const existIds = new Set(store.chatData[brand].map(r => r.id));
+      const newRows = chatRows.filter(r => !existIds.has(r.id));
+      store.chatData[brand] = store.chatData[brand].concat(newRows);
+    }
+  }
+
+  // UserChat meet 시트 -> 전화 데이터
+  const phoneRows = sheetToJson(wb, 'UserChat meet');
+  if (phoneRows.length) {
+    if (!store.phoneData[brand]) {
+      store.phoneData[brand] = phoneRows;
+    } else {
+      const existIds = new Set(store.phoneData[brand].map(r => r.id));
+      const newRows = phoneRows.filter(r => !existIds.has(r.id));
+      store.phoneData[brand] = store.phoneData[brand].concat(newRows);
+    }
+  }
+
+  // Manager data 시트 -> 담당자 이름 매핑
+  const mgRows = sheetToJson(wb, 'Manager data');
+  mgRows.forEach(m => {
+    if (m.id) {
+      store.managers[m.id] = m.name ? m.name.replace(/\s*매니저.*$/, '') : String(m.id);
+    }
+  });
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   사이드바 빌드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function buildSidebar() {
+  const brands = Object.keys(store.chatData);
+  const el = document.getElementById('sidebar-list');
+  let html = '';
+
+  // ─── 브랜드 통합 그룹 ───
+  html += `<div class="sidebar-group-label">브랜드 통합</div>`;
+
+  const integrated = [
+    { id: '통합-채팅',  label: '상담 생산성 - 채팅' },
+    { id: '통합-전화',  label: '상담 생산성 - 전화' },
+    { id: '통합-전체',  label: '상담 생산성 - 전체' },
+  ];
+  integrated.forEach(item => {
+    html += dashboardItemHTML(item.id, item.label);
+  });
+
+  // ─── 브랜드별 그룹 ───
+  brands.forEach(brand => {
+    html += `<div class="sidebar-group-label" style="margin-top:8px;">${brand}</div>`;
+    [
+      { id: `${brand}-voc-채팅`,  label: 'VOC 분석 - 채팅' },
+      { id: `${brand}-voc-전화`,  label: 'VOC 분석 - 전화' },
+      { id: `${brand}-voc-전체`,  label: 'VOC 분석 - 전체' },
+      { id: `${brand}-불량`,      label: '불량 VOC 대시보드' },
+    ].forEach(item => {
+      html += dashboardItemHTML(item.id, item.label);
+    });
+  });
+
+  el.innerHTML = html;
+}
+
+function dashboardItemHTML(id, label) {
+  const isActive = id === currentDashboardId;
+  return `<button class="dashboard-item${isActive ? ' active' : ''}" onclick="selectDashboard('${id.replace(/'/g, "\\'")}')" data-id="${id}">
+    <span class="item-dot"></span>
+    ${escHtml(label)}
+  </button>`;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   대시보드 선택 & 렌더
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function selectDashboard(id) {
+  currentDashboardId = id;
+
+  // 사이드바 active 갱신
+  document.querySelectorAll('.dashboard-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.id === id);
+  });
+
+  // 툴바 제목 갱신
+  updateToolbarTitle(id);
+
+  // 콘텐츠 렌더
+  renderDashboard(id);
+}
+
+function updateToolbarTitle(id) {
+  let title = id;
+  if (id === '통합-채팅') title = '상담 생산성 - 채팅';
+  else if (id === '통합-전화') title = '상담 생산성 - 전화';
+  else if (id === '통합-전체') title = '상담 생산성 - 전체';
+  else if (id.endsWith('-불량')) title = `${id.replace('-불량','')} · 불량 VOC 대시보드`;
+  else if (id.includes('-voc-')) {
+    const parts = id.split('-voc-');
+    title = `${parts[0]} · VOC 분석 - ${parts[1]}`;
+  }
+  document.getElementById('toolbar-title-text').textContent = title;
+}
+
+function renderDashboard(id) {
+  // 모든 뷰 숨기기
+  ['chat','phone','all','voc','defect'].forEach(v => {
+    const el = document.getElementById('view-' + v);
+    if (el) el.style.display = 'none';
+  });
+
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('dashboard-content').style.display = '';
-}
 
-// ── 뷰 전환 ─────────────────────────────────────────────
-function switchView(view) {
-  state.currentView = view;
-  ['productivity','voc','defective'].forEach(v => {
-    document.getElementById('view-'+v).style.display = v === view ? '' : 'none';
-    document.getElementById('nav-'+v).classList.toggle('active', v === view);
-  });
-  const titles = { productivity:'상담 생산성', voc:'VOC 분석', defective:'불량 VOC' };
-  document.querySelector('#toolbar-title').childNodes[0].textContent = titles[view];
-  if (state.currentBrand && state.brandData[state.currentBrand]) renderAll();
-}
+  const { start, end, prevStart, prevEnd } = getPeriodDates();
+  const dateRangeStr = formatDateRange(start, end);
 
-// ── 기간 ─────────────────────────────────────────────────
-function setPeriodType(type) {
-  state.periodType = type;
-  state.periodOffset = 0;
-  document.getElementById('btn-week').classList.toggle('active', type === 'week');
-  document.getElementById('btn-month').classList.toggle('active', type === 'month');
-  updatePeriodLabel();
-  if (state.currentBrand && state.brandData[state.currentBrand]) renderAll();
-}
-function movePeriod(dir) {
-  state.periodOffset += dir;
-  updatePeriodLabel();
-  if (state.currentBrand && state.brandData[state.currentBrand]) renderAll();
-}
-function goToNow() { state.periodOffset = 0; updatePeriodLabel(); if (state.currentBrand && state.brandData[state.currentBrand]) renderAll(); }
+  if (id === '통합-채팅') {
+    // 모든 브랜드 채팅 데이터 합산
+    const allChats = getAllChatData();
+    const cur = filterPeriod(allChats, start, end);
+    const prev = filterPeriod(allChats, prevStart, prevEnd);
 
-function getPeriodDates() {
-  const now = new Date();
-  if (state.periodType === 'week') {
-    const day = now.getDay(); // 0=Sun
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + state.periodOffset * 7);
-    monday.setHours(0,0,0,0);
-    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6); sunday.setHours(23,59,59,999);
-    const prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
-    const prevSunday = new Date(sunday); prevSunday.setDate(sunday.getDate() - 7);
-    return { start: monday, end: sunday, prevStart: prevMonday, prevEnd: prevSunday };
-  } else {
-    const y = now.getFullYear(), m = now.getMonth() + state.periodOffset;
-    const adjY = y + Math.floor(m / 12), adjM = ((m % 12) + 12) % 12;
-    const start = new Date(adjY, adjM, 1);
-    const end = new Date(adjY, adjM + 1, 0, 23, 59, 59, 999);
-    const prevStart = new Date(adjY, adjM - 1, 1);
-    const prevEnd = new Date(adjY, adjM, 0, 23, 59, 59, 999);
-    return { start, end, prevStart, prevEnd };
+    document.getElementById('view-chat').style.display = '';
+    renderChatBarChart(allChats, start);
+    renderChatKPIs(cur, prev, dateRangeStr);
+    renderManagerTable(cur, prev, dateRangeStr);
+    renderTagTable(cur, prev, dateRangeStr);
+
+  } else if (id === '통합-전화') {
+    const allPhone = getAllPhoneData();
+    const cur = filterPeriod(allPhone, start, end);
+    const prev = filterPeriod(allPhone, prevStart, prevEnd);
+
+    document.getElementById('view-phone').style.display = '';
+    renderPhoneBarChart(allPhone, start);
+    renderPhoneKPIs(cur, prev, dateRangeStr);
+    renderPhoneMissedTable(cur, prev);
+
+  } else if (id === '통합-전체') {
+    document.getElementById('view-all').style.display = '';
+
+  } else if (id.endsWith('-불량')) {
+    const brand = id.replace('-불량', '');
+    renderDefectView(brand, start, end, prevStart, prevEnd);
+
+  } else if (id.includes('-voc-')) {
+    const parts = id.split('-voc-');
+    const brand = parts[0];
+    const channel = parts[1]; // 채팅 | 전화 | 전체
+    renderVOCView(brand, channel, start, end, prevStart, prevEnd);
   }
 }
 
-function updatePeriodLabel() {
-  const { start, end } = getPeriodDates();
-  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
-  if (state.periodType === 'week') {
-    const wn = getWeekNum(start);
-    document.getElementById('period-label').textContent = `${start.getFullYear()}년 ${start.getMonth()+1}월 ${wn}주 (${fmt(start)}~${fmt(end)})`;
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   데이터 헬퍼
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function getAllChatData() {
+  return Object.values(store.chatData).flat();
+}
+
+function getAllPhoneData() {
+  return Object.values(store.phoneData).flat();
+}
+
+function filterPeriod(rows, start, end) {
+  return rows.filter(r => {
+    const d = parseDate(r.createdAt || r.managedAt || r.startedAt);
+    return d && d >= start && d <= end;
+  });
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  if (s instanceof Date) return s;
+  const str = String(s).replace(' ', 'T');
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function sheetToJson(wb, sheetName) {
+  if (!wb.Sheets[sheetName]) return [];
+  return XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: null });
+}
+
+function avg(arr) {
+  const valid = arr.filter(v => v != null && !isNaN(v));
+  if (!valid.length) return null;
+  return valid.reduce((a, b) => a + Number(b), 0) / valid.length;
+}
+
+function groupBy(arr, fn) {
+  const map = {};
+  arr.forEach(item => {
+    const key = fn(item) ?? '(없음)';
+    if (!map[key]) map[key] = [];
+    map[key].push(item);
+  });
+  return map;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   KPI 계산
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function calcKPIs(chats) {
+  const n = chats.length;
+  const responded = chats.filter(c => c.firstAnsweredAt).length;
+  const closed = chats.filter(c => c.state === 'closed').length;
+  const csatChats = chats.filter(c => c['profile.csat'] != null);
+  const complaints = csatChats.filter(c => Number(c['profile.csat']) <= 2).length;
+
+  const firstReplyTimes = chats.map(c => c.timeToFirstAnswerInOperation).filter(v => v != null);
+  const replyTimes = chats.map(c => c.avgReplyTimeInOperation ?? c.avgReplyTime).filter(v => v != null);
+  const handlingTimes = chats.map(c => c.memberHandlingTime).filter(v => v != null);
+  const csatScores = csatChats.map(c => Number(c['profile.csat']));
+
+  return {
+    totalChats: n,
+    responded,
+    responseRate: n ? responded / n * 100 : 0,
+    closedRate: n ? closed / n * 100 : 0,
+    avgFirstReply: firstReplyTimes.length ? avg(firstReplyTimes) : null,
+    avgReplyTime: replyTimes.length ? avg(replyTimes) : null,
+    avgHandling: handlingTimes.length ? avg(handlingTimes) : null,
+    avgSatisfaction: csatScores.length ? avg(csatScores) : null,
+    satisfactionRate: n ? csatChats.length / n * 100 : 0,
+    complaintRate: csatChats.length ? complaints / csatChats.length * 100 : 0,
+  };
+}
+
+/* 전화 KPI */
+function calcPhoneKPIs(rows) {
+  const n = rows.length;
+  // 수신 연결: missedReason 없거나 null
+  const connected = rows.filter(r => !r.missedReason).length;
+  const durations = rows.map(r => r.duration ?? r.talkTime).filter(v => v != null);
+  return {
+    total: n,
+    connected,
+    connectRate: n ? connected / n * 100 : 0,
+    avgDuration: durations.length ? avg(durations) : null,
+  };
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   포맷 함수
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function fmtSec(sec) {
+  if (sec == null) return '-';
+  sec = Math.round(Number(sec));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}시간 ${m}분`;
+  if (m > 0) return `${m}분 ${s}초`;
+  return `${s}초`;
+}
+
+function fmtPct(v) {
+  if (v == null) return '-';
+  return v.toFixed(2) + '%';
+}
+
+/**
+ * delta 계산 및 색상 결정
+ * @param {number|null} cur 현재값
+ * @param {number|null} prev 이전값
+ * @param {boolean} higherIsBetter 높을수록 좋은지
+ * @param {'number'|'time'|'pct'} type 표시 타입
+ * @returns {{ text: string, cls: string }}
+ */
+function fmtDelta(cur, prev, higherIsBetter, type = 'number') {
+  if (cur == null || prev == null) return { text: '-', cls: 'delta-neutral' };
+  const diff = cur - prev;
+  if (Math.abs(diff) < 0.001) return { text: '-', cls: 'delta-neutral' };
+
+  let text;
+  if (type === 'time') {
+    text = (diff > 0 ? '+' : '-') + fmtSec(Math.abs(diff));
+  } else if (type === 'pct') {
+    text = (diff > 0 ? '+' : '') + diff.toFixed(2) + '%p';
   } else {
-    document.getElementById('period-label').textContent = `${start.getFullYear()}년 ${start.getMonth()+1}월`;
+    text = (diff > 0 ? '+' : '') + diff.toFixed(2);
+  }
+
+  const isGood = higherIsBetter ? diff > 0 : diff < 0;
+  return { text, cls: isGood ? 'delta-green' : 'delta-red' };
+}
+
+function formatDateRange(start, end) {
+  const fmt = d => `${d.getMonth() + 1}/${d.getDate()}`;
+  return `${fmt(start)} ~ ${fmt(end)}`;
+}
+
+function formatDateRangeFull(start, end) {
+  const days = ['일','월','화','수','목','금','토'];
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`;
+  return `${fmt(start)} ~ ${fmt(end)}`;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   기간 계산
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function getPeriodDates() {
+  const now = new Date();
+  if (periodType === 'week') {
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + periodOffset * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    const prevMonday = new Date(monday);
+    prevMonday.setDate(monday.getDate() - 7);
+    const prevSunday = new Date(sunday);
+    prevSunday.setDate(sunday.getDate() - 7);
+    return { start: monday, end: sunday, prevStart: prevMonday, prevEnd: prevSunday };
+  } else {
+    const base = new Date(now.getFullYear(), now.getMonth() + periodOffset, 1);
+    const start = new Date(base.getFullYear(), base.getMonth(), 1);
+    const end = new Date(base.getFullYear(), base.getMonth() + 1, 0, 23, 59, 59, 999);
+    const prevStart = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+    const prevEnd = new Date(base.getFullYear(), base.getMonth(), 0, 23, 59, 59, 999);
+    return { start, end, prevStart, prevEnd };
   }
 }
 
@@ -368,387 +1722,1438 @@ function getWeekNum(d) {
   return Math.ceil((d.getDate() + firstDay.getDay()) / 7);
 }
 
-// ── 파일 로드 ─────────────────────────────────────────────
-function triggerUpload() { document.getElementById('file-input').click(); }
-
-function setupDragDrop() {
-  const overlay = document.getElementById('drop-overlay');
-  document.body.addEventListener('dragover', e => { e.preventDefault(); overlay.classList.add('active'); });
-  document.body.addEventListener('dragleave', e => { if (!e.relatedTarget) overlay.classList.remove('active'); });
-  document.body.addEventListener('drop', e => {
-    e.preventDefault(); overlay.classList.remove('active');
-    const f = e.dataTransfer.files[0];
-    if (f && (f.name.endsWith('.xlsx') || f.name.endsWith('.xls'))) loadFile(f);
-  });
-}
-
-function loadFile(file) {
-  if (!state.currentBrand) { alert('먼저 좌측에서 브랜드를 선택하세요.'); return; }
-  document.getElementById('loading').classList.add('active');
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const newChats = sheetToObj(wb, 'UserChat');
-      const managersRaw = sheetToObj(wb, 'Manager data');
-      const managers = {};
-      managersRaw.forEach(m => { managers[m.id] = m.name ? m.name.replace(/\s*매니저.*$/,'') : m.id; });
-
-      // 누적 병합: 기존 데이터와 합치되, id 기준 중복 제거
-      const existing = state.brandData[state.currentBrand];
-      let mergedChats = newChats;
-      let mergedManagers = managers;
-      if (existing) {
-        const existingIds = new Set(existing.chats.map(c => c.id));
-        const onlyNew = newChats.filter(c => !existingIds.has(c.id));
-        mergedChats = [...existing.chats, ...onlyNew];
-        mergedManagers = { ...existing.managers, ...managers };
-        const added = onlyNew.length, duped = newChats.length - onlyNew.length;
-        console.log(`병합: +${added}건 추가, ${duped}건 중복 제거, 총 ${mergedChats.length}건`);
-      }
-
-      state.brandData[state.currentBrand] = { chats: mergedChats, managers: mergedManagers };
-      updateDataRange();
-      renderBrandList();
-      showDashboard();
-      renderAll();
-    } catch(err) { alert('파일 파싱 오류: ' + err.message); console.error(err); }
-    document.getElementById('loading').classList.remove('active');
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function updateDataRange() {
-  const d = state.brandData[state.currentBrand];
-  if (!d || !d.chats.length) return;
-  const dates = d.chats.map(c => parseDate(c.createdAt)).filter(Boolean).sort((a,b) => a-b);
-  if (!dates.length) return;
-  const fmt = d => `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
-  document.getElementById('data-range').textContent = `데이터: ${fmt(dates[0])} ~ ${fmt(dates[dates.length-1])} (${d.chats.length}건)`;
-}
-
-function sheetToObj(wb, name) {
-  if (!wb.Sheets[name]) return [];
-  return XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: null });
-}
-
-// ── 데이터 필터 ─────────────────────────────────────────────
-function filterPeriod(chats, start, end) {
-  return chats.filter(c => {
-    const d = parseDate(c.createdAt || c.managedAt);
-    return d && d >= start && d <= end;
-  });
-}
-
-function parseDate(s) {
-  if (!s) return null;
-  return new Date(s.replace(' ', 'T'));
-}
-
-// ── KPI 계산 ─────────────────────────────────────────────
-function calcKPIs(chats) {
-  const n = chats.length;
-  const responded = chats.filter(c => c.firstAnsweredAt).length;
-  const closed = chats.filter(c => c.state === 'closed').length;
-  const withCsat = chats.filter(c => c['profile.csat'] != null);
-  const withFirstReply = chats.filter(c => c.timeToFirstAnswerInOperation != null);
-  const withReply = chats.filter(c => c.avgReplyTimeInOperation != null || c.avgReplyTime != null);
-  const withHandling = chats.filter(c => c.memberHandlingTime != null);
-  return {
-    total: n,
-    responded,
-    responseRate: n ? (responded / n * 100) : 0,
-    closedRate: n ? (closed / n * 100) : 0,
-    avgFirstReply: avg(withFirstReply.map(c => c.timeToFirstAnswerInOperation)),
-    avgReplyTime: avg(withReply.map(c => c.avgReplyTimeInOperation || c.avgReplyTime)),
-    avgHandling: avg(withHandling.map(c => c.memberHandlingTime)),
-    avgSatisfaction: avg(withCsat.map(c => c['profile.csat'])),
-    satisfactionRate: n ? (withCsat.length / n * 100) : 0,
-    complaintRate: withCsat.length ? (withCsat.filter(c => c['profile.csat'] <= 2).length / withCsat.length * 100) : 0,
-  };
-}
-
-function avg(arr) { if (!arr.length) return null; return arr.reduce((a,b) => a+b, 0) / arr.length; }
-
-function fmtSec(sec) {
-  if (sec == null) return '-';
-  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
-  if (h > 0) return `${h}시간 ${m}분`;
-  if (m > 0) return `${m}분 ${s}초`;
-  return `${s}초`;
-}
-
-function fmtDelta(cur, prev, higherIsBetter, isTime) {
-  if (cur == null || prev == null) return { text: '-', cls: 'delta-neutral' };
-  const diff = cur - prev;
-  if (Math.abs(diff) < 0.001) return { text: '±0', cls: 'delta-neutral' };
-  const sign = diff > 0 ? '+' : '';
-  let text;
-  if (isTime) text = sign + fmtSec(Math.abs(diff));
-  else text = sign + diff.toFixed(2);
-  const positive = diff > 0;
-  const cls = higherIsBetter ? (positive ? 'delta-up-good' : 'delta-down-bad') : (positive ? 'delta-up' : 'delta-down');
-  return { text, cls };
-}
-
-function fmtDeltaPct(cur, prev, higherIsBetter) {
-  if (cur == null || prev == null) return { text: '-', cls: 'delta-neutral' };
-  const diff = cur - prev;
-  if (Math.abs(diff) < 0.001) return { text: '±0%', cls: 'delta-neutral' };
-  const sign = diff > 0 ? '+' : '';
-  const text = sign + diff.toFixed(2) + '%';
-  const positive = diff > 0;
-  const cls = higherIsBetter ? (positive ? 'delta-up-good' : 'delta-down-bad') : (positive ? 'delta-up' : 'delta-down');
-  return { text, cls };
-}
-
-// ── 렌더링 메인 ─────────────────────────────────────────────
-function renderAll() {
-  const d = state.brandData[state.currentBrand];
-  if (!d) return;
-  const { start, end, prevStart, prevEnd } = getPeriodDates();
-  const cur = filterPeriod(d.chats, start, end);
-  const prev = filterPeriod(d.chats, prevStart, prevEnd);
-  updatePeriodLabel();
-
-  if (state.currentView === 'productivity') {
-    renderKPIs(cur, prev, start, end);
-    renderMainChart(d.chats, start);
-    renderManagerTable(cur, prev, d.managers);
-    renderTagTable(cur, prev);
-  } else if (state.currentView === 'voc') {
-    renderVOCView(cur, prev);
-  } else if (state.currentView === 'defective') {
-    renderDefectiveView(cur, prev);
+function getLast5Weeks(currentStart) {
+  const weeks = [];
+  for (let i = -4; i <= 0; i++) {
+    const start = new Date(currentStart);
+    start.setDate(currentStart.getDate() + i * 7);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    const wn = getWeekNum(start);
+    weeks.push({
+      start, end,
+      label: [`${start.getMonth()+1}월 ${wn}주차`, `${start.getMonth()+1}.${start.getDate()}-${end.getMonth()+1}.${end.getDate()}`],
+    });
   }
+  return weeks;
 }
 
-// ── KPI 카드 ─────────────────────────────────────────────
-function renderKPIs(cur, prev, start, end) {
-  const kc = calcKPIs(cur), kp = calcKPIs(prev);
-  const fmt = d => `${d.getMonth()+1}/${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})`;
-  const dateStr = `${fmt(start)} ~ ${fmt(end)}`;
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   기간 UI 업데이트
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function updatePeriodLabel() {
+  const { start, end } = getPeriodDates();
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+  let label;
+  if (periodType === 'week') {
+    const wn = getWeekNum(start);
+    label = `${start.getFullYear()}년 ${start.getMonth()+1}월 ${wn}주 (${fmt(start)}~${fmt(end)})`;
+  } else {
+    label = `${start.getFullYear()}년 ${start.getMonth()+1}월`;
+  }
+  document.getElementById('period-label').textContent = label;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   채팅 렌더러
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* 섹션1: stacked bar chart (최근 5주) */
+function renderChatBarChart(allChats, currentStart) {
+  const weeks = getLast5Weeks(currentStart);
+  const responded = weeks.map(w => filterPeriod(allChats, w.start, w.end).filter(c => c.firstAnsweredAt).length);
+  const missed = weeks.map(w => {
+    const wChats = filterPeriod(allChats, w.start, w.end);
+    return wChats.length - wChats.filter(c => c.firstAnsweredAt).length;
+  });
+
+  const ctx = document.getElementById('chat-bar-chart').getContext('2d');
+  if (chartInstances.chatBar) chartInstances.chatBar.destroy();
+  chartInstances.chatBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: weeks.map(w => w.label),
+      datasets: [
+        { label: '응대', data: responded, backgroundColor: '#818cf8', borderRadius: 3, borderSkipped: false },
+        { label: '미응대', data: missed, backgroundColor: '#e2e8f0', borderRadius: 3, borderSkipped: false },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#64748b' },
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { size: 10 }, color: '#64748b' },
+        },
+      },
+    },
+  });
+}
+
+/* 섹션2: KPI 카드 9개 */
+function renderChatKPIs(cur, prev, dateRangeStr) {
+  const kc = calcKPIs(cur);
+  const kp = calcKPIs(prev);
 
   const cards = [
-    { label:'총 채팅 수', val: kc.total+'건', delta: fmtDelta(kc.total, kp.total, false), good: false },
-    { label:'총 채팅 응대 수', val: kc.responded+'건', delta: fmtDelta(kc.responded, kp.responded, true), good: true },
-    { label:'채팅 응대 비율', val: kc.responseRate.toFixed(2)+'%', delta: fmtDeltaPct(kc.responseRate, kp.responseRate, true), good: true },
-    { label:'채팅 처리 완료 비율', val: kc.closedRate.toFixed(2)+'%', delta: fmtDeltaPct(kc.closedRate, kp.closedRate, true), good: true },
-    { label:'평균 채팅 첫 응대 시간', val: fmtSec(kc.avgFirstReply), delta: fmtDelta(kc.avgFirstReply, kp.avgFirstReply, false, true), good: false },
-    { label:'평균 채팅 응답 시간', val: fmtSec(kc.avgReplyTime), delta: fmtDelta(kc.avgReplyTime, kp.avgReplyTime, false, true), good: false },
-    { label:'평균 채팅 처리 시간', val: fmtSec(kc.avgHandling), delta: fmtDelta(kc.avgHandling, kp.avgHandling, false, true), good: false },
-    { label:'평균 채팅 만족도', val: kc.avgSatisfaction ? kc.avgSatisfaction.toFixed(2)+'점' : '-', delta: fmtDelta(kc.avgSatisfaction, kp.avgSatisfaction, true), good: true },
-    { label:'채팅 만족도 응답률', val: kc.satisfactionRate.toFixed(2)+'%', delta: fmtDeltaPct(kc.satisfactionRate, kp.satisfactionRate, true), good: true },
+    {
+      label: '총 채팅 수',
+      value: kc.totalChats + '건',
+      delta: fmtDelta(kc.totalChats, kp.totalChats, false, 'number'),
+    },
+    {
+      label: '총 채팅 응대 수',
+      value: kc.responded + '건',
+      delta: fmtDelta(kc.responded, kp.responded, true, 'number'),
+    },
+    {
+      label: '채팅 응대 비율',
+      value: fmtPct(kc.responseRate),
+      delta: fmtDelta(kc.responseRate, kp.responseRate, true, 'pct'),
+    },
+    {
+      label: '채팅 처리 완료 비율',
+      value: fmtPct(kc.closedRate),
+      delta: fmtDelta(kc.closedRate, kp.closedRate, true, 'pct'),
+    },
+    {
+      label: '평균 채팅 첫 응대 시간',
+      value: fmtSec(kc.avgFirstReply),
+      delta: fmtDelta(kc.avgFirstReply, kp.avgFirstReply, false, 'time'),
+    },
+    {
+      label: '평균 채팅 응답 시간',
+      value: fmtSec(kc.avgReplyTime),
+      delta: fmtDelta(kc.avgReplyTime, kp.avgReplyTime, false, 'time'),
+    },
+    {
+      label: '평균 채팅 처리 시간',
+      value: fmtSec(kc.avgHandling),
+      delta: fmtDelta(kc.avgHandling, kp.avgHandling, false, 'time'),
+    },
+    {
+      label: '평균 채팅 만족도',
+      value: kc.avgSatisfaction != null ? kc.avgSatisfaction.toFixed(2) + '점' : '-',
+      delta: fmtDelta(kc.avgSatisfaction, kp.avgSatisfaction, true, 'number'),
+    },
+    {
+      label: '채팅 만족도 응답률',
+      value: fmtPct(kc.satisfactionRate),
+      delta: fmtDelta(kc.satisfactionRate, kp.satisfactionRate, true, 'pct'),
+    },
   ];
 
-  document.getElementById('kpi-grid').innerHTML = cards.map(c => `
+  document.getElementById('chat-kpi-row').innerHTML = cards.map(c => `
     <div class="kpi-card">
-      <div class="kpi-label">${c.label}</div>
-      <div class="kpi-date">${dateStr}</div>
-      <div class="kpi-value">${c.val}</div>
-      <div class="kpi-delta ${c.delta.cls}">${c.delta.text}</div>
+      <div class="kpi-label">${escHtml(c.label)}</div>
+      <div class="kpi-date">${escHtml(dateRangeStr)}</div>
+      <div class="kpi-value">${escHtml(c.value)}</div>
+      <div class="kpi-delta ${c.delta.cls}">${escHtml(c.delta.text)}</div>
     </div>
   `).join('');
 }
 
-// ── 주차별 바 차트 ─────────────────────────────────────────────
-function renderMainChart(chats, currentStart) {
-  const weeks = [];
-  for (let i = -4; i <= 0; i++) {
-    const start = new Date(currentStart); start.setDate(currentStart.getDate() + i * 7);
-    const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
-    const wChats = filterPeriod(chats, start, end);
-    const responded = wChats.filter(c => c.firstAnsweredAt).length;
-    const wn = getWeekNum(start);
-    weeks.push({ label: `${start.getMonth()+1}월 ${wn}주차\n${start.getMonth()+1}.${start.getDate()}-${end.getMonth()+1}.${end.getDate()}`, responded, missed: wChats.length - responded });
-  }
+/* 섹션3: 담당자(통합) 테이블 */
+function renderManagerTable(cur, prev, dateRangeStr) {
+  document.getElementById('manager-date-range').textContent = dateRangeStr;
 
-  const ctx = document.getElementById('main-chart').getContext('2d');
-  if (state.mainChart) state.mainChart.destroy();
-  state.mainChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: weeks.map(w => w.label.split('\n')),
-      datasets: [
-        { label:'응대 채팅', data: weeks.map(w => w.responded), backgroundColor:'#818cf8', borderRadius: 4 },
-        { label:'미응대 채팅', data: weeks.map(w => w.missed), backgroundColor:'#e2e8f0', borderRadius: 4 },
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-        y: { stacked: true, beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
-      }
-    }
-  });
-}
-
-// ── 담당자별 테이블 ─────────────────────────────────────────────
-function renderManagerTable(cur, prev, managers) {
-  const grouped = groupBy(cur, c => c.assigneeId || '미배정');
-  const prevGrouped = groupBy(prev, c => c.assigneeId || '미배정');
+  const grouped = groupBy(cur, c => c.assigneeId ?? '미배정');
+  const prevGrouped = groupBy(prev, c => c.assigneeId ?? '미배정');
+  const total = cur.length || 1;
 
   const rows = Object.entries(grouped).map(([id, chats]) => {
     const prevChats = prevGrouped[id] || [];
-    const k = calcKPIs(chats), kp = calcKPIs(prevChats);
-    return { name: managers[id] || id, k, kp, total: chats.length };
-  }).sort((a,b) => b.total - a.total);
+    return {
+      name: store.managers[id] || id,
+      kc: calcKPIs(chats),
+      kp: calcKPIs(prevChats),
+      count: chats.length,
+    };
+  }).sort((a, b) => b.count - a.count);
 
   const thead = `<thead><tr>
-    <th>담당자</th><th>총 응대 수</th><th>처리 완료</th><th>불만 비율</th><th>첫 응대</th><th>응답 시간</th><th>처리 시간</th><th>만족도</th><th>비율</th>
+    <th>담당자(통합)</th>
+    <th>총 응대 수</th>
+    <th>총 처리 완료 수</th>
+    <th>불만 비율</th>
+    <th>평균 첫 응대 시간</th>
+    <th>평균 응답 시간</th>
+    <th>평균 상담 처리 시간</th>
+    <th>평균 만족도</th>
+    <th>전체 문의 중 비율</th>
   </tr></thead>`;
 
-  const totalRows = cur.length || 1;
   const tbody = '<tbody>' + rows.map(r => {
-    const d1 = fmtDelta(r.k.responded, r.kp.responded, true);
-    const d2 = fmtDeltaPct(r.k.closedRate, r.kp.closedRate, true);
-    const d3 = fmtDeltaPct(r.k.complaintRate, r.kp.complaintRate, false);
-    const d4 = fmtDelta(r.k.avgFirstReply, r.kp.avgFirstReply, false, true);
-    const d5 = fmtDelta(r.k.avgReplyTime, r.kp.avgReplyTime, false, true);
-    const d6 = fmtDelta(r.k.avgHandling, r.kp.avgHandling, false, true);
-    const d7 = fmtDelta(r.k.avgSatisfaction, r.kp.avgSatisfaction, true);
+    const d1 = fmtDelta(r.kc.responded,       r.kp.responded,       true,  'number');
+    const d2 = fmtDelta(r.kc.closedRate,       r.kp.closedRate,       true,  'pct');
+    const d3 = fmtDelta(r.kc.complaintRate,    r.kp.complaintRate,    false, 'pct');
+    const d4 = fmtDelta(r.kc.avgFirstReply,    r.kp.avgFirstReply,    false, 'time');
+    const d5 = fmtDelta(r.kc.avgReplyTime,     r.kp.avgReplyTime,     false, 'time');
+    const d6 = fmtDelta(r.kc.avgHandling,      r.kp.avgHandling,      false, 'time');
+    const d7 = fmtDelta(r.kc.avgSatisfaction,  r.kp.avgSatisfaction,  true,  'number');
     return `<tr>
-      <td>${r.name}</td>
-      <td><div class="td-main">${r.k.responded}건</div><div class="td-delta ${d1.cls}">${d1.text}</div></td>
-      <td><div class="td-main">${r.k.closedRate.toFixed(1)}%</div><div class="td-delta ${d2.cls}">${d2.text}</div></td>
-      <td><div class="td-main">${r.k.complaintRate.toFixed(1)}%</div><div class="td-delta ${d3.cls}">${d3.text}</div></td>
-      <td><div class="td-main">${fmtSec(r.k.avgFirstReply)}</div><div class="td-delta ${d4.cls}">${d4.text}</div></td>
-      <td><div class="td-main">${fmtSec(r.k.avgReplyTime)}</div><div class="td-delta ${d5.cls}">${d5.text}</div></td>
-      <td><div class="td-main">${fmtSec(r.k.avgHandling)}</div><div class="td-delta ${d6.cls}">${d6.text}</div></td>
-      <td><div class="td-main">${r.k.avgSatisfaction ? r.k.avgSatisfaction.toFixed(2)+'점' : '-'}</div><div class="td-delta ${d7.cls}">${d7.text}</div></td>
-      <td>${(r.total / totalRows * 100).toFixed(0)}%</td>
+      <td>${escHtml(r.name)}</td>
+      <td><div class="td-main">${r.kc.responded}건</div><div class="td-delta ${d1.cls}">${d1.text}</div></td>
+      <td><div class="td-main">${r.kc.closedRate.toFixed(1)}%</div><div class="td-delta ${d2.cls}">${d2.text}</div></td>
+      <td><div class="td-main">${r.kc.complaintRate.toFixed(1)}%</div><div class="td-delta ${d3.cls}">${d3.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.kc.avgFirstReply)}</div><div class="td-delta ${d4.cls}">${d4.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.kc.avgReplyTime)}</div><div class="td-delta ${d5.cls}">${d5.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.kc.avgHandling)}</div><div class="td-delta ${d6.cls}">${d6.text}</div></td>
+      <td><div class="td-main">${r.kc.avgSatisfaction != null ? r.kc.avgSatisfaction.toFixed(2) + '점' : '-'}</div><div class="td-delta ${d7.cls}">${d7.text}</div></td>
+      <td>${(r.count / total * 100).toFixed(1)}%</td>
     </tr>`;
   }).join('') + '</tbody>';
 
   document.getElementById('manager-table').innerHTML = thead + tbody;
+
+  // 그래프 보기가 켜져 있으면 차트도 다시 그리기
+  if (managerGraphVisible) renderManagerChart(rows);
 }
 
-// ── 태그별 테이블 ─────────────────────────────────────────────
-function renderTagTable(cur, prev) {
-  const grouped = groupBy(cur, c => c.tags || '태그 없음');
-  const prevGrouped = groupBy(prev, c => c.tags || '태그 없음');
+/* 섹션4: 상담 태그 테이블 */
+function renderTagTable(cur, prev, dateRangeStr) {
+  document.getElementById('tag-date-range').textContent = dateRangeStr;
+
+  // 태그 파싱: 콤마/세미콜론으로 구분될 수 있으므로 첫 태그 사용
+  const getTag = c => {
+    const raw = c.tags || c.tag || '태그 없음';
+    return String(raw).split(/[,;]/)[0].trim() || '태그 없음';
+  };
+
+  const grouped = groupBy(cur, getTag);
+  const prevGrouped = groupBy(prev, getTag);
+  const total = cur.length || 1;
 
   const rows = Object.entries(grouped).map(([tag, chats]) => {
     const prevChats = prevGrouped[tag] || [];
-    const k = calcKPIs(chats), kp = calcKPIs(prevChats);
-    return { tag, k, kp, total: chats.length };
-  }).sort((a,b) => b.total - a.total);
+    return {
+      tag,
+      kc: calcKPIs(chats),
+      kp: calcKPIs(prevChats),
+      count: chats.length,
+    };
+  }).sort((a, b) => b.count - a.count);
 
   const thead = `<thead><tr>
-    <th>상담 태그</th><th>총 문의</th><th>처리 완료</th><th>불만 비율</th><th>첫 응대</th><th>처리 시간</th><th>만족도</th><th>비율</th>
+    <th>상담 태그</th>
+    <th>총 문의 수</th>
+    <th>총 처리 완료 수</th>
+    <th>불만 비율</th>
+    <th>평균 첫 응대 시간</th>
+    <th>평균 응답 시간</th>
+    <th>평균 상담 처리 시간</th>
+    <th>평균 만족도</th>
+    <th>전체 문의 중 비율</th>
   </tr></thead>`;
 
-  const totalRows = cur.length || 1;
   const tbody = '<tbody>' + rows.map(r => {
-    const d1 = fmtDelta(r.k.total, r.kp.total, false);
-    const d2 = fmtDeltaPct(r.k.closedRate, r.kp.closedRate, true);
-    const d4 = fmtDelta(r.k.avgFirstReply, r.kp.avgFirstReply, false, true);
-    const d6 = fmtDelta(r.k.avgHandling, r.kp.avgHandling, false, true);
-    const d7 = fmtDelta(r.k.avgSatisfaction, r.kp.avgSatisfaction, true);
+    const d1 = fmtDelta(r.kc.totalChats,     r.kp.totalChats,     false, 'number');
+    const d2 = fmtDelta(r.kc.closedRate,      r.kp.closedRate,      true,  'pct');
+    const d3 = fmtDelta(r.kc.complaintRate,   r.kp.complaintRate,   false, 'pct');
+    const d4 = fmtDelta(r.kc.avgFirstReply,   r.kp.avgFirstReply,   false, 'time');
+    const d5 = fmtDelta(r.kc.avgReplyTime,    r.kp.avgReplyTime,    false, 'time');
+    const d6 = fmtDelta(r.kc.avgHandling,     r.kp.avgHandling,     false, 'time');
+    const d7 = fmtDelta(r.kc.avgSatisfaction, r.kp.avgSatisfaction, true,  'number');
     return `<tr>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.tag}">${r.tag}</td>
-      <td><div class="td-main">${r.k.total}건</div><div class="td-delta ${d1.cls}">${d1.text}</div></td>
-      <td><div class="td-main">${r.k.closedRate.toFixed(1)}%</div><div class="td-delta ${d2.cls}">${d2.text}</div></td>
-      <td>${r.k.complaintRate.toFixed(1)}%</td>
-      <td>${fmtSec(r.k.avgFirstReply)}</td>
-      <td>${fmtSec(r.k.avgHandling)}</td>
-      <td>${r.k.avgSatisfaction ? r.k.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
-      <td>${(r.total / totalRows * 100).toFixed(0)}%</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(r.tag)}">${escHtml(r.tag)}</td>
+      <td><div class="td-main">${r.kc.totalChats}건</div><div class="td-delta ${d1.cls}">${d1.text}</div></td>
+      <td><div class="td-main">${r.kc.closedRate.toFixed(1)}%</div><div class="td-delta ${d2.cls}">${d2.text}</div></td>
+      <td><div class="td-main">${r.kc.complaintRate.toFixed(1)}%</div><div class="td-delta ${d3.cls}">${d3.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.kc.avgFirstReply)}</div><div class="td-delta ${d4.cls}">${d4.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.kc.avgReplyTime)}</div><div class="td-delta ${d5.cls}">${d5.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.kc.avgHandling)}</div><div class="td-delta ${d6.cls}">${d6.text}</div></td>
+      <td><div class="td-main">${r.kc.avgSatisfaction != null ? r.kc.avgSatisfaction.toFixed(2) + '점' : '-'}</div><div class="td-delta ${d7.cls}">${d7.text}</div></td>
+      <td>${(r.count / total * 100).toFixed(1)}%</td>
     </tr>`;
   }).join('') + '</tbody>';
 
   document.getElementById('tag-table').innerHTML = thead + tbody;
+
+  if (tagGraphVisible) renderTagChartViz(rows);
 }
 
-// ── VOC 분석 뷰 ─────────────────────────────────────────────
-function renderVOCView(cur, prev) {
-  // 카테고리 집계 (태그의 첫 부분 = 카테고리)
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   그래프 보기 토글 (담당자)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function toggleManagerGraph() {
+  managerGraphVisible = !managerGraphVisible;
+  const wrap = document.getElementById('manager-chart-wrap');
+  const btn = document.getElementById('manager-graph-btn');
+  wrap.classList.toggle('visible', managerGraphVisible);
+  btn.classList.toggle('active', managerGraphVisible);
+
+  if (managerGraphVisible) {
+    // 현재 테이블 데이터에서 차트 그리기
+    const rows = collectManagerRows();
+    if (rows) renderManagerChart(rows);
+  } else {
+    if (chartInstances.managerBar) chartInstances.managerBar.destroy();
+  }
+}
+
+function renderManagerChart(rows) {
+  const top8 = rows.slice(0, 8);
+  const ctx = document.getElementById('manager-chart').getContext('2d');
+  if (chartInstances.managerBar) chartInstances.managerBar.destroy();
+  chartInstances.managerBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top8.map(r => r.name),
+      datasets: [
+        {
+          label: '총 응대 수',
+          data: top8.map(r => r.kc.responded),
+          backgroundColor: '#818cf8',
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+function collectManagerRows() {
+  // 현재 기간으로 재계산
+  const { start, end, prevStart, prevEnd } = getPeriodDates();
+  const allChats = getAllChatData();
+  const cur = filterPeriod(allChats, start, end);
+  const prev = filterPeriod(allChats, prevStart, prevEnd);
+  const grouped = groupBy(cur, c => c.assigneeId ?? '미배정');
+  const prevGrouped = groupBy(prev, c => c.assigneeId ?? '미배정');
+  return Object.entries(grouped).map(([id, chats]) => ({
+    name: store.managers[id] || id,
+    kc: calcKPIs(chats),
+    kp: calcKPIs(prevGrouped[id] || []),
+    count: chats.length,
+  })).sort((a, b) => b.count - a.count);
+}
+
+/* 그래프 보기 토글 (태그) */
+function toggleTagGraph() {
+  tagGraphVisible = !tagGraphVisible;
+  const wrap = document.getElementById('tag-chart-wrap');
+  const btn = document.getElementById('tag-graph-btn');
+  wrap.classList.toggle('visible', tagGraphVisible);
+  btn.classList.toggle('active', tagGraphVisible);
+
+  if (tagGraphVisible) {
+    const rows = collectTagRows();
+    if (rows) renderTagChartViz(rows);
+  } else {
+    if (chartInstances.tagBar) chartInstances.tagBar.destroy();
+  }
+}
+
+function renderTagChartViz(rows) {
+  const top8 = rows.slice(0, 8);
+  const ctx = document.getElementById('tag-chart').getContext('2d');
+  if (chartInstances.tagBar) chartInstances.tagBar.destroy();
+  chartInstances.tagBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top8.map(r => r.tag.length > 15 ? r.tag.slice(0,14)+'…' : r.tag),
+      datasets: [{
+        label: '총 문의 수',
+        data: top8.map(r => r.count),
+        backgroundColor: '#a5b4fc',
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+function collectTagRows() {
+  const { start, end } = getPeriodDates();
+  const allChats = getAllChatData();
+  const cur = filterPeriod(allChats, start, end);
+  const getTag = c => String(c.tags || c.tag || '태그 없음').split(/[,;]/)[0].trim();
+  const grouped = groupBy(cur, getTag);
+  return Object.entries(grouped).map(([tag, chats]) => ({
+    tag, kc: calcKPIs(chats), count: chats.length
+  })).sort((a, b) => b.count - a.count);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   전화 렌더러
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderPhoneBarChart(allPhone, currentStart) {
+  const weeks = getLast5Weeks(currentStart);
+  const connected = weeks.map(w => filterPeriod(allPhone, w.start, w.end).filter(r => !r.missedReason).length);
+  const missed = weeks.map(w => {
+    const wRows = filterPeriod(allPhone, w.start, w.end);
+    return wRows.filter(r => r.missedReason).length;
+  });
+
+  const ctx = document.getElementById('phone-bar-chart').getContext('2d');
+  if (chartInstances.phoneBar) chartInstances.phoneBar.destroy();
+  chartInstances.phoneBar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: weeks.map(w => w.label),
+      datasets: [
+        { label: '연결', data: connected, backgroundColor: '#fbbf24', borderRadius: 3 },
+        { label: '미연결', data: missed, backgroundColor: '#e2e8f0', borderRadius: 3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+function renderPhoneKPIs(cur, prev, dateRangeStr) {
+  const kc = calcPhoneKPIs(cur);
+  const kp = calcPhoneKPIs(prev);
+
+  const cards = [
+    { label: '총 전화 수', value: kc.total + '건', delta: fmtDelta(kc.total, kp.total, false, 'number') },
+    { label: '수신 연결 수', value: kc.connected + '건', delta: fmtDelta(kc.connected, kp.connected, true, 'number') },
+    { label: '연결 비율', value: fmtPct(kc.connectRate), delta: fmtDelta(kc.connectRate, kp.connectRate, true, 'pct') },
+    { label: '평균 통화 시간', value: fmtSec(kc.avgDuration), delta: fmtDelta(kc.avgDuration, kp.avgDuration, false, 'time') },
+  ];
+
+  document.getElementById('phone-kpi-grid').innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="kpi-label">${escHtml(c.label)}</div>
+      <div class="kpi-date">${escHtml(dateRangeStr)}</div>
+      <div class="kpi-value">${escHtml(c.value)}</div>
+      <div class="kpi-delta ${c.delta.cls}">${escHtml(c.delta.text)}</div>
+    </div>
+  `).join('');
+}
+
+function renderPhoneMissedTable(cur, prev) {
+  const grouped = groupBy(cur.filter(r => r.missedReason), r => r.missedReason || '사유 없음');
+  const total = cur.filter(r => r.missedReason).length || 1;
+
+  const rows = Object.entries(grouped).map(([reason, items]) => ({
+    reason, count: items.length,
+  })).sort((a, b) => b.count - a.count);
+
+  const thead = `<thead><tr>
+    <th>미수신 사유</th>
+    <th>건수</th>
+    <th>비율</th>
+  </tr></thead>`;
+
+  const tbody = '<tbody>' + rows.map(r => `<tr>
+    <td>${escHtml(r.reason)}</td>
+    <td>${r.count}건</td>
+    <td>${(r.count / total * 100).toFixed(1)}%</td>
+  </tr>`).join('') + '</tbody>';
+
+  document.getElementById('phone-missed-table').innerHTML = thead + tbody;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   브랜드별 VOC 분석 뷰
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
+  document.getElementById('view-voc').style.display = '';
+
+  let chats = store.chatData[brand] || [];
+  if (channel === '전화') chats = store.phoneData[brand] || [];
+  else if (channel === '전체') {
+    chats = [...(store.chatData[brand] || []), ...(store.phoneData[brand] || [])];
+  }
+
+  const cur = filterPeriod(chats, start, end);
+  const dateStr = formatDateRange(start, end);
+
+  // 태그 집계 (슬래시 앞 카테고리)
   const catMap = {};
   cur.forEach(c => {
-    const tag = c.tags || '기타';
-    const cat = tag.split('/')[0] || '기타';
+    const raw = c.tags || c.tag || '기타';
+    const cat = String(raw).split('/')[0].trim() || '기타';
     catMap[cat] = (catMap[cat] || 0) + 1;
   });
-  const sorted = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+  const sorted = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
   const maxVal = sorted[0]?.[1] || 1;
 
-  document.getElementById('voc-category-chart').innerHTML = sorted.map(([cat, cnt]) => `
-    <div class="tag-bar">
-      <span class="tag-name">${cat}</span>
-      <div class="tag-bar-bg"><div class="tag-bar-fill" style="width:${cnt/maxVal*100}%"></div></div>
-      <span class="tag-count">${cnt}건</span>
+  const barRows = sorted.map(([cat, cnt]) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-size:11px;color:#334155;min-width:150px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(cat)}</span>
+      <div style="flex:1;background:#f1f5f9;border-radius:4px;height:14px;overflow:hidden;">
+        <div style="height:100%;background:#818cf8;border-radius:4px;width:${(cnt/maxVal*100).toFixed(1)}%;"></div>
+      </div>
+      <span style="font-size:11px;color:#64748b;min-width:36px;text-align:right;">${cnt}건</span>
     </div>
   `).join('');
 
-  // 태그 상세 테이블
-  renderTagTable(cur, prev);
-  document.getElementById('voc-tag-table').innerHTML = document.getElementById('tag-table').innerHTML;
-}
-
-// ── 불량 VOC 뷰 ─────────────────────────────────────────────
-function renderDefectiveView(cur, prev) {
-  const defCur = cur.filter(c => {
-    const t = c.tags || '';
-    return DEFECTIVE_TAGS.some(dt => t.includes('불량')) || c['profile.defective'];
-  });
-  const defPrev = prev.filter(c => {
-    const t = c.tags || '';
-    return DEFECTIVE_TAGS.some(dt => t.includes('불량')) || c['profile.defective'];
-  });
-
-  const kc = calcKPIs(defCur), kp = calcKPIs(defPrev);
-
-  // 불량 KPI
-  document.getElementById('defective-kpi-grid').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">총 불량 문의</div>
-      <div class="kpi-value">${defCur.length}건</div>
-      <div class="kpi-delta ${fmtDelta(defCur.length, defPrev.length, false).cls}">${fmtDelta(defCur.length, defPrev.length, false).text}</div>
+  document.getElementById('view-voc').innerHTML = `
+    <div class="chart-section">
+      <div class="section-header">
+        <span class="section-title">
+          <span class="channel-badge">${escHtml(channel)}</span>
+          ${escHtml(brand)} · 문의 유형별 분포
+        </span>
+        <span style="font-size:11px;color:#94a3b8;">${escHtml(dateStr)}</span>
+      </div>
+      <div style="padding:4px 0;">${barRows || '<p style="color:#94a3b8;font-size:12px;padding:20px;">해당 기간 데이터가 없습니다</p>'}</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">전체 대비 불량 비율</div>
-      <div class="kpi-value">${cur.length ? (defCur.length/cur.length*100).toFixed(1)+'%' : '-'}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">평균 처리 시간</div>
-      <div class="kpi-value">${fmtSec(kc.avgHandling)}</div>
-      <div class="kpi-delta ${fmtDelta(kc.avgHandling, kp.avgHandling, false, true).cls}">${fmtDelta(kc.avgHandling, kp.avgHandling, false, true).text}</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">평균 만족도</div>
-      <div class="kpi-value">${kc.avgSatisfaction ? kc.avgSatisfaction.toFixed(2)+'점' : '-'}</div>
+    <div class="table-section">
+      <div class="section-header">
+        <span class="section-title">태그별 상세 현황</span>
+      </div>
+      <div class="table-overflow" id="voc-tag-table-wrap"></div>
     </div>
   `;
 
-  // 불량 유형별 테이블
-  const grouped = groupBy(defCur, c => c.tags || '태그 없음');
-  const rows = Object.entries(grouped).map(([tag, chats]) => ({
-    tag, count: chats.length, k: calcKPIs(chats)
-  })).sort((a,b) => b.count - a.count);
+  // 태그 테이블 (임시 컨테이너)
+  const prev2 = filterPeriod(chats, prevStart, prevEnd);
+  const tmpTable = document.getElementById('voc-tag-table-wrap');
+  const getTag = c => String(c.tags || c.tag || '태그 없음').split(/[,;]/)[0].trim();
+  const grouped = groupBy(cur, getTag);
+  const prevGrouped = groupBy(prev2, getTag);
+  const total = cur.length || 1;
+  const trows = Object.entries(grouped).map(([tag, items]) => {
+    const kc = calcKPIs(items);
+    const kp = calcKPIs(prevGrouped[tag] || []);
+    const d = fmtDelta(kc.totalChats, kp.totalChats, false, 'number');
+    return `<tr>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(tag)}</td>
+      <td><div class="td-main">${kc.totalChats}건</div><div class="td-delta ${d.cls}">${d.text}</div></td>
+      <td>${kc.closedRate.toFixed(1)}%</td>
+      <td>${kc.complaintRate.toFixed(1)}%</td>
+      <td>${fmtSec(kc.avgFirstReply)}</td>
+      <td>${fmtSec(kc.avgHandling)}</td>
+      <td>${kc.avgSatisfaction != null ? kc.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
+      <td>${(items.length/total*100).toFixed(1)}%</td>
+    </tr>`;
+  }).sort(() => 0).join('');
 
-  const totalDef = defCur.length || 1;
-  const thead = `<thead><tr><th>불량 유형</th><th>건수</th><th>비율</th><th>처리 완료</th><th>평균 처리 시간</th><th>평균 만족도</th></tr></thead>`;
-  const tbody = '<tbody>' + rows.map(r => `<tr>
-    <td>${r.tag}</td>
-    <td>${r.count}건</td>
-    <td>${(r.count/totalDef*100).toFixed(1)}%</td>
-    <td>${r.k.closedRate.toFixed(1)}%</td>
-    <td>${fmtSec(r.k.avgHandling)}</td>
-    <td>${r.k.avgSatisfaction ? r.k.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
-  </tr>`).join('') + '</tbody>';
-  document.getElementById('defective-table').innerHTML = thead + tbody;
+  tmpTable.innerHTML = `<table><thead><tr>
+    <th>상담 태그</th><th>총 문의 수</th><th>처리 완료</th><th>불만 비율</th><th>첫 응대</th><th>처리 시간</th><th>만족도</th><th>비율</th>
+  </tr></thead><tbody>${trows}</tbody></table>`;
 }
 
-// ── 유틸 ─────────────────────────────────────────────────
-function groupBy(arr, fn) {
-  const map = {};
-  arr.forEach(item => { const key = fn(item); if (!map[key]) map[key] = []; map[key].push(item); });
-  return map;
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   브랜드별 불량 VOC 뷰
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderDefectView(brand, start, end, prevStart, prevEnd) {
+  document.getElementById('view-defect').style.display = '';
+
+  const chats = store.chatData[brand] || [];
+  const cur = filterPeriod(chats, start, end).filter(c => {
+    const t = String(c.tags || c.tag || '');
+    return t.includes('불량');
+  });
+  const prev = filterPeriod(chats, prevStart, prevEnd).filter(c => {
+    const t = String(c.tags || c.tag || '');
+    return t.includes('불량');
+  });
+
+  const kc = calcKPIs(cur);
+  const kp = calcKPIs(prev);
+  const dateStr = formatDateRange(start, end);
+
+  const kpiHTML = `
+    <div class="phone-kpi-grid" style="margin-bottom:14px;">
+      <div class="kpi-card">
+        <div class="kpi-label">총 불량 문의</div>
+        <div class="kpi-date">${escHtml(dateStr)}</div>
+        <div class="kpi-value">${cur.length}건</div>
+        <div class="kpi-delta ${fmtDelta(cur.length, prev.length, false, 'number').cls}">${fmtDelta(cur.length, prev.length, false, 'number').text}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">전체 대비 불량 비율</div>
+        <div class="kpi-date">${escHtml(dateStr)}</div>
+        <div class="kpi-value">${chats.length ? (filterPeriod(chats,start,end).length ? (cur.length/filterPeriod(chats,start,end).length*100).toFixed(1)+'%' : '-') : '-'}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">평균 처리 시간</div>
+        <div class="kpi-date">${escHtml(dateStr)}</div>
+        <div class="kpi-value">${fmtSec(kc.avgHandling)}</div>
+        <div class="kpi-delta ${fmtDelta(kc.avgHandling, kp.avgHandling, false, 'time').cls}">${fmtDelta(kc.avgHandling, kp.avgHandling, false, 'time').text}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">평균 만족도</div>
+        <div class="kpi-date">${escHtml(dateStr)}</div>
+        <div class="kpi-value">${kc.avgSatisfaction != null ? kc.avgSatisfaction.toFixed(2)+'점' : '-'}</div>
+      </div>
+    </div>
+  `;
+
+  const getTag = c => String(c.tags || c.tag || '태그 없음').split(/[,;]/)[0].trim();
+  const grouped = groupBy(cur, getTag);
+  const totalDef = cur.length || 1;
+  const trows = Object.entries(grouped).map(([tag, items]) => {
+    const k = calcKPIs(items);
+    return `<tr>
+      <td>${escHtml(tag)}</td>
+      <td>${items.length}건</td>
+      <td>${(items.length/totalDef*100).toFixed(1)}%</td>
+      <td>${k.closedRate.toFixed(1)}%</td>
+      <td>${fmtSec(k.avgHandling)}</td>
+      <td>${k.avgSatisfaction != null ? k.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('view-defect').innerHTML = kpiHTML + `
+    <div class="table-section">
+      <div class="section-header">
+        <span class="section-title">
+          <span class="channel-badge" style="background:#fee2e2;color:#dc2626;">불량</span>
+          ${escHtml(brand)} · 불량 유형별 현황
+        </span>
+      </div>
+      <div class="table-overflow">
+        <table>
+          <thead><tr>
+            <th>불량 유형</th><th>건수</th><th>비율</th><th>처리 완료</th><th>평균 처리 시간</th><th>평균 만족도</th>
+          </tr></thead>
+          <tbody>${trows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
-// ── 시작 ─────────────────────────────────────────────────
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   빈 상태 표시
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function showNoDataState() {
+  document.getElementById('empty-state').style.display = '';
+  document.getElementById('dashboard-content').style.display = 'none';
+
+  // 사이드바도 기본 구조만 빌드
+  buildSidebar();
+  updatePeriodLabel();
+
+  const lastUpd = store.lastUpdated || '-';
+  document.getElementById('empty-state').innerHTML = `
+    <div class="empty-state">
+      <div style="font-size:40px;">📭</div>
+      <h3>아직 업로드된 데이터가 없습니다</h3>
+      <p>upload.bat를 실행하여 데이터를 GitHub에 업로드하세요</p>
+      <p style="font-size:11px; margin-top:8px; color:#94a3b8;">마지막 업데이트: ${escHtml(lastUpd)}</p>
+    </div>
+  `;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   툴바 이벤트 핸들러
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function setPeriodType(type) {
+  periodType = type;
+  periodOffset = 0;
+  document.getElementById('btn-week').classList.toggle('active', type === 'week');
+  document.getElementById('btn-month').classList.toggle('active', type === 'month');
+  updatePeriodLabel();
+  renderDashboard(currentDashboardId);
+}
+
+function movePeriod(dir) {
+  periodOffset += dir;
+  updatePeriodLabel();
+  renderDashboard(currentDashboardId);
+}
+
+function goToNow() {
+  periodOffset = 0;
+  updatePeriodLabel();
+  renderDashboard(currentDashboardId);
+}
+
+function refreshData() {
+  // 스토어 클리어 후 재로드
+  store.chatData = {};
+  store.phoneData = {};
+  store.managers = {};
+  store.lastUpdated = null;
+  document.getElementById('dashboard-content').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'none';
+  init();
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   엑셀 다운로드 (담당자 / 태그)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function downloadManagerExcel() {
+  const rows = collectManagerRows();
+  if (!rows || !rows.length) return alert('데이터가 없습니다.');
+  const data = [
+    ['담당자', '총 응대 수', '처리 완료 비율(%)', '불만 비율(%)', '평균 첫 응대 시간(초)', '평균 응답 시간(초)', '평균 처리 시간(초)', '평균 만족도', '비율(%)'],
+    ...rows.map(r => [
+      r.name,
+      r.kc.responded,
+      r.kc.closedRate.toFixed(2),
+      r.kc.complaintRate.toFixed(2),
+      r.kc.avgFirstReply != null ? Math.round(r.kc.avgFirstReply) : '',
+      r.kc.avgReplyTime != null ? Math.round(r.kc.avgReplyTime) : '',
+      r.kc.avgHandling != null ? Math.round(r.kc.avgHandling) : '',
+      r.kc.avgSatisfaction != null ? r.kc.avgSatisfaction.toFixed(2) : '',
+      rows.reduce((s, x) => s + x.count, 0) > 0 ? (r.count / rows.reduce((s, x) => s + x.count, 0) * 100).toFixed(1) : '0',
+    ])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '담당자별 현황');
+  XLSX.writeFile(wb, '담당자별_현황.xlsx');
+}
+
+function downloadTagExcel() {
+  const rows = collectTagRows();
+  if (!rows || !rows.length) return alert('데이터가 없습니다.');
+  const total = rows.reduce((s, r) => s + r.count, 0) || 1;
+  const data = [
+    ['상담 태그', '총 문의 수', '처리 완료 비율(%)', '불만 비율(%)', '평균 첫 응대 시간(초)', '평균 처리 시간(초)', '평균 만족도', '비율(%)'],
+    ...rows.map(r => [
+      r.tag,
+      r.kc.totalChats,
+      r.kc.closedRate.toFixed(2),
+      r.kc.complaintRate.toFixed(2),
+      r.kc.avgFirstReply != null ? Math.round(r.kc.avgFirstReply) : '',
+      r.kc.avgHandling != null ? Math.round(r.kc.avgHandling) : '',
+      r.kc.avgSatisfaction != null ? r.kc.avgSatisfaction.toFixed(2) : '',
+      (r.count / total * 100).toFixed(1),
+    ])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '상담태그별 현황');
+  XLSX.writeFile(wb, '상담태그별_현황.xlsx');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   로딩 UI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function setLoading(active, msg) {
+  document.getElementById('loading').classList.toggle('active', active);
+  if (msg) document.getElementById('loading-text').textContent = msg;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   메인 탭 전환 (대시보드 / 차트 / 리포트 / 리서치)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const MAIN_TABS = ['dashboard','chart','report','research'];
+
+function switchMainTab(tab) {
+  // 탭 버튼 활성 상태
+  MAIN_TABS.forEach(t => {
+    const btn = document.getElementById('tab-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+
+  // 사이드바 목록 전환
+  const sidebarList = document.getElementById('sidebar-list');
+  const reportSidebarList = document.getElementById('report-sidebar-list');
+  sidebarList.style.display = tab === 'dashboard' ? '' : 'none';
+  reportSidebarList.style.display = tab === 'report' ? '' : 'none';
+
+  // 콘텐츠 전환
+  if (tab === 'dashboard') {
+    // 기존 대시보드 렌더
+    renderDashboard(store.activeDash || '통합-채팅');
+    return;
+  }
+  if (tab === 'chart') {
+    showOnlyView('view-chart-extra');
+    renderChartExtra();
+    return;
+  }
+  if (tab === 'report') {
+    showOnlyView('view-report');
+    initReportTab();
+    return;
+  }
+  if (tab === 'research') {
+    showOnlyView('view-research');
+    renderResearchChart();
+    return;
+  }
+}
+
+function showOnlyView(id) {
+  // 모든 뷰 숨기기
+  ['view-chat','view-phone','view-voc','view-defect','view-chart-extra','view-report','view-research'].forEach(v => {
+    const el = document.getElementById(v);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('dashboard-content').style.display = '';
+  document.getElementById('empty-state').style.display = 'none';
+  const target = document.getElementById(id);
+  if (target) {
+    target.style.display = id === 'view-report' ? 'flex' : '';
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   차트 탭 — 추가 시각화
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const extraCharts = {};
+
+
+function renderChartExtra() {
+  const el = document.getElementById('view-chart-extra');
+  const brands = Object.keys(store.chatData);
+  if (!brands.length) {
+    el.innerHTML = '<div style="text-align:center;padding:80px;color:#94a3b8;"><div style="font-size:32px">📊</div><p>데이터를 먼저 업로드하세요</p></div>';
+    return;
+  }
+  el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">' +
+    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">브랜드별 채팅 건수</h4><div style="height:200px;position:relative;"><canvas id="ex-brand-bar"></canvas></div></div>' +
+    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">브랜드별 평균 만족도</h4><div style="height:200px;position:relative;"><canvas id="ex-csat-bar"></canvas></div></div>' +
+    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">주차별 응대율 추이</h4><div style="height:200px;position:relative;"><canvas id="ex-rate-line"></canvas></div></div>' +
+    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">태그 카테고리 분포</h4><div style="height:200px;position:relative;"><canvas id="ex-tag-donut"></canvas></div></div>' +
+    '</div>';
+  const {start, end} = getPeriodDates();
+  const brandCounts = brands.map(b => ({b, n: filterPeriod(store.chatData[b]||[], start, end).length})).sort((a,z) => z.n - a.n);
+  dchart('ex-brand-bar', {type:'bar', data:{labels:brandCounts.map(b=>b.b), datasets:[{data:brandCounts.map(b=>b.n), backgroundColor:'#818cf8', borderRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}});
+  const csatD = brands.map(b => {const cc=filterPeriod(store.chatData[b]||[],start,end), sc=cc.map(c=>c['profile.csat']).filter(v=>v!=null); return {b, avg:sc.length?sc.reduce((a,v)=>a+v,0)/sc.length:0};}).filter(d=>d.avg>0).sort((a,z)=>z.avg-a.avg);
+  dchart('ex-csat-bar', {type:'bar', data:{labels:csatD.map(b=>b.b), datasets:[{data:csatD.map(b=>+b.avg.toFixed(2)), backgroundColor:'#34d399', borderRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:false, min:1, max:5, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}});
+  const allC = Object.values(store.chatData).flat(), wks = [];
+  for (let i=-5;i<=0;i++) {const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);const wc=filterPeriod(allC,ws2,we2);wks.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()), rate:wc.length?+(wc.filter(c=>c.firstAnsweredAt).length/wc.length*100).toFixed(1):0});}
+  dchart('ex-rate-line', {type:'line', data:{labels:wks.map(w=>w.label), datasets:[{data:wks.map(w=>w.rate), borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,0.08)', fill:true, tension:0.3, pointRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, max:100, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}, callback:v=>v+'%'}}}}});
+  const tm = {};
+  allC.filter(c=>{const d=parseDate(c.createdAt||c.managedAt);return d&&d>=start&&d<=end;}).forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
+  const top7 = Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const clrs = ['#818cf8','#34d399','#fb923c','#f472b6','#60a5fa','#a78bfa','#94a3b8'];
+  dchart('ex-tag-donut', {type:'doughnut', data:{labels:top7.map(t=>t[0]), datasets:[{data:top7.map(t=>t[1]), backgroundColor:clrs, borderWidth:2}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{font:{size:10}, boxWidth:12}}}}});
+}
+
+function dchart(id, cfg) {if(extraCharts[id]){extraCharts[id].destroy();}const el=document.getElementById(id);if(el)extraCharts[id]=new Chart(el.getContext('2d'),cfg);}
+
+/* ━━━━━ 리서치 트렌드 차트 ━━━━━ */
+function renderResearchChart() {
+  const allC = Object.values(store.chatData).flat();
+  if (!allC.length) return;
+  const {start} = getPeriodDates();
+  const tm = {};
+  allC.forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
+  const top5 = Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]);
+  const wks = [];
+  for (let i=-3;i<=0;i++) {const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);wks.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()), chats:filterPeriod(allC,ws2,we2)});}
+  const clrs5 = ['#818cf8','#34d399','#fb923c','#f472b6','#60a5fa'];
+  const ctx = document.getElementById('research-trend-chart');
+  if (!ctx) return;
+  dchart('research-trend-chart', {type:'line', data:{labels:wks.map(w=>w.label), datasets:top5.map((cat,i)=>({label:cat, data:wks.map(w=>w.chats.filter(c=>(c.tags||'기타').startsWith(cat)).length), borderColor:clrs5[i], backgroundColor:clrs5[i]+'22', fill:false, tension:0.3, pointRadius:4}))}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{font:{size:10}, boxWidth:12}}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}});
+}
+
+/* ━━━━━ AI 설정 ━━━━━ */
+function openAISettings() {
+  const m = document.getElementById('ai-modal');
+  m.style.cssText = 'display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;';
+  const inp = document.getElementById('gemini-key-input');
+  if (store.geminiKey) inp.value = store.geminiKey;
+  setTimeout(()=>inp.focus(), 100);
+}
+function closeAISettings() { document.getElementById('ai-modal').style.display = 'none'; }
+function saveAIKey() {
+  const key = document.getElementById('gemini-key-input').value.trim();
+  if (!key) { alert('API 키를 입력하세요'); return; }
+  store.geminiKey = key;
+  document.getElementById('ai-key-status').textContent = '✓ AI 설정 완료';
+  closeAISettings();
+}
+
+/* ━━━━━ Gemini API ━━━━━ */
+async function callGemini(prompt) {
+  if (!store.geminiKey) { openAISettings(); throw new Error('API 키가 설정되지 않았습니다'); }
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+store.geminiKey, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3, maxOutputTokens:2048}})});
+  if (!res.ok) {const e=await res.json().catch(()=>({}));throw new Error(res.status===400?'API 키가 유효하지 않습니다.':'Gemini 오류: '+(e?.error?.message||res.status));}
+  const d = await res.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '응답 없음';
+}
+function showAIThinking(id) {
+  document.getElementById(id).innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:#6366f1;font-size:13px;padding:20px;"><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span><span>AI가 분석 중입니다...</span></div>';
+}
+function renderMarkdown(md) {
+  return md
+    .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:700;color:#1e293b;margin:14px 0 6px;">$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2 style="font-size:14px;font-weight:700;color:#1e293b;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;">$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1 style="font-size:15px;font-weight:700;color:#1e293b;margin:16px 0 10px;">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^- (.+)$/gm,'<li style="margin-bottom:4px;padding-left:4px;">$1</li>')
+    .replace(/^---$/gm,'<hr style="border:none;border-top:1px solid #f1f5f9;margin:12px 0;">')
+    .replace(/\n\n/g,'<br><br>');
+}
+
+/* ━━━━━ AI 리포트 생성 ━━━━━ */
+async function generateReport() {
+  const btn = document.getElementById('report-gen-btn');
+  if (btn) btn.disabled = true;
+  showAIThinking('report-output');
+  try {
+    const {start,end,prevStart,prevEnd} = getPeriodDates();
+    const dash = store.activeDash || '통합-채팅';
+    const brand = dash.split('-')[0];
+    const allC = brand==='통합' ? Object.values(store.chatData).flat() : (store.chatData[brand]||[]);
+    const cur = filterPeriod(allC,start,end), prev = filterPeriod(allC,prevStart,prevEnd);
+    if (!cur.length) { document.getElementById('report-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">선택 기간에 데이터가 없습니다.</div>'; return; }
+    const kc = calcKPIs(cur), kp = calcKPIs(prev);
+    const tagMap = {};
+    cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
+    const top7 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
+    const total = cur.length||1;
+    const periodStr = (start.getMonth()+1)+'/'+start.getDate()+' ~ '+(end.getMonth()+1)+'/'+end.getDate();
+    const brandLabel = brand==='통합' ? '브랜드 통합' : brand;
+    const mgrMap = {};
+    cur.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;mgrMap[n]=(mgrMap[n]||0)+1;});
+    const prompt = '당신은 CX 전문 분석가입니다. 아래 데이터를 바탕으로 한국어 주간 VOC 리포트를 마크다운으로 작성해주세요.\n\n브랜드: '+brandLabel+'  기간: '+periodStr+'\n핵심 지표:\n- 총 채팅: '+kc.totalChats+'건 (전기간: '+kp.totalChats+'건)\n- 응대율: '+kc.responseRate.toFixed(1)+'% (전: '+kp.responseRate.toFixed(1)+'%)\n- 처리완료율: '+kc.closedRate.toFixed(1)+'% (전: '+kp.closedRate.toFixed(1)+'%)\n- 평균 첫 응대: '+fmtSec(kc.avgFirstReply)+'\n- 평균 처리시간: '+fmtSec(kc.avgHandling)+'\n- 평균 만족도: '+(kc.avgSatisfaction?kc.avgSatisfaction.toFixed(2)+'점':'없음')+'\n- 불만 비율: '+kc.complaintRate.toFixed(1)+'%\n상위 문의 유형:\n'+top7.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건 ('+((t[1]/total)*100).toFixed(1)+'%)').join('\n')+'\n담당자별:\n'+Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]).map(([n,c])=>'- '+n+': '+c+'건').join('\n')+'\n\n# '+periodStr+' VOC 리포트 — '+brandLabel+'\n## 📌 이번 주 요약\n## 📈 주요 변화\n## ⚠️ 주목할 이슈\n## 💡 개선 제안 (3가지)\n## 📊 데이터 노트';
+    const result = await callGemini(prompt);
+    document.getElementById('report-output').innerHTML = '<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  } catch(e) {
+    document.getElementById('report-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* ━━━━━ 리서치 패턴 분석 ━━━━━ */
+async function generatePatterns() {
+  showAIThinking('research-output');
+  try {
+    const {start,end} = getPeriodDates();
+    const allC = Object.values(store.chatData).flat();
+    const cur = filterPeriod(allC,start,end);
+    if (!cur.length) { document.getElementById('research-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">선택 기간에 데이터가 없습니다.</div>'; return; }
+    const tagMap = {};
+    cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
+    const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const hcTags = Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
+    const prompt = 'CX 데이터 분석가입니다. 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
+    const result = await callGemini(prompt);
+    document.getElementById('research-output').innerHTML = '<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  } catch(e) { document.getElementById('research-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>'; }
+}
+
+async function generateImprovement() {
+  showAIThinking('research-output');
+  try {
+    const {start,end} = getPeriodDates();
+    const allC = Object.values(store.chatData).flat();
+    const cur = filterPeriod(allC,start,end);
+    const kc = calcKPIs(cur);
+    const tagMap = {};
+    cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
+    const top5 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const prompt = '이커머스 CX 개선 컨설턴트입니다.\n\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%, 첫 응대 '+fmtSec(kc.avgFirstReply)+', 처리시간 '+fmtSec(kc.avgHandling)+', 만족도 '+(kc.avgSatisfaction?kc.avgSatisfaction.toFixed(2)+'점':'없음')+'\n주요 문의:\n'+top5.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제 (1개월)\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
+    const result = await callGemini(prompt);
+    document.getElementById('research-output').innerHTML = '<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  } catch(e) { document.getElementById('research-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>'; }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   리포트 탭 — 핵심 로직
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const REPORTS = [
+  {id:'voc-all',    name:'전체 VOC 리포트',          group:'team', desc:'전체 상담을 통합한 VOC 리포트입니다.', filters:{}},
+  {id:'complaint',  name:'불만 고객/개선 요청 리포트', group:'team', desc:'불만(CSAT 1~2점)으로 분류된 VOC 리포트입니다.', filters:{complaint:true}},
+  {id:'defect',     name:'불량 VOC 리포트(통합)',     group:'team', desc:'불량 관련 VOC를 통합한 리포트입니다.', filters:{tagCats:['불량','재불량']}},
+  {id:'return-ex',  name:'교환/반품 상세 리포트',     group:'team', desc:'교환 및 반품 관련 상담 리포트입니다.', filters:{tagCats:['교환','반품']}},
+  {id:'tag-voc',    name:'상담태그 기준 VOC 리포트',  group:'team', desc:'상담 태그 기준으로 분류한 리포트입니다.', filters:{hasTags:true}},
+  {id:'mgr-prod',   name:'담당자별 생산성',           group:'team', desc:'담당자별 상담 처리 현황 리포트입니다.', filters:{hasAssignee:true}},
+  {id:'csat-rep',   name:'CSAT/만족도 리포트',        group:'team', desc:'고객 만족도(CSAT) 측정 상담 리포트입니다.', filters:{hasCsat:true}},
+];
+
+const reportState = {
+  activeId: null,
+  viewMode: 'table',      // 'table' | 'stats'
+  period: '30d',
+  customStart: null,
+  customEnd: null,
+  searchQuery: '',
+  sortCol: null,
+  sortDir: 'desc',
+  detailRow: null,
+  statsCharts: {},
+};
+
+function getReportPeriodDates() {
+  const now = new Date();
+  const end = new Date(now); end.setHours(23,59,59,999);
+  let start = new Date(now);
+  const p = reportState.period;
+  if (p === 'today')  { start.setHours(0,0,0,0); }
+  else if (p === '7d')  { start.setDate(now.getDate()-6);  start.setHours(0,0,0,0); }
+  else if (p === '30d') { start.setDate(now.getDate()-29); start.setHours(0,0,0,0); }
+  else if (p === '60d') { start.setDate(now.getDate()-59); start.setHours(0,0,0,0); }
+  else if (p === '90d') { start.setDate(now.getDate()-89); start.setHours(0,0,0,0); }
+  else if (p === 'custom' && reportState.customStart) { start = new Date(reportState.customStart); }
+  const diffMs = end - start;
+  const prevEnd = new Date(start); prevEnd.setMilliseconds(-1);
+  const prevStart = new Date(prevEnd.getTime() - diffMs);
+  return {start, end, prevStart, prevEnd};
+}
+
+function applyReportFilters(chats) {
+  const report = REPORTS.find(r => r.id === reportState.activeId);
+  if (!report) return chats;
+  const f = report.filters;
+  let result = chats;
+  if (f.complaint) result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] <= 2);
+  if (f.tagCats)   result = result.filter(c => { const cat=(c.tags||'').split('/')[0]; return f.tagCats.some(fc=>cat.includes(fc)); });
+  if (f.hasTags)   result = result.filter(c => c.tags);
+  if (f.hasAssignee) result = result.filter(c => c.assigneeId);
+  if (f.hasCsat)   result = result.filter(c => c['profile.csat'] != null);
+  if (reportState.searchQuery) {
+    const q = reportState.searchQuery.toLowerCase();
+    result = result.filter(c => (c.tags||'').toLowerCase().includes(q) || (store.managers[c.assigneeId]||'').toLowerCase().includes(q));
+  }
+  return result;
+}
+
+function getReportChats() {
+  const allChats = Object.values(store.chatData).flat();
+  const {start, end} = getReportPeriodDates();
+  const period = filterPeriod(allChats, start, end);
+  return applyReportFilters(period);
+}
+
+function getPrevReportChats() {
+  const allChats = Object.values(store.chatData).flat();
+  const {prevStart, prevEnd} = getReportPeriodDates();
+  const period = filterPeriod(allChats, prevStart, prevEnd);
+  return applyReportFilters(period);
+}
+
+/* ━━━━━ 리포트 사이드바 렌더링 ━━━━━ */
+function renderReportList() {
+  const el = document.getElementById('report-sidebar-list');
+  if (!el) return;
+  const teamReports = REPORTS.filter(r => r.group === 'team');
+  el.innerHTML =
+    '<div style="padding:10px 8px 6px;">' +
+      '<button onclick="createNewReport()" style="width:100%;display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px dashed #c7d2fe;background:#fafafe;border-radius:7px;cursor:pointer;font-size:12px;color:#6366f1;">' +
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>' +
+        '새 리포트 만들기' +
+      '</button>' +
+    '</div>' +
+    '<div style="padding:4px 8px 2px;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.5px;text-transform:uppercase;">팀 스페이스</div>' +
+    teamReports.map(r =>
+      '<button onclick="selectReport(\''+r.id+'\')" style="width:100%;text-align:left;padding:7px 12px;border:none;background:'+(reportState.activeId===r.id?'var(--primary-light)':'none')+';cursor:pointer;font-size:12px;color:'+(reportState.activeId===r.id?'var(--primary)':'#475569')+';border-left:3px solid '+(reportState.activeId===r.id?'var(--primary)':'transparent')+';display:flex;align-items:center;gap:6px;">' +
+        '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="12" rx="1"/><line x1="3" y1="4" x2="9" y2="4"/><line x1="3" y1="6.5" x2="7" y2="6.5"/><line x1="3" y1="9" x2="8" y2="9"/></svg>' +
+        r.name +
+      '</button>'
+    ).join('');
+}
+
+function createNewReport() { alert('새 리포트 만들기 기능은 준비 중입니다.'); }
+
+/* ━━━━━ 리포트 선택 및 렌더링 ━━━━━ */
+function selectReport(id) {
+  reportState.activeId = id;
+  reportState.viewMode = 'table';
+  renderReportList();
+  renderReportContent();
+}
+
+function renderReportContent() {
+  const report = REPORTS.find(r => r.id === reportState.activeId);
+  if (!report) return;
+  const el = document.getElementById('rpt-body');
+  if (!el) return;
+
+  const cur  = getReportChats();
+  const prev = getPrevReportChats();
+  const {start, end} = getReportPeriodDates();
+
+  document.getElementById('rpt-title').textContent = report.name;
+  document.getElementById('rpt-desc').textContent  = report.desc;
+  document.getElementById('rpt-count').textContent = '총 '+cur.length+'개의 상담';
+  const fmt = d => (d.getMonth()+1)+'/'+(d.getDate());
+  document.getElementById('rpt-date-range').textContent = fmt(start)+' ~ '+fmt(end);
+
+  if (reportState.viewMode === 'table') {
+    document.getElementById('rpt-tab-table').style.fontWeight = '700';
+    document.getElementById('rpt-tab-table').style.borderBottom = '2px solid var(--primary)';
+    document.getElementById('rpt-tab-stats').style.fontWeight = '400';
+    document.getElementById('rpt-tab-stats').style.borderBottom = 'none';
+    renderReportTable(cur);
+    document.getElementById('rpt-table-view').style.display = '';
+    document.getElementById('rpt-stats-view').style.display = 'none';
+  } else {
+    document.getElementById('rpt-tab-table').style.fontWeight = '400';
+    document.getElementById('rpt-tab-table').style.borderBottom = 'none';
+    document.getElementById('rpt-tab-stats').style.fontWeight = '700';
+    document.getElementById('rpt-tab-stats').style.borderBottom = '2px solid var(--primary)';
+    renderReportStats(cur, prev, start, end);
+    document.getElementById('rpt-table-view').style.display = 'none';
+    document.getElementById('rpt-stats-view').style.display = '';
+  }
+}
+
+/* ━━━━━ 기간 변경 ━━━━━ */
+function setReportPeriod(p) {
+  reportState.period = p;
+  ['today','7d','30d','60d','90d'].forEach(pp => {
+    const btn = document.getElementById('rpt-period-'+pp);
+    if (btn) { btn.style.background = pp===p?'var(--primary)':''; btn.style.color = pp===p?'#fff':'#64748b'; }
+  });
+  if (reportState.activeId) renderReportContent();
+}
+
+/* ━━━━━ 상담 테이블 뷰 ━━━━━ */
+function renderReportTable(chats) {
+  const tbody = document.getElementById('rpt-table-body');
+  if (!tbody) return;
+  if (!chats.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#94a3b8;">해당 기간에 데이터가 없습니다</td></tr>';
+    return;
+  }
+  tbody.innerHTML = chats.slice(0,200).map(c => {
+    const csat = c['profile.csat'];
+    let csatBadge, csatBg;
+    if (csat == null)  { csatBadge = '— 미측정'; csatBg = '#f8fafc'; }
+    else if (csat <= 2){ csatBadge = '😡 불만';  csatBg = '#fef2f2'; }
+    else if (csat <= 3){ csatBadge = '😐 보통';  csatBg = '#fffbeb'; }
+    else               { csatBadge = '😊 만족';  csatBg = '#f0fdf4'; }
+    const tag  = c.tags || '—';
+    const cat  = tag.split('/')[0];
+    const prod = c['profile.product'] || '—';
+    const mgr  = store.managers[c.assigneeId] || (c.assigneeId ? c.assigneeId : '—');
+    const dt   = parseDate(c.createdAt || c.managedAt);
+    const dtStr = dt ? (dt.getMonth()+1)+'/'+(dt.getDate()) : '—';
+    return '<tr style="cursor:pointer;" onclick="showRowDetail(\''+escHtml(c.id||'')+'\')" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
+      '<td><span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:12px;background:'+csatBg+';">'+csatBadge+'</span></td>' +
+      '<td style="font-size:12px;color:#334155;">'+escHtml(cat)+'</td>' +
+      '<td style="font-size:12px;color:#334155;">'+escHtml(prod)+'</td>' +
+      '<td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</td>' +
+      '<td style="font-size:11px;color:#64748b;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</td>' +
+      '<td style="font-size:11px;color:#64748b;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</td>' +
+      '<td style="font-size:12px;">'+escHtml(c.name||'—')+'</td>' +
+      '<td style="font-size:12px;">'+escHtml(mgr)+'</td>' +
+      '<td style="font-size:11px;color:#64748b;">채널톡</td>' +
+      '<td style="font-size:11px;color:#94a3b8;">'+dtStr+'</td>' +
+    '</tr>';
+  }).join('');
+  document.getElementById('rpt-count').textContent = '총 '+chats.length+'개의 상담'+(chats.length>200?' (상위 200개 표시)':'');
+}
+
+function showRowDetail(id) {
+  const allC = Object.values(store.chatData).flat();
+  const row  = allC.find(c => c.id === id);
+  if (!row) return;
+  const panel = document.getElementById('rpt-detail-panel');
+  if (!panel) return;
+  const csat = row['profile.csat'];
+  const mgr  = store.managers[row.assigneeId] || row.assigneeId || '미배정';
+  const dt   = parseDate(row.createdAt || row.managedAt);
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
+      '<div style="font-size:13px;font-weight:600;color:#1e293b;">상담 상세</div>' +
+      '<button onclick="document.getElementById(\'rpt-detail-panel\').style.display=\'none\'" style="border:none;background:none;cursor:pointer;font-size:16px;color:#94a3b8;">×</button>' +
+    '</div>' +
+    '<div style="font-size:11px;color:#64748b;line-height:2;">' +
+      '<div><b>고객명</b>: '+escHtml(row.name||'—')+'</div>' +
+      '<div><b>담당자</b>: '+escHtml(mgr)+'</div>' +
+      '<div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div>' +
+      '<div><b>제품명</b>: '+escHtml(row['profile.product']||'—')+'</div>' +
+      '<div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div>' +
+      '<div><b>상담 상태</b>: '+(row.state==='closed'?'종료됨':'진행중')+'</div>' +
+      '<div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div>' +
+      '<div><b>처리완료</b>: '+escHtml(row.closedAt||'—')+'</div>' +
+      '<div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div>' +
+      '<div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div>' +
+    '</div>';
+  panel.style.display = '';
+}
+
+function searchReportTable() {
+  reportState.searchQuery = document.getElementById('rpt-search-input')?.value || '';
+  if (reportState.activeId) renderReportTable(getReportChats());
+}
+
+function downloadReportExcel() {
+  const chats = getReportChats();
+  if (!chats.length) return alert('데이터가 없습니다.');
+  const data = [['불만여부','대표문의유형','제품명','상담태그','고객명','담당자','만족도','인입경로','날짜'],
+    ...chats.map(c=>{
+      const csat=c['profile.csat'];
+      return [csat==null?'미측정':csat<=2?'불만':csat<=3?'보통':'만족', (c.tags||'').split('/')[0], c['profile.product']||'', c.tags||'', c.name||'', store.managers[c.assigneeId]||c.assigneeId||'', csat!=null?csat:'', '채널톡', c.createdAt||''];
+    })];
+  const ws = XLSX.utils.aoa_to_sheet(data), wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '리포트');
+  const r = REPORTS.find(r=>r.id===reportState.activeId);
+  XLSX.writeFile(wb, (r?r.name:'리포트')+'_'+reportState.period+'.xlsx');
+}
+
+/* ━━━━━ 상담 통계 뷰 ━━━━━ */
+function renderReportStats(cur, prev, start, end) {
+  renderReportSummary(cur, prev);
+  renderReportTrend(cur, start, end);
+  renderTagLeaderboard(cur, prev);
+  renderManagerLeaderboard(cur, prev);
+  renderStatCharts(cur);
+  renderChangeDetection(cur, prev);
+}
+
+function renderReportSummary(cur, prev) {
+  const kc = calcKPIs(cur), kp = calcKPIs(prev);
+  const compCount = prev.length;
+  const delta = cur.length - compCount;
+  const deltaSign = delta >= 0 ? '+' : '';
+  const deltaPct = compCount ? ((delta/compCount)*100).toFixed(0) : '—';
+  const complaint = cur.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;
+  const prevComplaint = prev.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;
+  const cd = complaint - prevComplaint;
+  const cpct = prevComplaint ? ((cd/prevComplaint)*100).toFixed(0) : '—';
+  const inbound = cur.filter(c=>c.direction==='INBOUND'||!c.direction).length;
+  const total = cur.length||1;
+  const inPct = Math.round(inbound/total*100);
+  const el = document.getElementById('rpt-summary');
+  if (!el) return;
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">' +
+      '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;">' +
+        '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">전체 문의 건수 및 증감</div>' +
+        '<div style="font-size:22px;font-weight:700;color:#1e293b;">'+cur.length+'건</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">' +
+          '<span style="font-size:12px;color:'+(delta<=0?'#10b981':'#ef4444')+';">'+(delta<=0?'↓':'↑')+' '+Math.abs(delta)+'건 ('+deltaSign+deltaPct+'%)</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:#94a3b8;margin-top:6px;">현재: '+cur.length+'건 / 비교: '+compCount+'건</div>' +
+      '</div>' +
+      '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;">' +
+        '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">불만 건수 및 증감</div>' +
+        '<div style="font-size:22px;font-weight:700;color:#ef4444;">'+complaint+'건</div>' +
+        '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">' +
+          '<span style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+((cd>=0?'+':'')+cpct+'%))</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:#94a3b8;margin-top:6px;">현재: '+complaint+'건 / 비교: '+prevComplaint+'건</div>' +
+      '</div>' +
+      '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;">' +
+        '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">인바운드 / 아웃바운드</div>' +
+        '<canvas id="rpt-inbound-chart" height="80"></canvas>' +
+        '<div style="display:flex;gap:12px;margin-top:8px;font-size:11px;">' +
+          '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#818cf8;margin-right:3px;"></span>인바운드 '+inPct+'%</span>' +
+          '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e2e8f0;margin-right:3px;"></span>아웃바운드 '+(100-inPct)+'%</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  setTimeout(()=>{
+    const ctx = document.getElementById('rpt-inbound-chart');
+    if (ctx) {
+      if (reportState.statsCharts['inbound']) reportState.statsCharts['inbound'].destroy();
+      reportState.statsCharts['inbound'] = new Chart(ctx.getContext('2d'), {
+        type:'doughnut', data:{labels:['인바운드','아웃바운드'], datasets:[{data:[inPct,100-inPct], backgroundColor:['#818cf8','#e2e8f0'], borderWidth:2}]},
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}
+      });
+    }
+  }, 50);
+}
+
+function renderReportTrend(chats, start, end) {
+  const el = document.getElementById('rpt-trend');
+  if (!el) return;
+  const days = Math.round((end-start)/(1000*60*60*24));
+  const interval = days <= 7 ? 'day' : 'week';
+  const buckets = [];
+  if (interval === 'day') {
+    for (let i=0;i<=days;i++) {const d=new Date(start);d.setDate(start.getDate()+i);const e=new Date(d);e.setHours(23,59,59,999);const dc=filterPeriod(chats,d,e);buckets.push({label:(d.getMonth()+1)+'/'+(d.getDate()), count:dc.length, complaint:dc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}
+  } else {
+    const totalWks = Math.ceil(days/7);
+    for (let i=0;i<totalWks;i++) {const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);const wc=filterPeriod(chats,ws2,we2);buckets.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()),count:wc.length,complaint:wc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}
+  }
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
+    '<div style="font-size:13px;font-weight:600;margin-bottom:12px;">📈 추이 그래프</div>' +
+    '<div style="height:160px;position:relative;"><canvas id="rpt-trend-chart"></canvas></div>' +
+    '<div style="overflow-x:auto;margin-top:12px;"><table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+    '<thead><tr style="background:#f8fafc;"><th style="padding:6px 10px;text-align:left;color:#64748b;">기간</th><th style="padding:6px 10px;text-align:right;color:#64748b;">문의수</th><th style="padding:6px 10px;text-align:right;color:#64748b;">불만수</th><th style="padding:6px 10px;text-align:right;color:#64748b;">불만율</th></tr></thead>' +
+    '<tbody>'+buckets.map(b=>'<tr><td style="padding:5px 10px;">'+b.label+'</td><td style="padding:5px 10px;text-align:right;">'+b.count+'건</td><td style="padding:5px 10px;text-align:right;color:#ef4444;">'+b.complaint+'건</td><td style="padding:5px 10px;text-align:right;color:#94a3b8;">'+(b.count?((b.complaint/b.count*100).toFixed(1)+'%'):'—')+'</td></tr>').join('')+'</tbody></table></div>' +
+  '</div>';
+  setTimeout(()=>{
+    const ctx = document.getElementById('rpt-trend-chart');
+    if (ctx) {
+      if (reportState.statsCharts['trend']) reportState.statsCharts['trend'].destroy();
+      reportState.statsCharts['trend'] = new Chart(ctx.getContext('2d'), {
+        type:'line', data:{labels:buckets.map(b=>b.label), datasets:[{label:'문의수', data:buckets.map(b=>b.count), borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,0.08)', fill:true, tension:0.3, pointRadius:3},{label:'불만수', data:buckets.map(b=>b.complaint), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.05)', fill:true, tension:0.3, pointRadius:3}]},
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{font:{size:10}, boxWidth:10}}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}
+      });
+    }
+  }, 50);
+}
+
+function renderTagLeaderboard(cur, prev) {
+  const el = document.getElementById('rpt-tag-board');
+  if (!el) return;
+  const tagMap = {}, prevMap = {};
+  cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
+  prev.forEach(c=>{const t=c.tags||'태그없음';prevMap[t]=(prevMap[t]||0)+1;});
+  const sorted = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
+  const maxVal = sorted[0]?.[1] || 1;
+  const total  = cur.length || 1;
+  const rows = sorted.slice(0,8).map(([tag,cnt],i) => {
+    const pCnt = prevMap[tag]||0;
+    const delta = cnt - pCnt;
+    const dStr = pCnt ? ((delta>=0?'+':'')+((delta/pCnt*100).toFixed(0))+'%') : (delta>0?'신규':'—');
+    const dColor = delta > 0 ? '#ef4444' : delta < 0 ? '#10b981' : '#94a3b8';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+      '<span style="font-size:11px;font-weight:600;color:#94a3b8;min-width:20px;text-align:right;">'+(i+1)+'</span>' +
+      '<span style="font-size:11px;color:#334155;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</span>' +
+      '<div style="flex:1;background:#f1f5f9;border-radius:4px;height:12px;overflow:hidden;"><div style="height:100%;background:#818cf8;border-radius:4px;width:'+Math.round(cnt/maxVal*100)+'%;"></div></div>' +
+      '<span style="font-size:11px;font-weight:600;color:#1e293b;min-width:32px;text-align:right;">'+cnt+'</span>' +
+      '<span style="font-size:10px;color:'+dColor+';min-width:36px;text-align:right;">'+dStr+'</span>' +
+    '</div>';
+  }).join('');
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+      '<div style="font-size:13px;font-weight:600;">🏆 태그별 리더보드</div>' +
+      '<span style="font-size:11px;color:#94a3b8;">총 '+sorted.length+'개 태그</span>' +
+    '</div>' +
+    rows +
+    (sorted.length > 8 ? '<button onclick="toggleTagBoard(this)" style="width:100%;padding:6px;border:1px solid #e2e8f0;background:none;border-radius:6px;cursor:pointer;font-size:12px;color:#64748b;margin-top:4px;">더보기 ('+sorted.slice(8).length+'개)</button>' : '') +
+  '</div>';
+}
+
+function toggleTagBoard(btn) {
+  const cur = getReportChats(), prev = getPrevReportChats();
+  const tagMap={},prevMap={};
+  cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
+  prev.forEach(c=>{const t=c.tags||'태그없음';prevMap[t]=(prevMap[t]||0)+1;});
+  const all = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
+  const maxVal=all[0]?.[1]||1;
+  const container = btn.parentElement.querySelector('.extra-tags');
+  if (container) { container.remove(); btn.textContent='더보기 ('+all.slice(8).length+'개)'; return; }
+  const div = document.createElement('div');
+  div.className = 'extra-tags';
+  div.innerHTML = all.slice(8).map(([tag,cnt],i)=>{
+    const pCnt=prevMap[tag]||0,delta=cnt-pCnt;
+    const dStr=pCnt?((delta>=0?'+':'')+((delta/pCnt*100).toFixed(0))+'%'):(delta>0?'신규':'—');
+    const dColor=delta>0?'#ef4444':delta<0?'#10b981':'#94a3b8';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:11px;font-weight:600;color:#94a3b8;min-width:20px;text-align:right;">'+(i+9)+'</span><span style="font-size:11px;color:#334155;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(tag)+'</span><div style="flex:1;background:#f1f5f9;border-radius:4px;height:12px;overflow:hidden;"><div style="height:100%;background:#818cf8;border-radius:4px;width:'+Math.round(cnt/maxVal*100)+'%;"></div></div><span style="font-size:11px;font-weight:600;color:#1e293b;min-width:32px;text-align:right;">'+cnt+'</span><span style="font-size:10px;color:'+dColor+';min-width:36px;text-align:right;">'+dStr+'</span></div>';
+  }).join('');
+  btn.before(div);
+  btn.textContent = '접기';
+}
+
+function renderManagerLeaderboard(cur, prev) {
+  const el = document.getElementById('rpt-mgr-board');
+  if (!el) return;
+  const mgrMap={},prevMap={};
+  cur.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;mgrMap[n]=(mgrMap[n]||0)+1;});
+  prev.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;prevMap[n]=(prevMap[n]||0)+1;});
+  const sorted = Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]);
+  if (!sorted.length) { el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:600;margin-bottom:12px;">😊 담당자별 리더보드</div><p style="color:#94a3b8;font-size:12px;">담당자 데이터가 없습니다</p></div>'; return; }
+  const rows = sorted.slice(0,8).map(([name,cnt],i)=>{
+    const items=cur.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===name);
+    const kc=calcKPIs(items);
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+    return '<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 10px;font-size:12px;text-align:center;">'+medal+'</td><td style="padding:8px 10px;font-size:12px;font-weight:500;color:#1e293b;">'+escHtml(name)+'</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+cnt+'건</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+kc.closedRate.toFixed(0)+'%</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+(kc.avgSatisfaction?kc.avgSatisfaction.toFixed(1)+'점':'—')+'</td></tr>';
+  }).join('');
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div style="font-size:13px;font-weight:600;">😊 담당자별 리더보드</div><span style="font-size:11px;color:#94a3b8;">'+sorted.length+'명</span></div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f8fafc;"><th style="padding:7px 10px;text-align:center;color:#64748b;font-weight:600;">순위</th><th style="padding:7px 10px;text-align:left;color:#64748b;font-weight:600;">담당자명</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">응대수</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">처리완료율</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">평균만족도</th></tr></thead><tbody>'+rows+'</tbody></table>' +
+    (sorted.length>8 ? '<button onclick="this.style.display=\'none\'" style="width:100%;padding:6px;border:1px solid #e2e8f0;background:none;border-radius:6px;cursor:pointer;font-size:12px;color:#64748b;margin-top:4px;">더보기</button>' : '') +
+  '</div>';
+}
+
+function renderStatCharts(chats) {
+  const el = document.getElementById('rpt-stat-charts');
+  if (!el) return;
+  const csatDist = [0,0,0,0,0];
+  chats.forEach(c=>{const v=c['profile.csat'];if(v!=null&&v>=1&&v<=5)csatDist[Math.round(v)-1]++;});
+  const hourDist = new Array(24).fill(0);
+  chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)hourDist[d.getHours()]++;});
+  const dayDist = new Array(7).fill(0);
+  chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)dayDist[d.getDay()]++;});
+  el.innerHTML =
+    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
+      '<div style="font-size:13px;font-weight:600;margin-bottom:14px;">📊 상담 통계</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">' +
+        '<div><div style="font-size:11px;color:#64748b;margin-bottom:8px;">만족도 분포 (1~5점)</div><div style="height:130px;position:relative;"><canvas id="rpt-csat-chart"></canvas></div></div>' +
+        '<div><div style="font-size:11px;color:#64748b;margin-bottom:8px;">시간대별 문의 분포</div><div style="height:130px;position:relative;"><canvas id="rpt-hour-chart"></canvas></div></div>' +
+        '<div><div style="font-size:11px;color:#64748b;margin-bottom:8px;">요일별 문의 분포</div><div style="height:130px;position:relative;"><canvas id="rpt-day-chart"></canvas></div></div>' +
+      '</div>' +
+    '</div>';
+  setTimeout(()=>{
+    const cc=document.getElementById('rpt-csat-chart');
+    if(cc){if(reportState.statsCharts['csat'])reportState.statsCharts['csat'].destroy();reportState.statsCharts['csat']=new Chart(cc.getContext('2d'),{type:'bar',data:{labels:['1점','2점','3점','4점','5점'],datasets:[{data:csatDist,backgroundColor:['#ef4444','#f97316','#eab308','#84cc16','#22c55e'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10},stepSize:1}}}}});}
+    const hc=document.getElementById('rpt-hour-chart');
+    if(hc){if(reportState.statsCharts['hour'])reportState.statsCharts['hour'].destroy();reportState.statsCharts['hour']=new Chart(hc.getContext('2d'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+'시'),datasets:[{data:hourDist,backgroundColor:'#818cf8',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}
+    const dc2=document.getElementById('rpt-day-chart');
+    if(dc2){if(reportState.statsCharts['day'])reportState.statsCharts['day'].destroy();reportState.statsCharts['day']=new Chart(dc2.getContext('2d'),{type:'bar',data:{labels:['일','월','화','수','목','금','토'],datasets:[{data:dayDist,backgroundColor:['#f472b6','#818cf8','#818cf8','#818cf8','#818cf8','#818cf8','#60a5fa'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}
+  },50);
+}
+
+function renderChangeDetection(cur, prev) {
+  const el = document.getElementById('rpt-change-detect');
+  if (!el) return;
+  const curMap={},prevMap={};
+  cur.forEach(c=>{const t=c.tags||'기타';curMap[t]=(curMap[t]||0)+1;});
+  prev.forEach(c=>{const t=c.tags||'기타';prevMap[t]=(prevMap[t]||0)+1;});
+  const changes = Object.entries(curMap).filter(([t,n])=>{const p=prevMap[t]||0;return p>0&&Math.abs(n-p)/p>0.5;}).map(([t,n])=>({tag:t,cur:n,prev:prevMap[t],delta:n-prevMap[t],pct:((n-prevMap[t])/prevMap[t]*100).toFixed(0)})).sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct));
+  const surge = changes.filter(c=>c.delta>0).slice(0,3);
+  const drop  = changes.filter(c=>c.delta<0).slice(0,3);
+  if (!surge.length && !drop.length) { el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">🔍 변화 감지 대시보드</div><div style="color:#94a3b8;font-size:13px;padding:20px 0;text-align:center;">특별한 변화가 관찰되지 않았어요</div></div>'; return; }
+  const mkRow = c => '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155;">'+escHtml(c.tag)+'</span><span style="font-size:11px;font-weight:600;color:'+(c.delta>0?'#ef4444':'#10b981')+'">'+(c.delta>0?'↑+':'↓')+c.delta+'건 ('+c.pct+'%)</span><span style="font-size:10px;color:#94a3b8;">'+c.prev+'→'+c.cur+'건</span></div>';
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
+    '<div style="font-size:13px;font-weight:600;margin-bottom:12px;">🔍 변화 감지 대시보드</div>' +
+    (surge.length?'<div style="font-size:11px;font-weight:600;color:#ef4444;margin-bottom:6px;">📈 급증 VOC</div>'+surge.map(mkRow).join(''):'') +
+    (drop.length?'<div style="font-size:11px;font-weight:600;color:#10b981;margin:'+(surge.length?'10px':'0')+'px 0 6px;">📉 급감 VOC</div>'+drop.map(mkRow).join(''):'') +
+  '</div>';
+}
+
+/* ━━━━━ 탭 전환 ━━━━━ */
+function switchMainTab(tab) {
+  ['dashboard','chart','report','research'].forEach(t=>{
+    const btn=document.getElementById('tab-'+t);
+    if(btn) btn.classList.toggle('active',t===tab);
+  });
+  const sidebarList = document.getElementById('sidebar-list');
+  const reportList  = document.getElementById('report-sidebar-list');
+  if (sidebarList) sidebarList.style.display = tab==='dashboard' ? '' : 'none';
+  if (reportList)  reportList.style.display  = tab==='report'    ? '' : 'none';
+  if (tab==='dashboard') { renderDashboard(store.activeDash||'통합-채팅'); return; }
+  if (tab==='chart')    { showOnlyView('view-chart-extra'); renderChartExtra(); return; }
+  if (tab==='report')   {
+    showOnlyView('view-report');
+    renderReportList();
+    if (!reportState.activeId && REPORTS.length) selectReport(REPORTS[0].id);
+    else if (reportState.activeId) renderReportContent();
+    return;
+  }
+  if (tab==='research') { showOnlyView('view-research'); renderResearchChart(); return; }
+}
+
+function showOnlyView(id) {
+  ['view-chat','view-phone','view-all','view-voc','view-defect','view-chart-extra','view-report','view-research'].forEach(v=>{
+    const el=document.getElementById(v); if(el) el.style.display='none';
+  });
+  document.getElementById('dashboard-content').style.display='';
+  document.getElementById('empty-state').style.display='none';
+  const t=document.getElementById(id); if(t) t.style.display='';
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   앱 시작
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+document.getElementById('tab-dashboard').onclick = () => switchMainTab('dashboard');
 init();
 </script>
 </body>

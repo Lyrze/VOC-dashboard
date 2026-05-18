@@ -2895,7 +2895,7 @@ function renderReportSummary(cur, prev) {
         '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">불만 건수 및 증감</div>' +
         '<div style="font-size:22px;font-weight:700;color:#ef4444;">'+complaint+'건</div>' +
         '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">' +
-          '<span style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+((cd>=0?'+':'')+cpct+'%))</span>' +
+          '<span style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+(cd>=0?'+':'')+cpct+'%)</span>' +
         '</div>' +
         '<div style="font-size:11px;color:#94a3b8;margin-top:6px;">현재: '+complaint+'건 / 비교: '+prevComplaint+'건</div>' +
       '</div>' +

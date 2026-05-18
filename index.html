@@ -1204,6 +1204,20 @@ tbody td:first-child {
               <div class="rpt-card-title">변화 감지 대시보드</div>
               <div id="rpt-change-detect"></div>
             </div>
+
+            <!-- AI 인사이트 섹션 (리서치로 분석하기 결과) -->
+            <div class="rpt-stats-card" style="margin-bottom:14px;" id="rpt-ai-section">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div class="rpt-card-title" style="margin-bottom:0;">AI 인사이트</div>
+                <div style="display:flex;gap:6px;">
+                  <button onclick="rptRunAIAnalysis('pattern')" style="padding:5px 11px;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">패턴 분석</button>
+                  <button onclick="rptRunAIAnalysis('improve')" style="padding:5px 11px;background:#fff;color:#6366f1;border:1.5px solid #c7d2fe;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">개선 제안</button>
+                </div>
+              </div>
+              <div id="rpt-ai-output" style="min-height:60px;">
+                <div style="color:#94a3b8;font-size:12px;text-align:center;padding:16px 0;">위 버튼으로 AI 분석을 실행하세요</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2535,7 +2549,7 @@ function saveAIKey() {
 /* ━━━━━ Gemini API ━━━━━ */
 async function callGemini(prompt) {
   if (!store.geminiKey) { openAISettings(); throw new Error('API 키가 설정되지 않았습니다'); }
-  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+store.geminiKey, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3, maxOutputTokens:2048}})});
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+store.geminiKey, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3, maxOutputTokens:2048}})});
   if (!res.ok) {const e=await res.json().catch(()=>({}));throw new Error(res.status===400?'API 키가 유효하지 않습니다.':'Gemini 오류: '+(e?.error?.message||res.status));}
   const d = await res.json();
   return d.candidates?.[0]?.content?.parts?.[0]?.text || '응답 없음';
@@ -3088,7 +3102,8 @@ function showOnlyView(id) {
   });
   document.getElementById('dashboard-content').style.display='';
   document.getElementById('empty-state').style.display='none';
-  const t=document.getElementById(id); if(t) t.style.display='';
+  const t=document.getElementById(id);
+  if(t) t.style.display = (id === 'view-report') ? 'flex' : '';
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3110,34 +3125,9 @@ function rptCloseDetail() {
   const p = document.getElementById('rpt-detail-panel');
   if(p) p.style.display='none';
 }
+function searchReportTable() { rptApplySearch(); }
 
-
-/* ━━━ 리포트 탭 추가 핸들러 ━━━ */
-function rptBack() {
-  // 리포트 목록으로 돌아가기 (현재는 동일 탭 유지)
-  renderReportList();
-}
-function rptDownload() { downloadReportExcel(); }
-function rptRefreshData() {
-  if (reportState.activeId) renderReportContent();
-}
-function rptAITag() {
-  if (!store.geminiKey) { openAISettings(); return; }
-  switchMainTab('research');
-  setTimeout(generatePatterns, 200);
-}
-function rptResearch() {
-  switchMainTab('research');
-  setTimeout(generatePatterns, 200);
-}
-function rptAddFilter() {
-  // Filter add - placeholder
-  alert('Filter feature coming soon.');
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   App start
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* App start */
 document.getElementById('tab-dashboard').onclick = () => switchMainTab('dashboard');
 init();
 </script>

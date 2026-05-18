@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOC 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Pretendard', 'Noto Sans KR', sans-serif; background: #f4f6fa; color: #1a1a2e; font-size: 13px; display: flex; height: 100vh; overflow: hidden; }
+
+/* ── 사이드바 ── */
+#sidebar { width: 220px; min-width: 220px; background: #fff; border-right: 1px solid #e8eaf0; display: flex; flex-direction: column; overflow: hidden; }
+.sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid #e8eaf0; }
+.sidebar-logo span { font-size: 15px; font-weight: 700; color: #4f46e5; letter-spacing: -0.5px; }
+.sidebar-logo small { display: block; font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+.sidebar-nav { padding: 10px 8px 6px; border-bottom: 1px solid #e8eaf0; }
+.sidebar-nav button { width: 100%; text-align: left; padding: 7px 10px; border: none; background: none; cursor: pointer; border-radius: 6px; font-size: 12.5px; color: #475569; display: flex; align-items: center; gap: 6px; }
+.sidebar-nav button.active { background: #eff0fe; color: #4f46e5; font-weight: 600; }
+.sidebar-nav button:hover:not(.active) { background: #f8fafc; }
+.nav-icon { width: 16px; height: 16px; opacity: 0.7; }
+
+.sidebar-brands { flex: 1; overflow-y: auto; padding: 10px 8px; }
+.sidebar-brands h4 { font-size: 10px; color: #94a3b8; font-weight: 600; padding: 4px 8px 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+.brand-btn { width: 100%; text-align: left; padding: 6px 10px; border: none; background: none; cursor: pointer; border-radius: 6px; font-size: 12px; color: #475569; display: flex; align-items: center; justify-content: space-between; }
+.brand-btn.active { background: #eff0fe; color: #4f46e5; font-weight: 600; }
+.brand-btn:hover:not(.active) { background: #f8fafc; }
+.brand-badge { font-size: 9px; padding: 1px 5px; border-radius: 10px; background: #e8eaf0; color: #64748b; }
+.brand-badge.has-data { background: #d1fae5; color: #059669; }
+
+/* ── 메인 영역 ── */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* 상단 툴바 */
+#toolbar { background: #fff; border-bottom: 1px solid #e8eaf0; padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.toolbar-title { font-size: 14px; font-weight: 600; color: #1e293b; flex: 1; }
+.toolbar-sub { font-size: 11px; color: #94a3b8; font-weight: 400; margin-left: 6px; }
+.period-group { display: flex; align-items: center; gap: 6px; }
+.period-type-btns { display: flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+.period-type-btns button { padding: 5px 12px; border: none; background: none; cursor: pointer; font-size: 12px; color: #64748b; }
+.period-type-btns button.active { background: #4f46e5; color: #fff; }
+.nav-btn { width: 28px; height: 28px; border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; }
+.nav-btn:hover { background: #f8fafc; }
+.period-label { font-size: 12px; color: #334155; font-weight: 500; min-width: 140px; text-align: center; }
+.upload-btn { padding: 6px 14px; background: #4f46e5; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; }
+.upload-btn:hover { background: #4338ca; }
+input[type=file] { display: none; }
+
+/* 스크롤 영역 */
+#content { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+/* KPI 카드 */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.kpi-card { background: #fff; border-radius: 10px; padding: 14px 16px; border: 1px solid #e8eaf0; cursor: pointer; transition: box-shadow 0.15s; }
+.kpi-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.kpi-label { font-size: 11px; color: #64748b; margin-bottom: 6px; line-height: 1.3; }
+.kpi-date { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
+.kpi-value { font-size: 20px; font-weight: 700; color: #1e293b; }
+.kpi-delta { font-size: 11px; margin-top: 4px; }
+.delta-up { color: #ef4444; }
+.delta-down { color: #10b981; }
+.delta-up-good { color: #10b981; }
+.delta-down-bad { color: #ef4444; }
+.delta-neutral { color: #94a3b8; }
+
+/* 차트 영역 */
+.chart-section { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; padding: 16px; margin-bottom: 16px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.section-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+.chart-legend { display: flex; gap: 12px; font-size: 11px; color: #64748b; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+.chart-wrap { height: 200px; position: relative; }
+
+/* 테이블 */
+.table-section { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; padding: 16px; margin-bottom: 16px; }
+.table-sub { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.table-sub button { padding: 4px 10px; border: 1px solid #e2e8f0; background: none; border-radius: 5px; cursor: pointer; font-size: 11px; color: #64748b; }
+.table-sub button.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+.excel-btn { padding: 5px 10px; border: 1px solid #e2e8f0; background: #fff; border-radius: 5px; cursor: pointer; font-size: 11px; color: #64748b; margin-left: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { background: #f8fafc; color: #64748b; font-weight: 600; padding: 8px 10px; text-align: right; border-bottom: 2px solid #e8eaf0; white-space: nowrap; cursor: pointer; }
+thead th:first-child { text-align: left; }
+thead th:hover { color: #4f46e5; }
+tbody tr:hover { background: #f8fafc; }
+tbody td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #334155; }
+tbody td:first-child { text-align: left; color: #1e293b; font-weight: 500; }
+.td-main { font-weight: 600; }
+.td-delta { font-size: 10px; color: #94a3b8; }
+.td-delta.up { color: #ef4444; }
+.td-delta.down { color: #10b981; }
+.td-delta.up-good { color: #10b981; }
+.td-delta.down-bad { color: #ef4444; }
+
+/* 빈 상태 */
+.empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+.empty-state h3 { font-size: 15px; margin-bottom: 8px; color: #64748b; }
+.empty-state p { font-size: 12px; line-height: 1.6; }
+.empty-upload-btn { margin-top: 16px; padding: 8px 20px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+
+/* 드래그앤드롭 오버레이 */
+#drop-overlay { display: none; position: fixed; inset: 0; background: rgba(79,70,229,0.15); border: 3px dashed #4f46e5; border-radius: 12px; z-index: 100; justify-content: center; align-items: center; font-size: 18px; color: #4f46e5; font-weight: 600; }
+#drop-overlay.active { display: flex; }
+
+/* 로딩 */
+.loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #fff; border-radius: 10px; padding: 24px 32px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); text-align: center; z-index: 200; }
+.loading.active { display: block; }
+.spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #4f46e5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+
+/* VOC 분석 태그 차트 */
+.tag-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tag-name { font-size: 11px; color: #334155; min-width: 160px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tag-bar-bg { flex: 1; background: #f1f5f9; border-radius: 4px; height: 14px; overflow: hidden; }
+.tag-bar-fill { height: 100%; background: #818cf8; border-radius: 4px; transition: width 0.4s; }
+.tag-count { font-size: 11px; color: #64748b; min-width: 36px; text-align: right; }
+</style>
+</head>
+<body>
+
+<!-- 드롭 오버레이 -->
+<div id="drop-overlay">📂 xlsx 파일을 여기에 놓으세요</div>
+
+<!-- 로딩 -->
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:#64748b;">데이터 불러오는 중...</div>
+</div>
+
+<!-- 숨겨진 파일 인풋 -->
+<input type="file" id="file-input" accept=".xlsx,.xls">
+
+<!-- 사이드바 -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <span>VOC STUDIO</span>
+    <small>올릿 CX 대시보드</small>
+  </div>
+  <div class="sidebar-nav">
+    <button class="active" onclick="switchView('productivity')" id="nav-productivity">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+      상담 생산성
+    </button>
+    <button onclick="switchView('voc')" id="nav-voc">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+      VOC 분석
+    </button>
+    <button onclick="switchView('defective')" id="nav-defective">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5"/></svg>
+      불량 VOC
+    </button>
+  </div>
+  <div class="sidebar-brands">
+    <h4>브랜드</h4>
+    <div id="brand-list"></div>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div id="main">
+  <div id="toolbar">
+    <div class="toolbar-title" id="toolbar-title">
+      상담 생산성<span class="toolbar-sub" id="toolbar-brand">브랜드를 선택하세요</span>
+    </div>
+    <div class="period-group">
+      <div class="period-type-btns">
+        <button class="active" onclick="setPeriodType('week')" id="btn-week">주</button>
+        <button onclick="setPeriodType('month')" id="btn-month">월</button>
+      </div>
+      <button class="nav-btn" onclick="movePeriod(-1)">‹</button>
+      <span class="period-label" id="period-label">-</span>
+      <button class="nav-btn" onclick="movePeriod(1)">›</button>
+      <button class="nav-btn" onclick="goToNow()" title="현재로">●</button>
+    </div>
+    <span id="data-range" style="font-size:11px;color:#94a3b8;"></span>
+    <button class="upload-btn" onclick="triggerUpload()">+ xlsx 업로드</button>
+  </div>
+
+  <div id="content">
+    <div class="empty-state" id="empty-state">
+      <h3>📊 데이터를 업로드해주세요</h3>
+      <p>좌측에서 브랜드를 선택한 뒤<br>채널톡에서 내보낸 xlsx 파일을 업로드하세요.</p>
+      <button class="empty-upload-btn" onclick="triggerUpload()">xlsx 파일 업로드</button>
+    </div>
+    <div id="dashboard-content" style="display:none">
+      <!-- 상담 생산성 뷰 -->
+      <div id="view-productivity">
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="chart-section">
+          <div class="section-header">
+            <span class="section-title" id="chart-title">채팅 응대 현황</span>
+            <div class="chart-legend">
+              <span><span class="legend-dot" style="background:#818cf8"></span>응대 채팅</span>
+              <span><span class="legend-dot" style="background:#e2e8f0"></span>미응대 채팅</span>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
+        </div>
+        <div class="two-col">
+          <div class="table-section">
+            <div class="section-header">
+              <span class="section-title">담당자별 현황</span>
+            </div>
+            <div style="overflow-x:auto"><table id="manager-table"></table></div>
+          </div>
+          <div class="table-section">
+            <div class="section-header">
+              <span class="section-title">상담 태그별 현황</span>
+            </div>
+            <div style="overflow-x:auto"><table id="tag-table"></table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOC 분석 뷰 -->
+      <div id="view-voc" style="display:none">
+        <div class="chart-section">
+          <div class="section-header"><span class="section-title">문의 유형별 분포</span></div>
+          <div id="voc-category-chart"></div>
+        </div>
+        <div class="table-section">
+          <div class="section-header"><span class="section-title">태그별 상세 현황</span></div>
+          <div style="overflow-x:auto"><table id="voc-tag-table"></table></div>
+        </div>
+      </div>
+
+      <!-- 불량 VOC 뷰 -->
+      <div id="view-defective" style="display:none">
+        <div class="kpi-grid" id="defective-kpi-grid"></div>
+        <div class="table-section">
+          <div class="section-header"><span class="section-title">불량 유형별 현황</span></div>
+          <div style="overflow-x:auto"><table id="defective-table"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 상수 ─────────────────────────────────────────────────
+const BRANDS = ['슬룸','닥터맨즈','닥터아망','마넬','빌바','셀올로지','심플리케어','얼라인랩','와이브닝','코코다움','12 o\' clock'];
+const DEFECTIVE_TAGS = ['불량/불량확정','불량/불량문의','재불량','불량/불량콜백'];
+
+// ── 상태 ─────────────────────────────────────────────────
+let state = {
+  brandData: {},   // brand -> { chats:[], managers:{} }
+  currentBrand: null,
+  currentView: 'productivity',
+  periodType: 'week',
+  periodOffset: 0,
+  mainChart: null,
+};
+
+// ── 초기화 ─────────────────────────────────────────────────
+function init() {
+  renderBrandList();
+  updatePeriodLabel();
+  setupDragDrop();
+  document.getElementById('file-input').addEventListener('change', e => {
+    if (e.target.files[0]) loadFile(e.target.files[0]);
+    e.target.value = '';
+  });
+}
+
+function renderBrandList() {
+  const el = document.getElementById('brand-list');
+  el.innerHTML = BRANDS.map(b => `
+    <button class="brand-btn ${b === state.currentBrand ? 'active' : ''}" onclick="selectBrand('${b.replace(/'/g,"\\'")}')">
+      <span>${b}</span>
+      <span class="brand-badge ${state.brandData[b] ? 'has-data' : ''}">${state.brandData[b] ? '✓' : '—'}</span>
+    </button>
+  `).join('');
+}
+
+// ── 브랜드 선택 ─────────────────────────────────────────────
+function selectBrand(brand) {
+  state.currentBrand = brand;
+  state.periodOffset = 0;
+  renderBrandList();
+  document.getElementById('toolbar-brand').textContent = ' · ' + brand;
+  if (state.brandData[brand]) {
+    updateDataRange();
+    showDashboard();
+    renderAll();
+  } else {
+    document.getElementById('data-range').textContent = '';
+    showEmpty();
+  }
+}
+
+function showEmpty() {
+  document.getElementById('empty-state').style.display = '';
+  document.getElementById('dashboard-content').style.display = 'none';
+}
+function showDashboard() {
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('dashboard-content').style.display = '';
+}
+
+// ── 뷰 전환 ─────────────────────────────────────────────
+function switchView(view) {
+  state.currentView = view;
+  ['productivity','voc','defective'].forEach(v => {
+    document.getElementById('view-'+v).style.display = v === view ? '' : 'none';
+    document.getElementById('nav-'+v).classList.toggle('active', v === view);
+  });
+  const titles = { productivity:'상담 생산성', voc:'VOC 분석', defective:'불량 VOC' };
+  document.querySelector('#toolbar-title').childNodes[0].textContent = titles[view];
+  if (state.currentBrand && state.brandData[state.currentBrand]) renderAll();
+}
+
+// ── 기간 ─────────────────────────────────────────────────
+function setPeriodType(type) {
+  state.periodType = type;
+  state.periodOffset = 0;
+  document.getElementById('btn-week').classList.toggle('active', type === 'week');
+  document.getElementById('btn-month').classList.toggle('active', type === 'month');
+  updatePeriodLabel();
+  if (state.currentBrand && state.brandData[state.currentBrand]) renderAll();
+}
+function movePeriod(dir) {
+  state.periodOffset += dir;
+  updatePeriodLabel();
+  if (state.currentBrand && state.brandData[state.currentBrand]) renderAll();
+}
+function goToNow() { state.periodOffset = 0; updatePeriodLabel(); if (state.currentBrand && state.brandData[state.currentBrand]) renderAll(); }
+
+function getPeriodDates() {
+  const now = new Date();
+  if (state.periodType === 'week') {
+    const day = now.getDay(); // 0=Sun
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + state.periodOffset * 7);
+    monday.setHours(0,0,0,0);
+    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6); sunday.setHours(23,59,59,999);
+    const prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
+    const prevSunday = new Date(sunday); prevSunday.setDate(sunday.getDate() - 7);
+    return { start: monday, end: sunday, prevStart: prevMonday, prevEnd: prevSunday };
+  } else {
+    const y = now.getFullYear(), m = now.getMonth() + state.periodOffset;
+    const adjY = y + Math.floor(m / 12), adjM = ((m % 12) + 12) % 12;
+    const start = new Date(adjY, adjM, 1);
+    const end = new Date(adjY, adjM + 1, 0, 23, 59, 59, 999);
+    const prevStart = new Date(adjY, adjM - 1, 1);
+    const prevEnd = new Date(adjY, adjM, 0, 23, 59, 59, 999);
+    return { start, end, prevStart, prevEnd };
+  }
+}
+
+function updatePeriodLabel() {
+  const { start, end } = getPeriodDates();
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+  if (state.periodType === 'week') {
+    const wn = getWeekNum(start);
+    document.getElementById('period-label').textContent = `${start.getFullYear()}년 ${start.getMonth()+1}월 ${wn}주 (${fmt(start)}~${fmt(end)})`;
+  } else {
+    document.getElementById('period-label').textContent = `${start.getFullYear()}년 ${start.getMonth()+1}월`;
+  }
+}
+
+function getWeekNum(d) {
+  const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
+  return Math.ceil((d.getDate() + firstDay.getDay()) / 7);
+}
+
+// ── 파일 로드 ─────────────────────────────────────────────
+function triggerUpload() { document.getElementById('file-input').click(); }
+
+function setupDragDrop() {
+  const overlay = document.getElementById('drop-overlay');
+  document.body.addEventListener('dragover', e => { e.preventDefault(); overlay.classList.add('active'); });
+  document.body.addEventListener('dragleave', e => { if (!e.relatedTarget) overlay.classList.remove('active'); });
+  document.body.addEventListener('drop', e => {
+    e.preventDefault(); overlay.classList.remove('active');
+    const f = e.dataTransfer.files[0];
+    if (f && (f.name.endsWith('.xlsx') || f.name.endsWith('.xls'))) loadFile(f);
+  });
+}
+
+function loadFile(file) {
+  if (!state.currentBrand) { alert('먼저 좌측에서 브랜드를 선택하세요.'); return; }
+  document.getElementById('loading').classList.add('active');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const newChats = sheetToObj(wb, 'UserChat');
+      const managersRaw = sheetToObj(wb, 'Manager data');
+      const managers = {};
+      managersRaw.forEach(m => { managers[m.id] = m.name ? m.name.replace(/\s*매니저.*$/,'') : m.id; });
+
+      // 누적 병합: 기존 데이터와 합치되, id 기준 중복 제거
+      const existing = state.brandData[state.currentBrand];
+      let mergedChats = newChats;
+      let mergedManagers = managers;
+      if (existing) {
+        const existingIds = new Set(existing.chats.map(c => c.id));
+        const onlyNew = newChats.filter(c => !existingIds.has(c.id));
+        mergedChats = [...existing.chats, ...onlyNew];
+        mergedManagers = { ...existing.managers, ...managers };
+        const added = onlyNew.length, duped = newChats.length - onlyNew.length;
+        console.log(`병합: +${added}건 추가, ${duped}건 중복 제거, 총 ${mergedChats.length}건`);
+      }
+
+      state.brandData[state.currentBrand] = { chats: mergedChats, managers: mergedManagers };
+      updateDataRange();
+      renderBrandList();
+      showDashboard();
+      renderAll();
+    } catch(err) { alert('파일 파싱 오류: ' + err.message); console.error(err); }
+    document.getElementById('loading').classList.remove('active');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateDataRange() {
+  const d = state.brandData[state.currentBrand];
+  if (!d || !d.chats.length) return;
+  const dates = d.chats.map(c => parseDate(c.createdAt)).filter(Boolean).sort((a,b) => a-b);
+  if (!dates.length) return;
+  const fmt = d => `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+  document.getElementById('data-range').textContent = `데이터: ${fmt(dates[0])} ~ ${fmt(dates[dates.length-1])} (${d.chats.length}건)`;
+}
+
+function sheetToObj(wb, name) {
+  if (!wb.Sheets[name]) return [];
+  return XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: null });
+}
+
+// ── 데이터 필터 ─────────────────────────────────────────────
+function filterPeriod(chats, start, end) {
+  return chats.filter(c => {
+    const d = parseDate(c.createdAt || c.managedAt);
+    return d && d >= start && d <= end;
+  });
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  return new Date(s.replace(' ', 'T'));
+}
+
+// ── KPI 계산 ─────────────────────────────────────────────
+function calcKPIs(chats) {
+  const n = chats.length;
+  const responded = chats.filter(c => c.firstAnsweredAt).length;
+  const closed = chats.filter(c => c.state === 'closed').length;
+  const withCsat = chats.filter(c => c['profile.csat'] != null);
+  const withFirstReply = chats.filter(c => c.timeToFirstAnswerInOperation != null);
+  const withReply = chats.filter(c => c.avgReplyTimeInOperation != null || c.avgReplyTime != null);
+  const withHandling = chats.filter(c => c.memberHandlingTime != null);
+  return {
+    total: n,
+    responded,
+    responseRate: n ? (responded / n * 100) : 0,
+    closedRate: n ? (closed / n * 100) : 0,
+    avgFirstReply: avg(withFirstReply.map(c => c.timeToFirstAnswerInOperation)),
+    avgReplyTime: avg(withReply.map(c => c.avgReplyTimeInOperation || c.avgReplyTime)),
+    avgHandling: avg(withHandling.map(c => c.memberHandlingTime)),
+    avgSatisfaction: avg(withCsat.map(c => c['profile.csat'])),
+    satisfactionRate: n ? (withCsat.length / n * 100) : 0,
+    complaintRate: withCsat.length ? (withCsat.filter(c => c['profile.csat'] <= 2).length / withCsat.length * 100) : 0,
+  };
+}
+
+function avg(arr) { if (!arr.length) return null; return arr.reduce((a,b) => a+b, 0) / arr.length; }
+
+function fmtSec(sec) {
+  if (sec == null) return '-';
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+  if (h > 0) return `${h}시간 ${m}분`;
+  if (m > 0) return `${m}분 ${s}초`;
+  return `${s}초`;
+}
+
+function fmtDelta(cur, prev, higherIsBetter, isTime) {
+  if (cur == null || prev == null) return { text: '-', cls: 'delta-neutral' };
+  const diff = cur - prev;
+  if (Math.abs(diff) < 0.001) return { text: '±0', cls: 'delta-neutral' };
+  const sign = diff > 0 ? '+' : '';
+  let text;
+  if (isTime) text = sign + fmtSec(Math.abs(diff));
+  else text = sign + diff.toFixed(2);
+  const positive = diff > 0;
+  const cls = higherIsBetter ? (positive ? 'delta-up-good' : 'delta-down-bad') : (positive ? 'delta-up' : 'delta-down');
+  return { text, cls };
+}
+
+function fmtDeltaPct(cur, prev, higherIsBetter) {
+  if (cur == null || prev == null) return { text: '-', cls: 'delta-neutral' };
+  const diff = cur - prev;
+  if (Math.abs(diff) < 0.001) return { text: '±0%', cls: 'delta-neutral' };
+  const sign = diff > 0 ? '+' : '';
+  const text = sign + diff.toFixed(2) + '%';
+  const positive = diff > 0;
+  const cls = higherIsBetter ? (positive ? 'delta-up-good' : 'delta-down-bad') : (positive ? 'delta-up' : 'delta-down');
+  return { text, cls };
+}
+
+// ── 렌더링 메인 ─────────────────────────────────────────────
+function renderAll() {
+  const d = state.brandData[state.currentBrand];
+  if (!d) return;
+  const { start, end, prevStart, prevEnd } = getPeriodDates();
+  const cur = filterPeriod(d.chats, start, end);
+  const prev = filterPeriod(d.chats, prevStart, prevEnd);
+  updatePeriodLabel();
+
+  if (state.currentView === 'productivity') {
+    renderKPIs(cur, prev, start, end);
+    renderMainChart(d.chats, start);
+    renderManagerTable(cur, prev, d.managers);
+    renderTagTable(cur, prev);
+  } else if (state.currentView === 'voc') {
+    renderVOCView(cur, prev);
+  } else if (state.currentView === 'defective') {
+    renderDefectiveView(cur, prev);
+  }
+}
+
+// ── KPI 카드 ─────────────────────────────────────────────
+function renderKPIs(cur, prev, start, end) {
+  const kc = calcKPIs(cur), kp = calcKPIs(prev);
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}(${['일','월','화','수','목','금','토'][d.getDay()]})`;
+  const dateStr = `${fmt(start)} ~ ${fmt(end)}`;
+
+  const cards = [
+    { label:'총 채팅 수', val: kc.total+'건', delta: fmtDelta(kc.total, kp.total, false), good: false },
+    { label:'총 채팅 응대 수', val: kc.responded+'건', delta: fmtDelta(kc.responded, kp.responded, true), good: true },
+    { label:'채팅 응대 비율', val: kc.responseRate.toFixed(2)+'%', delta: fmtDeltaPct(kc.responseRate, kp.responseRate, true), good: true },
+    { label:'채팅 처리 완료 비율', val: kc.closedRate.toFixed(2)+'%', delta: fmtDeltaPct(kc.closedRate, kp.closedRate, true), good: true },
+    { label:'평균 채팅 첫 응대 시간', val: fmtSec(kc.avgFirstReply), delta: fmtDelta(kc.avgFirstReply, kp.avgFirstReply, false, true), good: false },
+    { label:'평균 채팅 응답 시간', val: fmtSec(kc.avgReplyTime), delta: fmtDelta(kc.avgReplyTime, kp.avgReplyTime, false, true), good: false },
+    { label:'평균 채팅 처리 시간', val: fmtSec(kc.avgHandling), delta: fmtDelta(kc.avgHandling, kp.avgHandling, false, true), good: false },
+    { label:'평균 채팅 만족도', val: kc.avgSatisfaction ? kc.avgSatisfaction.toFixed(2)+'점' : '-', delta: fmtDelta(kc.avgSatisfaction, kp.avgSatisfaction, true), good: true },
+    { label:'채팅 만족도 응답률', val: kc.satisfactionRate.toFixed(2)+'%', delta: fmtDeltaPct(kc.satisfactionRate, kp.satisfactionRate, true), good: true },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-date">${dateStr}</div>
+      <div class="kpi-value">${c.val}</div>
+      <div class="kpi-delta ${c.delta.cls}">${c.delta.text}</div>
+    </div>
+  `).join('');
+}
+
+// ── 주차별 바 차트 ─────────────────────────────────────────────
+function renderMainChart(chats, currentStart) {
+  const weeks = [];
+  for (let i = -4; i <= 0; i++) {
+    const start = new Date(currentStart); start.setDate(currentStart.getDate() + i * 7);
+    const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+    const wChats = filterPeriod(chats, start, end);
+    const responded = wChats.filter(c => c.firstAnsweredAt).length;
+    const wn = getWeekNum(start);
+    weeks.push({ label: `${start.getMonth()+1}월 ${wn}주차\n${start.getMonth()+1}.${start.getDate()}-${end.getMonth()+1}.${end.getDate()}`, responded, missed: wChats.length - responded });
+  }
+
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  if (state.mainChart) state.mainChart.destroy();
+  state.mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: weeks.map(w => w.label.split('\n')),
+      datasets: [
+        { label:'응대 채팅', data: weeks.map(w => w.responded), backgroundColor:'#818cf8', borderRadius: 4 },
+        { label:'미응대 채팅', data: weeks.map(w => w.missed), backgroundColor:'#e2e8f0', borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ── 담당자별 테이블 ─────────────────────────────────────────────
+function renderManagerTable(cur, prev, managers) {
+  const grouped = groupBy(cur, c => c.assigneeId || '미배정');
+  const prevGrouped = groupBy(prev, c => c.assigneeId || '미배정');
+
+  const rows = Object.entries(grouped).map(([id, chats]) => {
+    const prevChats = prevGrouped[id] || [];
+    const k = calcKPIs(chats), kp = calcKPIs(prevChats);
+    return { name: managers[id] || id, k, kp, total: chats.length };
+  }).sort((a,b) => b.total - a.total);
+
+  const thead = `<thead><tr>
+    <th>담당자</th><th>총 응대 수</th><th>처리 완료</th><th>불만 비율</th><th>첫 응대</th><th>응답 시간</th><th>처리 시간</th><th>만족도</th><th>비율</th>
+  </tr></thead>`;
+
+  const totalRows = cur.length || 1;
+  const tbody = '<tbody>' + rows.map(r => {
+    const d1 = fmtDelta(r.k.responded, r.kp.responded, true);
+    const d2 = fmtDeltaPct(r.k.closedRate, r.kp.closedRate, true);
+    const d3 = fmtDeltaPct(r.k.complaintRate, r.kp.complaintRate, false);
+    const d4 = fmtDelta(r.k.avgFirstReply, r.kp.avgFirstReply, false, true);
+    const d5 = fmtDelta(r.k.avgReplyTime, r.kp.avgReplyTime, false, true);
+    const d6 = fmtDelta(r.k.avgHandling, r.kp.avgHandling, false, true);
+    const d7 = fmtDelta(r.k.avgSatisfaction, r.kp.avgSatisfaction, true);
+    return `<tr>
+      <td>${r.name}</td>
+      <td><div class="td-main">${r.k.responded}건</div><div class="td-delta ${d1.cls}">${d1.text}</div></td>
+      <td><div class="td-main">${r.k.closedRate.toFixed(1)}%</div><div class="td-delta ${d2.cls}">${d2.text}</div></td>
+      <td><div class="td-main">${r.k.complaintRate.toFixed(1)}%</div><div class="td-delta ${d3.cls}">${d3.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.k.avgFirstReply)}</div><div class="td-delta ${d4.cls}">${d4.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.k.avgReplyTime)}</div><div class="td-delta ${d5.cls}">${d5.text}</div></td>
+      <td><div class="td-main">${fmtSec(r.k.avgHandling)}</div><div class="td-delta ${d6.cls}">${d6.text}</div></td>
+      <td><div class="td-main">${r.k.avgSatisfaction ? r.k.avgSatisfaction.toFixed(2)+'점' : '-'}</div><div class="td-delta ${d7.cls}">${d7.text}</div></td>
+      <td>${(r.total / totalRows * 100).toFixed(0)}%</td>
+    </tr>`;
+  }).join('') + '</tbody>';
+
+  document.getElementById('manager-table').innerHTML = thead + tbody;
+}
+
+// ── 태그별 테이블 ─────────────────────────────────────────────
+function renderTagTable(cur, prev) {
+  const grouped = groupBy(cur, c => c.tags || '태그 없음');
+  const prevGrouped = groupBy(prev, c => c.tags || '태그 없음');
+
+  const rows = Object.entries(grouped).map(([tag, chats]) => {
+    const prevChats = prevGrouped[tag] || [];
+    const k = calcKPIs(chats), kp = calcKPIs(prevChats);
+    return { tag, k, kp, total: chats.length };
+  }).sort((a,b) => b.total - a.total);
+
+  const thead = `<thead><tr>
+    <th>상담 태그</th><th>총 문의</th><th>처리 완료</th><th>불만 비율</th><th>첫 응대</th><th>처리 시간</th><th>만족도</th><th>비율</th>
+  </tr></thead>`;
+
+  const totalRows = cur.length || 1;
+  const tbody = '<tbody>' + rows.map(r => {
+    const d1 = fmtDelta(r.k.total, r.kp.total, false);
+    const d2 = fmtDeltaPct(r.k.closedRate, r.kp.closedRate, true);
+    const d4 = fmtDelta(r.k.avgFirstReply, r.kp.avgFirstReply, false, true);
+    const d6 = fmtDelta(r.k.avgHandling, r.kp.avgHandling, false, true);
+    const d7 = fmtDelta(r.k.avgSatisfaction, r.kp.avgSatisfaction, true);
+    return `<tr>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.tag}">${r.tag}</td>
+      <td><div class="td-main">${r.k.total}건</div><div class="td-delta ${d1.cls}">${d1.text}</div></td>
+      <td><div class="td-main">${r.k.closedRate.toFixed(1)}%</div><div class="td-delta ${d2.cls}">${d2.text}</div></td>
+      <td>${r.k.complaintRate.toFixed(1)}%</td>
+      <td>${fmtSec(r.k.avgFirstReply)}</td>
+      <td>${fmtSec(r.k.avgHandling)}</td>
+      <td>${r.k.avgSatisfaction ? r.k.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
+      <td>${(r.total / totalRows * 100).toFixed(0)}%</td>
+    </tr>`;
+  }).join('') + '</tbody>';
+
+  document.getElementById('tag-table').innerHTML = thead + tbody;
+}
+
+// ── VOC 분석 뷰 ─────────────────────────────────────────────
+function renderVOCView(cur, prev) {
+  // 카테고리 집계 (태그의 첫 부분 = 카테고리)
+  const catMap = {};
+  cur.forEach(c => {
+    const tag = c.tags || '기타';
+    const cat = tag.split('/')[0] || '기타';
+    catMap[cat] = (catMap[cat] || 0) + 1;
+  });
+  const sorted = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+  const maxVal = sorted[0]?.[1] || 1;
+
+  document.getElementById('voc-category-chart').innerHTML = sorted.map(([cat, cnt]) => `
+    <div class="tag-bar">
+      <span class="tag-name">${cat}</span>
+      <div class="tag-bar-bg"><div class="tag-bar-fill" style="width:${cnt/maxVal*100}%"></div></div>
+      <span class="tag-count">${cnt}건</span>
+    </div>
+  `).join('');
+
+  // 태그 상세 테이블
+  renderTagTable(cur, prev);
+  document.getElementById('voc-tag-table').innerHTML = document.getElementById('tag-table').innerHTML;
+}
+
+// ── 불량 VOC 뷰 ─────────────────────────────────────────────
+function renderDefectiveView(cur, prev) {
+  const defCur = cur.filter(c => {
+    const t = c.tags || '';
+    return DEFECTIVE_TAGS.some(dt => t.includes('불량')) || c['profile.defective'];
+  });
+  const defPrev = prev.filter(c => {
+    const t = c.tags || '';
+    return DEFECTIVE_TAGS.some(dt => t.includes('불량')) || c['profile.defective'];
+  });
+
+  const kc = calcKPIs(defCur), kp = calcKPIs(defPrev);
+
+  // 불량 KPI
+  document.getElementById('defective-kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">총 불량 문의</div>
+      <div class="kpi-value">${defCur.length}건</div>
+      <div class="kpi-delta ${fmtDelta(defCur.length, defPrev.length, false).cls}">${fmtDelta(defCur.length, defPrev.length, false).text}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">전체 대비 불량 비율</div>
+      <div class="kpi-value">${cur.length ? (defCur.length/cur.length*100).toFixed(1)+'%' : '-'}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">평균 처리 시간</div>
+      <div class="kpi-value">${fmtSec(kc.avgHandling)}</div>
+      <div class="kpi-delta ${fmtDelta(kc.avgHandling, kp.avgHandling, false, true).cls}">${fmtDelta(kc.avgHandling, kp.avgHandling, false, true).text}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">평균 만족도</div>
+      <div class="kpi-value">${kc.avgSatisfaction ? kc.avgSatisfaction.toFixed(2)+'점' : '-'}</div>
+    </div>
+  `;
+
+  // 불량 유형별 테이블
+  const grouped = groupBy(defCur, c => c.tags || '태그 없음');
+  const rows = Object.entries(grouped).map(([tag, chats]) => ({
+    tag, count: chats.length, k: calcKPIs(chats)
+  })).sort((a,b) => b.count - a.count);
+
+  const totalDef = defCur.length || 1;
+  const thead = `<thead><tr><th>불량 유형</th><th>건수</th><th>비율</th><th>처리 완료</th><th>평균 처리 시간</th><th>평균 만족도</th></tr></thead>`;
+  const tbody = '<tbody>' + rows.map(r => `<tr>
+    <td>${r.tag}</td>
+    <td>${r.count}건</td>
+    <td>${(r.count/totalDef*100).toFixed(1)}%</td>
+    <td>${r.k.closedRate.toFixed(1)}%</td>
+    <td>${fmtSec(r.k.avgHandling)}</td>
+    <td>${r.k.avgSatisfaction ? r.k.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
+  </tr>`).join('') + '</tbody>';
+  document.getElementById('defective-table').innerHTML = thead + tbody;
+}
+
+// ── 유틸 ─────────────────────────────────────────────────
+function groupBy(arr, fn) {
+  const map = {};
+  arr.forEach(item => { const key = fn(item); if (!map[key]) map[key] = []; map[key].push(item); });
+  return map;
+}
+
+// ── 시작 ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

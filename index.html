@@ -1113,9 +1113,9 @@ tbody td:first-child {
         </div>
 
         <!-- 뷰 영역 -->
-        <div id="rpt-view-area" style="flex:1;overflow:hidden;position:relative;">
+        <div id="rpt-view-area" style="flex:1;min-height:0;position:relative;">
           <!-- 상담 테이블 뷰 -->
-          <div id="rpt-view-table" style="height:100%;overflow:auto;padding:0;">
+          <div id="rpt-view-table" style="overflow:auto;padding:0;">
             <div id="rpt-table-toolbar" style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;">
               <span id="rpt-total-count" style="font-size:13px;font-weight:600;color:#1e293b;"></span>
               <input id="rpt-search" type="text" placeholder="검색..." oninput="rptApplySearch()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;width:180px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
@@ -1149,7 +1149,7 @@ tbody td:first-child {
           </div>
 
           <!-- 상담 통계 뷰 -->
-          <div id="rpt-view-stats" style="display:none;height:100%;overflow:auto;padding:20px;">
+          <div id="rpt-view-stats" style="display:none;overflow:visible;padding:20px;">
             <!-- 비교기간 -->
             <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
               <div id="rpt-compare-label" style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:4px 10px;"></div>
@@ -2549,8 +2549,28 @@ function saveAIKey() {
 /* ━━━━━ Gemini API ━━━━━ */
 async function callGemini(prompt) {
   if (!store.geminiKey) { openAISettings(); throw new Error('API 키가 설정되지 않았습니다'); }
-  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+store.geminiKey, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3, maxOutputTokens:2048}})});
-  if (!res.ok) {const e=await res.json().catch(()=>({}));throw new Error(res.status===400?'API 키가 유효하지 않습니다.':'Gemini 오류: '+(e?.error?.message||res.status));}
+  // Try gemini-2.0-flash first, fallback to gemini-1.5-flash-latest
+  const models = ['gemini-2.0-flash','gemini-1.5-flash-latest','gemini-1.5-flash-002'];
+  let res, lastErr;
+  for (const model of models) {
+    try {
+      res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+store.geminiKey, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3, maxOutputTokens:2048}})});
+      if (res.ok) break;
+      const errData = await res.clone().json().catch(()=>({}));
+      const errMsg = errData?.error?.message || '';
+      // 모델 미지원이면 다음 모델로
+      if (errMsg.includes('not found') || errMsg.includes('not supported')) continue;
+      // 그 외 에러 (키 오류 등)
+      lastErr = errMsg || ('HTTP '+res.status);
+      break;
+    } catch(e) { lastErr = e.message; continue; }
+  }
+  if (!res || !res.ok) {
+    const errData = res ? await res.json().catch(()=>({})) : {};
+    const msg = errData?.error?.message || lastErr || 'Unknown error';
+    if (msg.includes('API_KEY_INVALID') || msg.includes('INVALID_ARGUMENT')) throw new Error('API 키가 유효하지 않습니다. 좌측 하단 AI 설정에서 키를 다시 입력하세요.');
+    throw new Error('Gemini 오류: ' + msg);
+  }
   const d = await res.json();
   return d.candidates?.[0]?.content?.parts?.[0]?.text || '응답 없음';
 }
@@ -2658,6 +2678,7 @@ const reportState = {
   sortDir: 'desc',
   detailRow: null,
   statsCharts: {},
+  dynamicFilters: {},     // 사용자 선택 필터: {status, complaint, manager, tagCat, product}
 };
 
 function getReportPeriodDates() {
@@ -2679,19 +2700,84 @@ function getReportPeriodDates() {
 
 function applyReportFilters(chats) {
   const report = REPORTS.find(r => r.id === reportState.activeId);
-  if (!report) return chats;
-  const f = report.filters;
   let result = chats;
-  if (f.complaint) result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] <= 2);
-  if (f.tagCats)   result = result.filter(c => { const cat=(c.tags||'').split('/')[0]; return f.tagCats.some(fc=>cat.includes(fc)); });
-  if (f.hasTags)   result = result.filter(c => c.tags);
-  if (f.hasAssignee) result = result.filter(c => c.assigneeId);
-  if (f.hasCsat)   result = result.filter(c => c['profile.csat'] != null);
+
+  // 리포트 기본 필터 (프리셋)
+  if (report) {
+    const f = report.filters;
+    if (f.complaint) result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] <= 2);
+    if (f.tagCats)   result = result.filter(c => { const cat=(c.tags||'').split('/')[0]; return f.tagCats.some(fc=>cat.includes(fc)); });
+    if (f.hasTags)   result = result.filter(c => c.tags);
+    if (f.hasAssignee) result = result.filter(c => c.assigneeId);
+    if (f.hasCsat)   result = result.filter(c => c['profile.csat'] != null);
+  }
+
+  // 동적 필터 (사용자 선택)
+  const df = reportState.dynamicFilters || {};
+  if (df.status)    result = result.filter(c => c.state === df.status);
+  if (df.complaint === 'yes') result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] <= 2);
+  if (df.complaint === 'no')  result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] > 2);
+  if (df.manager)   result = result.filter(c => (store.managers[c.assigneeId]||c.assigneeId) === df.manager);
+  if (df.tagCat)    result = result.filter(c => (c.tags||'').split('/')[0] === df.tagCat);
+  if (df.product)   result = result.filter(c => (c['profile.product']||'') === df.product);
+
+  // 검색어 필터
   if (reportState.searchQuery) {
     const q = reportState.searchQuery.toLowerCase();
-    result = result.filter(c => (c.tags||'').toLowerCase().includes(q) || (store.managers[c.assigneeId]||'').toLowerCase().includes(q));
+    result = result.filter(c => (c.tags||'').toLowerCase().includes(q) ||
+      (store.managers[c.assigneeId]||'').toLowerCase().includes(q) ||
+      (c.name||'').toLowerCase().includes(q));
   }
   return result;
+}
+
+/* 필터 칩 UI 생성 */
+function buildReportFilterUI() {
+  const bar = document.getElementById('rpt-filter-chips');
+  if (!bar) return;
+  const allChats = Object.values(store.chatData).flat();
+  const df = reportState.dynamicFilters || {};
+
+  // 동적 옵션 추출
+  const managers = [...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
+  const tagCats  = [...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
+  const products = [...new Set(allChats.map(c=>c['profile.product']).filter(Boolean))].sort().slice(0,30);
+
+  const sel = (id, label, opts, val) =>
+    `<select id="${id}" onchange="setDynamicFilter('${id}',this.value)"
+      style="padding:4px 8px;border:1px solid ${val?'#6366f1':'#e2e8f0'};border-radius:6px;font-size:11px;color:${val?'#4f46e5':'#64748b'};background:${val?'#eff0fe':'#fff'};cursor:pointer;outline:none;">
+      <option value="">${label}</option>
+      ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+    </select>`;
+
+  bar.innerHTML =
+    sel('status', '상담 상태', ['closed','initial'].map(v=>v==='closed'?'종료됨':'진행중'), df.status ? (df.status==='closed'?'종료됨':'진행중') : '') +
+    `<select id="complaint" onchange="setDynamicFilter('complaint',this.value)"
+      style="padding:4px 8px;border:1px solid ${df.complaint?'#6366f1':'#e2e8f0'};border-radius:6px;font-size:11px;color:${df.complaint?'#4f46e5':'#64748b'};background:${df.complaint?'#eff0fe':'#fff'};cursor:pointer;outline:none;">
+      <option value="">불만 여부</option>
+      <option value="yes" ${df.complaint==='yes'?'selected':''}>😡 불만 (1~2점)</option>
+      <option value="no"  ${df.complaint==='no'?'selected':''}>😊 만족 (3~5점)</option>
+    </select>` +
+    sel('manager', '담당자', managers, df.manager) +
+    sel('tagCat', '태그 카테고리', tagCats, df.tagCat) +
+    (products.length ? sel('product', '제품명', products, df.product) : '') +
+    (Object.keys(df).some(k=>df[k]) ?
+      `<button onclick="clearAllFilters()" style="padding:4px 10px;border:1px solid #fecaca;background:#fef2f2;border-radius:6px;font-size:11px;color:#ef4444;cursor:pointer;">✕ 초기화</button>` : '');
+}
+
+function setDynamicFilter(key, rawVal) {
+  if (!reportState.dynamicFilters) reportState.dynamicFilters = {};
+  // status 셀렉트는 한글→영문 변환
+  let val = rawVal;
+  if (key === 'status') { val = rawVal === '종료됨' ? 'closed' : rawVal === '진행중' ? 'initial' : rawVal; }
+  if (!val) delete reportState.dynamicFilters[key];
+  else reportState.dynamicFilters[key] = val;
+  if (reportState.activeId) renderReportContent();
+}
+
+function clearAllFilters() {
+  reportState.dynamicFilters = {};
+  if (reportState.activeId) renderReportContent();
 }
 
 function getReportChats() {
@@ -2742,6 +2828,10 @@ function selectReport(id) {
 function renderReportContent() {
   const report = REPORTS.find(r => r.id === reportState.activeId);
   if (!report) return;
+
+  // 필터 UI 먼저 빌드
+  buildReportFilterUI();
+
   const cur  = getReportChats();
   const prev = getPrevReportChats();
   const {start, end} = getReportPeriodDates();
@@ -3059,73 +3149,72 @@ function renderStatCharts(chats) {
 function renderChangeDetection(cur, prev) {
   const el = document.getElementById('rpt-change-detect');
   if (!el) return;
-  const curMap={},prevMap={};
-  cur.forEach(c=>{const t=c.tags||'기타';curMap[t]=(curMap[t]||0)+1;});
-  prev.forEach(c=>{const t=c.tags||'기타';prevMap[t]=(prevMap[t]||0)+1;});
-  const changes = Object.entries(curMap).filter(([t,n])=>{const p=prevMap[t]||0;return p>0&&Math.abs(n-p)/p>0.5;}).map(([t,n])=>({tag:t,cur:n,prev:prevMap[t],delta:n-prevMap[t],pct:((n-prevMap[t])/prevMap[t]*100).toFixed(0)})).sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct));
+  const curMap={}, prevMap={};
+  cur.forEach(c=>{const t=c.tags||'기타'; curMap[t]=(curMap[t]||0)+1;});
+  prev.forEach(c=>{const t=c.tags||'기타'; prevMap[t]=(prevMap[t]||0)+1;});
+  const changes = Object.entries(curMap).filter(([t,n])=>{
+    const p=prevMap[t]||0; return p>0 && Math.abs(n-p)/p>0.5;
+  }).map(([t,n])=>({tag:t,cur:n,prev:prevMap[t],delta:n-prevMap[t],pct:((n-prevMap[t])/prevMap[t]*100).toFixed(0)}))
+    .sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct));
   const surge = changes.filter(c=>c.delta>0).slice(0,3);
   const drop  = changes.filter(c=>c.delta<0).slice(0,3);
-  if (!surge.length && !drop.length) { el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:600;margin-bottom:8px;">🔍 변화 감지 대시보드</div><div style="color:#94a3b8;font-size:13px;padding:20px 0;text-align:center;">특별한 변화가 관찰되지 않았어요</div></div>'; return; }
-  const mkRow = c => '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155;">'+escHtml(c.tag)+'</span><span style="font-size:11px;font-weight:600;color:'+(c.delta>0?'#ef4444':'#10b981')+'">'+(c.delta>0?'↑+':'↓')+c.delta+'건 ('+c.pct+'%)</span><span style="font-size:10px;color:#94a3b8;">'+c.prev+'→'+c.cur+'건</span></div>';
-  el.innerHTML = '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
-    '<div style="font-size:13px;font-weight:600;margin-bottom:12px;">🔍 변화 감지 대시보드</div>' +
-    (surge.length?'<div style="font-size:11px;font-weight:600;color:#ef4444;margin-bottom:6px;">📈 급증 VOC</div>'+surge.map(mkRow).join(''):'') +
-    (drop.length?'<div style="font-size:11px;font-weight:600;color:#10b981;margin:'+(surge.length?'10px':'0')+'px 0 6px;">📉 급감 VOC</div>'+drop.map(mkRow).join(''):'') +
-  '</div>';
-}
-
-/* ━━━━━ 탭 전환 ━━━━━ */
-function switchMainTab(tab) {
-  ['dashboard','chart','report','research'].forEach(t=>{
-    const btn=document.getElementById('tab-'+t);
-    if(btn) btn.classList.toggle('active',t===tab);
-  });
-  const sidebarList = document.getElementById('sidebar-list');
-  const reportList  = document.getElementById('report-sidebar-list');
-  if (sidebarList) sidebarList.style.display = tab==='dashboard' ? '' : 'none';
-  if (reportList)  reportList.style.display  = tab==='report'    ? '' : 'none';
-  if (tab==='dashboard') { renderDashboard(store.activeDash||'통합-채팅'); return; }
-  if (tab==='chart')    { showOnlyView('view-chart-extra'); renderChartExtra(); return; }
-  if (tab==='report')   {
-    showOnlyView('view-report');
-    renderReportList();
-    if (!reportState.activeId && REPORTS.length) selectReport(REPORTS[0].id);
-    else if (reportState.activeId) renderReportContent();
+  if (!surge.length && !drop.length) {
+    el.innerHTML='<div style="color:#94a3b8;font-size:13px;padding:20px 0;text-align:center;">특별한 변화가 관찰되지 않았어요</div>';
     return;
   }
-  if (tab==='research') { showOnlyView('view-research'); renderResearchChart(); return; }
+  const mkRow = c => '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155;">'+escHtml(c.tag)+'</span><span style="font-size:11px;font-weight:600;color:'+(c.delta>0?'#ef4444':'#10b981')+'">'+(c.delta>0?'↑+':'↓')+c.delta+'건 ('+c.pct+'%)</span><span style="font-size:10px;color:#94a3b8;">'+c.prev+'→'+c.cur+'건</span></div>';
+  el.innerHTML =
+    (surge.length?'<div style="font-size:11px;font-weight:600;color:#ef4444;margin-bottom:6px;">📈 급증 VOC</div>'+surge.map(mkRow).join(''):'') +
+    (drop.length?'<div style="font-size:11px;font-weight:600;color:#10b981;margin:'+(surge.length?'10px':'0')+'px 0 6px;">📉 급감 VOC</div>'+drop.map(mkRow).join(''):'');
 }
 
-function showOnlyView(id) {
-  ['view-chat','view-phone','view-all','view-voc','view-defect','view-chart-extra','view-report','view-research'].forEach(v=>{
-    const el=document.getElementById(v); if(el) el.style.display='none';
-  });
-  document.getElementById('dashboard-content').style.display='';
-  document.getElementById('empty-state').style.display='none';
-  const t=document.getElementById(id);
-  if(t) t.style.display = (id === 'view-report') ? 'flex' : '';
+/* ━━━ 리포트 탭 추가 핸들러 ━━━ */
+function rptBack() { renderReportList(); }
+function rptDownload() { downloadReportExcel(); }
+function rptRefreshData() { if (reportState.activeId) renderReportContent(); }
+function rptAITag() {
+  reportState.viewMode = 'stats';
+  renderReportContent();
+  setTimeout(() => rptRunAIAnalysis('pattern'), 300);
 }
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   앱 시작
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/* ━━━ HTML onclick 호환 함수들 ━━━ */
-function rptSwitchSubTab(tab) {
-  reportState.viewMode = tab;
-  if (reportState.activeId) renderReportContent();
+function rptResearch() {
+  reportState.viewMode = 'stats';
+  renderReportContent();
+  setTimeout(() => rptRunAIAnalysis('pattern'), 300);
 }
-function rptSetPeriod(p) { setReportPeriod(p); }
-function rptApplySearch() {
-  reportState.searchQuery = (document.getElementById('rpt-search')||{}).value||'';
-  if (reportState.activeId) renderReportTable(getReportChats());
-}
+function rptAddFilter() { alert('필터는 상단 드롭다운을 사용하세요.'); }
 function rptNewReport() { createNewReport(); }
 function rptCloseDetail() {
   const p = document.getElementById('rpt-detail-panel');
   if(p) p.style.display='none';
 }
 function searchReportTable() { rptApplySearch(); }
+
+async function rptRunAIAnalysis(type) {
+  if (!store.geminiKey) { openAISettings(); return; }
+  const outputEl = document.getElementById('rpt-ai-output');
+  if (!outputEl) return;
+  outputEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:#6366f1;padding:12px 0;font-size:12px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;"></span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;"></span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;"></span>&nbsp;분석 중...</div>';
+  document.getElementById('rpt-ai-section')?.scrollIntoView({behavior:'smooth', block:'start'});
+  try {
+    const cur = getReportChats();
+    const tagMap = {};
+    cur.forEach(c => { const t=c.tags||'기타'; tagMap[t]=(tagMap[t]||0)+1; });
+    const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const kc = calcKPIs(cur);
+    let prompt;
+    if (type === 'pattern') {
+      const hcTags = Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
+      prompt = 'CX 데이터 분석가입니다. 이 리포트 데이터에서 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
+    } else {
+      prompt = '이커머스 CX 개선 컨설턴트입니다.\n\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%\n주요 문의:\n'+top10.slice(0,5).map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
+    }
+    const result = await callGemini(prompt);
+    outputEl.innerHTML = '<div style="font-size:12px;line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  } catch(e) {
+    outputEl.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:12px;color:#dc2626;font-size:12px;">⚠️ '+e.message+'</div>';
+  }
+}
 
 /* App start */
 document.getElementById('tab-dashboard').onclick = () => switchMainTab('dashboard');

@@ -1452,6 +1452,67 @@ tbody td:first-child {
     </div>
   </div>
 </div>
+<!-- report-create-modal -->
+<div id="report-create-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeReportCreationModal()">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">&#x1F4CB; 새 리포트 만들기</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:20px;">필터 조건을 설정하고 리포트 이름을 지정하세요</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">리포트 이름 *</label>
+        <input id="rpt-create-name" type="text" placeholder="예: 처리자 A 상담 실적"
+          style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">브랜드</label>
+          <select id="rpt-create-brand" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체 브랜드</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">상담 상태</label>
+          <select id="rpt-create-status" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체</option>
+            <option value="closed">종료됨</option>
+            <option value="initial">진행중</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">불만 여부</label>
+          <select id="rpt-create-complaint" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체</option>
+            <option value="yes">&#x1F621; 불만 (1~2점)</option>
+            <option value="no">&#x1F60A; 만족 (3~5점)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">담당자</label>
+          <select id="rpt-create-manager" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체 담당자</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">태그 카테고리</label>
+          <select id="rpt-create-tagcat" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">제품명</label>
+          <select id="rpt-create-product" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+      <button onclick="closeReportCreationModal()" style="padding:8px 16px;border:1px solid #e2e8f0;background:#fff;border-radius:7px;cursor:pointer;font-size:13px;color:#64748b;">취소</button>
+      <button onclick="saveNewReport()" style="padding:8px 20px;background:#6366f1;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">리포트 만들기</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3228,17 +3289,11 @@ async function generateImprovement(){
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   리포트 탭 — REPORTS 상수 & 상태
+   리포트 탭 — 상태
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const REPORTS = [
-  {id:'voc-all',   name:'전체 VOC 리포트',          group:'team', desc:'전체 상담을 통합한 VOC 리포트입니다.', filters:{}},
-  {id:'complaint', name:'불만 고객/개선 요청 리포트', group:'team', desc:'불만(CSAT 1~2점)으로 분류된 VOC 리포트입니다.', filters:{complaint:true}},
-  {id:'defect',    name:'불량 VOC 리포트(통합)',     group:'team', desc:'불량 관련 VOC를 통합한 리포트입니다.', filters:{tagCats:['불량','재불량']}},
-  {id:'return-ex', name:'교환/반품 상세 리포트',     group:'team', desc:'교환 및 반품 관련 상담 리포트입니다.', filters:{tagCats:['교환','반품']}},
-  {id:'tag-voc',   name:'상담태그 기준 VOC 리포트',  group:'team', desc:'상담 태그 기준으로 분류한 리포트입니다.', filters:{hasTags:true}},
-  {id:'mgr-prod',  name:'담당자별 생산성',           group:'team', desc:'담당자별 상담 처리 현황 리포트입니다.', filters:{hasAssignee:true}},
-  {id:'csat-rep',  name:'CSAT/만족도 리포트',        group:'team', desc:'고객 만족도(CSAT) 측정 상담 리포트입니다.', filters:{hasCsat:true}},
-];
+// 사용자가 직접 생성한 리포트 목록 (세션 중 메모리에 저장)
+// 각 항목: { id, name, filters: {status, complaint, manager, tagCat, product, brand}, createdAt }
+const savedReports = [];
 
 const reportState = {
   activeId:null, viewMode:'table', period:'30d',
@@ -3263,16 +3318,7 @@ function getReportPeriodDates(){
 }
 
 function applyReportFilters(chats){
-  const report=REPORTS.find(r=>r.id===reportState.activeId);
   let result=chats;
-  if(report){
-    const f=report.filters;
-    if(f.complaint)result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2);
-    if(f.tagCats)result=result.filter(c=>{const cat=(c.tags||'').split('/')[0];return f.tagCats.some(fc=>cat.includes(fc));});
-    if(f.hasTags)result=result.filter(c=>c.tags);
-    if(f.hasAssignee)result=result.filter(c=>c.assigneeId);
-    if(f.hasCsat)result=result.filter(c=>c['profile.csat']!=null);
-  }
   const df=reportState.dynamicFilters||{};
   if(df.status)result=result.filter(c=>c.state===df.status);
   if(df.complaint==='yes')result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2);
@@ -3280,10 +3326,14 @@ function applyReportFilters(chats){
   if(df.manager)result=result.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===df.manager);
   if(df.tagCat)result=result.filter(c=>(c.tags||'').split('/')[0]===df.tagCat);
   if(df.product)result=result.filter(c=>(c['profile.product']||'')===df.product);
+  if(df.brand)result=result.filter(c=>{
+    const brands=Object.keys(store.chatData);
+    const matchBrand=brands.find(b=>(store.chatData[b]||[]).includes(c));
+    return !df.brand||matchBrand===df.brand;
+  });
   if(reportState.searchQuery){const q=reportState.searchQuery.toLowerCase();result=result.filter(c=>(c.tags||'').toLowerCase().includes(q)||(store.managers[c.assigneeId]||'').toLowerCase().includes(q)||(c.name||'').toLowerCase().includes(q));}
   return result;
 }
-
 function getReportChats(){const allChats=Object.values(store.chatData).flat();const{start,end}=getReportPeriodDates();return applyReportFilters(filterPeriod(allChats,start,end));}
 function getPrevReportChats(){const allChats=Object.values(store.chatData).flat();const{prevStart,prevEnd}=getReportPeriodDates();return applyReportFilters(filterPeriod(allChats,prevStart,prevEnd));}
 
@@ -3291,14 +3341,39 @@ function getPrevReportChats(){const allChats=Object.values(store.chatData).flat(
 function renderReportList(){
   const el=document.getElementById('rpt-team-list');
   if(!el)return;
-  el.innerHTML=REPORTS.map(r=>'<button onclick="selectReport(\''+r.id+'\')" style="width:100%;text-align:left;padding:7px 12px;border:none;background:'+(reportState.activeId===r.id?'var(--primary-light)':'none')+';cursor:pointer;font-size:12px;color:'+(reportState.activeId===r.id?'var(--primary)':'#475569')+';border-left:3px solid '+(reportState.activeId===r.id?'var(--primary)':'transparent')+';display:flex;align-items:center;gap:6px;"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="12" rx="1"/><line x1="3" y1="4" x2="9" y2="4"/><line x1="3" y1="6.5" x2="7" y2="6.5"/><line x1="3" y1="9" x2="8" y2="9"/></svg>'+r.name+'</button>').join('');
+  if(!savedReports.length){
+    el.innerHTML='<div style="padding:12px 10px;font-size:12px;color:#94a3b8;text-align:center;">' +
+      '아직 리포트가 없습니다.<br>위 버튼으로 새 리포트를 만들어보세요.</div>';
+    return;
+  }
+  el.innerHTML=savedReports.map(function(r){
+    var act=reportState.activeId===r.id;
+    var bg=act?'var(--primary-light)':'none';
+    var col=act?'var(--primary)':'#475569';
+    var brd=act?'var(--primary)':'transparent';
+    return '<div style="display:flex;align-items:center;gap:2px;padding:1px 0;">'+
+      '<button onclick="selectReport(\x27'+r.id+'\x27)" style="flex:1;text-align:left;padding:7px 10px;border:none;background:'+bg+';cursor:pointer;font-size:12px;color:'+col+';border-left:3px solid '+brd+';display:flex;align-items:center;gap:6px;">'+
+      '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="12" rx="1"/><line x1="3" y1="4" x2="9" y2="4"/><line x1="3" y1="6.5" x2="7" y2="6.5"/><line x1="3" y1="9" x2="8" y2="9"/></svg>'+
+      escHtml(r.name)+'</button>'+
+      '<button onclick="deleteReport(\x27'+r.id+'\x27)" title="삭제" style="padding:4px 6px;border:none;background:none;cursor:pointer;color:#cbd5e1;font-size:13px;flex-shrink:0;" onmouseover="this.style.color=\x27#ef4444\x27" onmouseout="this.style.color=\x27#cbd5e1\x27">✕</button>'+
+      '</div>';
+  }).join('');
+}
+function createNewReport(){
+  openReportCreationModal();
+}
+function selectReport(id){
+  const report=savedReports.find(r=>r.id===id);
+  if(!report)return;
+  reportState.activeId=id;
+  reportState.viewMode='table';
+  reportState.dynamicFilters=Object.assign({},report.filters);
+  renderReportList();
+  renderReportContent();
 }
 
-function createNewReport(){alert('새 리포트 만들기 기능은 준비 중입니다.');}
-function selectReport(id){reportState.activeId=id;reportState.viewMode='table';renderReportList();renderReportContent();}
-
 function renderReportContent(){
-  const report=REPORTS.find(r=>r.id===reportState.activeId);
+  const report=savedReports.find(r=>r.id===reportState.activeId);
   if(!report)return;
   buildReportFilterUI();
   const cur=getReportChats(),prev=getPrevReportChats();
@@ -3370,7 +3445,7 @@ function downloadReportExcel(){
     ...chats.map(c=>{const csat=c['profile.csat'];return[csat==null?'미측정':csat<=2?'불만':csat<=3?'보통':'만족',(c.tags||'').split('/')[0],c['profile.product']||'',c.tags||'',c.name||'',store.managers[c.assigneeId]||c.assigneeId||'',csat!=null?csat:'',c.createdAt||''];})];
   const ws=XLSX.utils.aoa_to_sheet(data),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'리포트');
-  const r=REPORTS.find(r=>r.id===reportState.activeId);
+  const r=savedReports.find(r=>r.id===reportState.activeId);
   XLSX.writeFile(wb,(r?r.name:'리포트')+'_'+reportState.period+'.xlsx');
 }
 
@@ -3470,6 +3545,71 @@ function renderStatCharts(chats){
     const dc2=document.getElementById('rpt-dow-chart');
     if(dc2){if(reportState.statsCharts['day'])reportState.statsCharts['day'].destroy();reportState.statsCharts['day']=new Chart(dc2.getContext('2d'),{type:'bar',data:{labels:['일','월','화','수','목','금','토'],datasets:[{data:dayDist,backgroundColor:['#f472b6','#818cf8','#818cf8','#818cf8','#818cf8','#818cf8','#60a5fa'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}
   },50);
+}
+
+function deleteReport(id){
+  const idx=savedReports.findIndex(r=>r.id===id);
+  if(idx===-1)return;
+  savedReports.splice(idx,1);
+  if(reportState.activeId===id){
+    reportState.activeId=null;
+    reportState.dynamicFilters={};
+    const content=document.getElementById('rpt-view-table');
+    const stats=document.getElementById('rpt-view-stats');
+    if(content)content.style.display='none';
+    if(stats)stats.style.display='none';
+    const titleEl=document.getElementById('rpt-title');
+    if(titleEl)titleEl.textContent='';
+    const descEl=document.getElementById('rpt-desc');
+    if(descEl)descEl.textContent='';
+  }
+  renderReportList();
+}
+
+function openReportCreationModal(){
+  const modal=document.getElementById('report-create-modal');
+  if(!modal)return;
+  const allChats=Object.values(store.chatData).flat();
+  const brands=Object.keys(store.chatData);
+  const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
+  const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
+  const products=[...new Set(allChats.map(c=>c['profile.product']).filter(Boolean))].sort().slice(0,30);
+  const fill=(id,opts)=>{
+    const el=document.getElementById(id);if(!el)return;
+    const cur=el.children[0].outerHTML;
+    el.innerHTML=cur+opts.map(o=>'<option value="'+escHtml(o)+'">'+escHtml(o)+'</option>').join('');
+  };
+  fill('rpt-create-brand',brands);
+  fill('rpt-create-manager',managers);
+  fill('rpt-create-tagcat',tagCats);
+  fill('rpt-create-product',products);
+  document.getElementById('rpt-create-name').value='';
+  modal.style.display='flex';
+  setTimeout(()=>document.getElementById('rpt-create-name').focus(),100);
+}
+
+function closeReportCreationModal(){
+  const modal=document.getElementById('report-create-modal');
+  if(modal)modal.style.display='none';
+}
+
+function saveNewReport(){
+  const name=document.getElementById('rpt-create-name')?.value?.trim();
+  if(!name){alert('리포트 이름을 입력하세요.');return;}
+  const filters={
+    brand:document.getElementById('rpt-create-brand')?.value||'',
+    status:document.getElementById('rpt-create-status')?.value||'',
+    complaint:document.getElementById('rpt-create-complaint')?.value||'',
+    manager:document.getElementById('rpt-create-manager')?.value||'',
+    tagCat:document.getElementById('rpt-create-tagcat')?.value||'',
+    product:document.getElementById('rpt-create-product')?.value||'',
+  };
+  Object.keys(filters).forEach(k=>{if(!filters[k])delete filters[k];});
+  const id='report_'+Date.now();
+  savedReports.push({id,name,filters,createdAt:new Date().toISOString()});
+  closeReportCreationModal();
+  renderReportList();
+  selectReport(id);
 }
 
 /* App start */

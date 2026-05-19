@@ -802,6 +802,36 @@ tbody td:first-child {
   color: var(--text-main);
 }
 .rpt-trend-table td:first-child { text-align: left; color: var(--text-sub); }
+
+/* ─── 리서치 프리셋 버튼 ─── */
+.research-preset-btn {
+  display:flex; flex-direction:column; gap:4px;
+  padding:14px; border:1px solid #e8eaf0; background:#fff;
+  border-radius:10px; cursor:pointer; text-align:left;
+  transition:all 0.15s; font-family:inherit;
+}
+.research-preset-btn:hover { border-color:var(--primary); background:var(--primary-light); }
+.research-preset-btn strong { font-size:12px; color:#1e293b; }
+.research-preset-btn span { font-size:11px; color:#64748b; line-height:1.4; }
+
+/* ─── 채팅 메시지 ─── */
+.chat-msg { display:flex; gap:10px; max-width:85%; }
+.chat-msg.user { align-self:flex-end; flex-direction:row-reverse; }
+.chat-bubble { padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.7; }
+.chat-bubble.ai   { background:#fff; border:1px solid #e8eaf0; color:#334155; border-radius:12px 12px 12px 2px; }
+.chat-bubble.user { background:var(--primary); color:#fff; border-radius:12px 12px 2px 12px; }
+.chat-bubble h2,.chat-bubble h3 { font-size:13px; font-weight:700; margin:10px 0 4px; color:#1e293b; }
+.chat-bubble.user h2,.chat-bubble.user h3 { color:#fff; }
+.chat-bubble ul,.chat-bubble ol { padding-left:18px; margin:4px 0; }
+.chat-bubble li { margin-bottom:3px; }
+.chat-bubble strong { font-weight:700; }
+.chat-typing { display:flex; gap:4px; align-items:center; padding:12px 14px; }
+.chat-typing span { width:7px; height:7px; border-radius:50%; background:#94a3b8; animation:ai-pulse 1.2s ease-in-out infinite; }
+.chat-typing span:nth-child(2) { animation-delay:0.2s; }
+.chat-typing span:nth-child(3) { animation-delay:0.4s; }
+
+/* ─── cp-btn (차트 기간) ─── */
+.cp-btn.active { background:var(--primary)!important; color:#fff!important; border-color:var(--primary)!important; }
 </style>
 </head>
 <body>
@@ -887,7 +917,7 @@ tbody td:first-child {
 <!-- ━━━━━━━━━━━━━━━━━━━━━━━━ 메인 영역 ━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="main">
   <!-- 툴바 -->
-  <div id="toolbar">
+  <div id="toolbar" style="position:relative;">
     <div class="toolbar-title">
       <span id="toolbar-title-text">상담 생산성 - 채팅</span>
       <span class="toolbar-sub" id="toolbar-sub-text"></span>
@@ -909,12 +939,39 @@ tbody td:first-child {
     <button class="nav-arrow" onclick="goToNow()" title="현재로" style="font-size:9px;color:#94a3b8;">●</button>
 
     <!-- 필터/옵션 -->
-    <button class="toolbar-btn">
+    <button class="toolbar-btn" onclick="toggleDashboardFilter()" id="dash-filter-btn">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
         <line x1="1" y1="3" x2="11" y2="3"/><line x1="3" y1="6" x2="9" y2="6"/><line x1="5" y1="9" x2="7" y2="9"/>
       </svg>
-      필터
+      <span id="dash-filter-label">필터</span>
     </button>
+    <!-- 필터 패널 -->
+    <div id="dash-filter-panel" style="display:none;position:absolute;top:52px;right:60px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:100;min-width:280px;">
+      <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:12px;">필터 설정</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">브랜드</div>
+          <select id="df-brand" onchange="applyDashboardFilter()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체 브랜드</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">상담 상태</div>
+          <select id="df-status" onchange="applyDashboardFilter()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체</option>
+            <option value="closed">종료됨</option>
+            <option value="initial">진행중</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:5px;">담당자</div>
+          <select id="df-manager" onchange="applyDashboardFilter()" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;">
+            <option value="">전체 담당자</option>
+          </select>
+        </div>
+        <button onclick="clearDashboardFilter()" style="padding:7px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#ef4444;font-size:12px;cursor:pointer;width:100%;">필터 초기화</button>
+      </div>
+    </div>
     <button class="toolbar-btn">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
         <circle cx="6" cy="6" r="1.5"/><circle cx="2" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/>
@@ -1062,8 +1119,54 @@ tbody td:first-child {
       </div>
 
       <!-- ─── 차트 탭 ─── -->
-      <div id="view-chart-extra" style="display:none;">
-        <!-- renderChartExtra()로 생성 -->
+      <div id="view-chart-extra" style="display:none;padding:0;flex-direction:column;">
+        <!-- ─── AI 차트 빌더 ─── -->
+        <div style="display:flex;height:100%;min-height:600px;">
+          <!-- 좌측 입력 패널 -->
+          <div style="width:280px;min-width:280px;border-right:1px solid var(--border);background:#fff;padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;">
+            <div style="font-size:15px;font-weight:700;color:#1e293b;">AI로 차트 만들기</div>
+            <div style="font-size:11px;background:#eff0fe;color:#4f46e5;padding:4px 8px;border-radius:5px;display:inline-block;font-weight:600;">BETA</div>
+            <!-- 기간 -->
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;">기간</div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                <button onclick="setChartPeriod('7d')"  id="cp-7d"  class="cp-btn active" style="padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;cursor:pointer;">7일</button>
+                <button onclick="setChartPeriod('30d')" id="cp-30d" class="cp-btn" style="padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;cursor:pointer;">30일</button>
+                <button onclick="setChartPeriod('60d')" id="cp-60d" class="cp-btn" style="padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;cursor:pointer;">60일</button>
+                <button onclick="setChartPeriod('90d')" id="cp-90d" class="cp-btn" style="padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;cursor:pointer;">90일</button>
+              </div>
+            </div>
+            <!-- 차트 내용 -->
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;">차트 내용</div>
+              <textarea id="chart-ai-input" placeholder="보고 싶은 차트를 입력하세요&#10;예) 날짜별 문의 수&#10;예) 담당자별 응대 건수 비교&#10;예) Top 10 상담 태그" style="width:100%;height:120px;padding:8px;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;resize:none;outline:none;font-family:inherit;line-height:1.5;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+            </div>
+            <!-- 추천 -->
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;">이렇게 만들 수 있어요</div>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                <button onclick="setChartPrompt('날짜별 문의 수')" style="text-align:left;padding:6px 10px;border:1px solid #e8eaf0;background:#f8fafc;border-radius:6px;font-size:11px;color:#334155;cursor:pointer;width:100%;">날짜별 문의 수</button>
+                <button onclick="setChartPrompt('날짜별 CSAT 평균 점수')" style="text-align:left;padding:6px 10px;border:1px solid #e8eaf0;background:#f8fafc;border-radius:6px;font-size:11px;color:#334155;cursor:pointer;width:100%;">날짜별 CSAT 평균 점수</button>
+                <button onclick="setChartPrompt('담당자별 응대 건수 비교')" style="text-align:left;padding:6px 10px;border:1px solid #e8eaf0;background:#f8fafc;border-radius:6px;font-size:11px;color:#334155;cursor:pointer;width:100%;">담당자별 응대 건수 비교</button>
+                <button onclick="setChartPrompt('Top 10 상담 태그')" style="text-align:left;padding:6px 10px;border:1px solid #e8eaf0;background:#f8fafc;border-radius:6px;font-size:11px;color:#334155;cursor:pointer;width:100%;">Top 10 상담 태그</button>
+                <button onclick="setChartPrompt('날짜별 불만 문의 건수 추이')" style="text-align:left;padding:6px 10px;border:1px solid #e8eaf0;background:#f8fafc;border-radius:6px;font-size:11px;color:#334155;cursor:pointer;width:100%;">날짜별 불만 문의 건수 추이</button>
+                <button onclick="setChartPrompt('담당자별 평균 첫 응대 시간')" style="text-align:left;padding:6px 10px;border:1px solid #e8eaf0;background:#f8fafc;border-radius:6px;font-size:11px;color:#334155;cursor:pointer;width:100%;">담당자별 평균 첫 응대 시간</button>
+              </div>
+            </div>
+            <button onclick="generateAIChart()" id="chart-gen-btn" style="padding:10px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%;">차트 생성하기</button>
+          </div>
+          <!-- 우측 차트 표시 영역 -->
+          <div style="flex:1;padding:20px;overflow-y:auto;background:#f8fafc;">
+            <div id="chart-ai-output" style="background:#fff;border-radius:10px;border:1px solid #e8eaf0;padding:24px;min-height:400px;display:flex;align-items:center;justify-content:center;">
+              <div style="text-align:center;color:#94a3b8;">
+                <div style="font-size:32px;margin-bottom:12px;">📊</div>
+                <div style="font-size:14px;font-weight:500;">왼쪽 패널에서 차트 내용을 입력하고</div>
+                <div style="font-size:13px;margin-top:4px;">차트 생성하기를 누르세요</div>
+              </div>
+            </div>
+            <div id="chart-ai-history" style="margin-top:16px;display:flex;flex-direction:column;gap:12px;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- ─── 리포트 탭 ─── -->
@@ -1237,36 +1340,83 @@ tbody td:first-child {
       </div>
 
       <!-- ─── 리서치 탭 ─── -->
-      <div id="view-research" style="display:none;">
-        <div class="ai-panel">
-          <div class="ai-panel-header">
-            <div>
-              <div style="font-size:15px;font-weight:700;color:#1e293b;">VOC 패턴 리서치</div>
-              <div style="font-size:11px;color:#94a3b8;margin-top:2px;">반복 VOC 패턴을 분석하고 개선 방향을 제시합니다</div>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button class="ai-gen-btn ai-gen-btn-secondary" onclick="generatePatterns()">
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><polyline points="7,4 7,7 9,9"/></svg>
-                패턴 분석
-              </button>
-              <button class="ai-gen-btn" onclick="generateImprovement()">
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg>
-                개선 제안
+      <div id="view-research" style="display:none;flex-direction:column;height:100%;">
+        <!-- ─── 리서치 AI 채팅 ─── -->
+        <div style="display:flex;height:100%;min-height:600px;">
+          <!-- 좌측: 대화 목록 + 필터 -->
+          <div style="width:220px;min-width:220px;border-right:1px solid var(--border);background:#fff;display:flex;flex-direction:column;">
+            <div style="padding:14px 12px 10px;border-bottom:1px solid var(--border);">
+              <button onclick="newResearchChat()" style="width:100%;padding:8px;background:var(--primary);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>새 대화 만들기
               </button>
             </div>
+            <!-- 기간 선택 -->
+            <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
+              <div style="font-size:10px;font-weight:600;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;">분석 기간</div>
+              <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                <button onclick="setResearchPeriod('today')" id="rp-today" class="rp-btn" style="padding:3px 8px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;font-size:10px;cursor:pointer;color:#64748b;">오늘</button>
+                <button onclick="setResearchPeriod('7d')"   id="rp-7d"   class="rp-btn" style="padding:3px 8px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;font-size:10px;cursor:pointer;color:#64748b;">7일</button>
+                <button onclick="setResearchPeriod('30d')"  id="rp-30d"  class="rp-btn active" style="padding:3px 8px;border:1px solid var(--primary);background:var(--primary-light);border-radius:5px;font-size:10px;cursor:pointer;color:var(--primary);">30일</button>
+                <button onclick="setResearchPeriod('60d')"  id="rp-60d"  class="rp-btn" style="padding:3px 8px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;font-size:10px;cursor:pointer;color:#64748b;">60일</button>
+                <button onclick="setResearchPeriod('90d')"  id="rp-90d"  class="rp-btn" style="padding:3px 8px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;font-size:10px;cursor:pointer;color:#64748b;">90일</button>
+              </div>
+            </div>
+            <!-- 대화 목록 -->
+            <div id="research-chat-list" style="flex:1;overflow-y:auto;padding:8px;">
+              <!-- newResearchChat()으로 생성 -->
+            </div>
+            <!-- 사용량 -->
+            <div style="padding:8px 12px;border-top:1px solid var(--border);font-size:10px;color:#94a3b8;text-align:center;" id="research-usage">AI 설정 필요</div>
           </div>
-
-          <!-- 태그 트렌드 차트 (AI 없이도 보임) -->
-          <div class="ai-chart-section">
-            <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px;">📊 문의 유형 트렌드 (최근 4주)</div>
-            <div style="height:220px;position:relative;"><canvas id="research-trend-chart"></canvas></div>
-          </div>
-
-          <!-- AI 분석 결과 -->
-          <div id="research-output" class="ai-output" style="min-height:200px;">
-            <div class="ai-placeholder">
-              <div style="font-size:28px;">🔍</div>
-              <p><strong>패턴 분석</strong>으로 반복 VOC를, <strong>개선 제안</strong>으로 액션 플랜을 받아보세요</p>
+          <!-- 우측: 채팅 영역 -->
+          <div style="flex:1;display:flex;flex-direction:column;background:#f8fafc;">
+            <!-- 채팅 메시지 영역 -->
+            <div id="research-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;">
+              <!-- 프리셋 선택 초기 화면 -->
+              <div id="research-welcome" style="display:flex;flex-direction:column;align-items:center;padding:30px 20px;gap:16px;">
+                <div style="font-size:16px;font-weight:600;color:#1e293b;">VOC 분석을 무엇부터 시작하면 좋을까?</div>
+                <div style="font-size:13px;color:#64748b;text-align:center;">아래 작업 중 하나를 선택하시거나,<br>다른 질문을 직접 입력해주세요.</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:600px;">
+                  <button onclick="sendResearchPreset('voc-top10')" class="research-preset-btn">
+                    <span style="font-size:18px;">💡</span>
+                    <strong>VOC Top10 이슈 파악</strong>
+                    <span>선택한 기간 동안에 가장 많이 발생한 Top 10 이슈를 확인합니다</span>
+                  </button>
+                  <button onclick="sendResearchPreset('complaint')" class="research-preset-btn">
+                    <span style="font-size:18px;">😠</span>
+                    <strong>주요 불만 VOC 분석하기</strong>
+                    <span>불만족 VOC를 집중 분석하여 서비스 만족도 개선을 위한 액션 아이템을 찾습니다</span>
+                  </button>
+                  <button onclick="sendResearchPreset('new-update')" class="research-preset-btn">
+                    <span style="font-size:18px;">🔥</span>
+                    <strong>신규 업데이트 반응 확인</strong>
+                    <span>신규 업데이트 혹은 주요 기능에 대한 VOC를 확인합니다</span>
+                  </button>
+                  <button onclick="sendResearchPreset('specific-issue')" class="research-preset-btn">
+                    <span style="font-size:18px;">🔍</span>
+                    <strong>특정 불편 사용자 파악</strong>
+                    <span>특정 불편을 겪고 있는 사용자의 상황을 파악하고 보고서를 작성합니다</span>
+                  </button>
+                  <button onclick="sendResearchPreset('visualize')" class="research-preset-btn">
+                    <span style="font-size:18px;">📊</span>
+                    <strong>시각화하기</strong>
+                    <span>VOC를 기반으로 막대·원형·파이 차트 등 차트를 그립니다</span>
+                  </button>
+                  <button onclick="sendResearchPreset('free')" class="research-preset-btn">
+                    <span style="font-size:18px;">💬</span>
+                    <strong>자유롭게 질문하기</strong>
+                    <span>자유롭게 질문하고 답변을 받습니다</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- 입력 영역 -->
+            <div style="padding:12px 16px;background:#fff;border-top:1px solid var(--border);">
+              <div style="display:flex;gap:8px;align-items:flex-end;">
+                <textarea id="research-input" rows="2" placeholder="질문을 입력하세요..." style="flex:1;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;resize:none;outline:none;font-family:inherit;line-height:1.5;max-height:120px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e2e8f0'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendResearchMessage();}"></textarea>
+                <button onclick="sendResearchMessage()" id="research-send-btn" style="padding:10px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">전송</button>
+              </div>
+              <div style="font-size:10px;color:#94a3b8;margin-top:5px;text-align:center;">Enter로 전송 · Shift+Enter로 줄바꿈</div>
             </div>
           </div>
         </div>
@@ -2475,7 +2625,46 @@ function setLoading(active, msg) {
   if (msg) document.getElementById('loading-text').textContent = msg;
 }
 
-/* switchMainTab / showOnlyView: 하단에 최신 버전으로 통합 */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   메인 탭 전환 (대시보드 / 차트 / 리포트 / 리서치)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function switchMainTab(tab) {
+  ['dashboard','chart','report','research'].forEach(t => {
+    const btn = document.getElementById('tab-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  const sidebarList  = document.getElementById('sidebar-list');
+  const reportList   = document.getElementById('report-sidebar-list');
+  if (sidebarList) sidebarList.style.display  = tab === 'dashboard' ? '' : 'none';
+  if (reportList)  reportList.style.display   = tab === 'report'    ? '' : 'none';
+  if (tab === 'dashboard') { renderDashboard(store.activeDash || '통합-채팅'); return; }
+  if (tab === 'chart')     { showOnlyView('view-chart-extra'); renderChartExtra(); return; }
+  if (tab === 'report')    {
+    showOnlyView('view-report');
+    renderReportList();
+    if (!reportState.activeId && REPORTS.length) selectReport(REPORTS[0].id);
+    else if (reportState.activeId) renderReportContent();
+    return;
+  }
+  if (tab === 'research')  { showOnlyView('view-research'); renderResearchChart(); return; }
+}
+
+function showOnlyView(id) {
+  ['view-chat','view-phone','view-all','view-voc','view-defect',
+   'view-chart-extra','view-report','view-research'].forEach(v => {
+    const el = document.getElementById(v);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('dashboard-content').style.display = '';
+  document.getElementById('empty-state').style.display = 'none';
+  const t = document.getElementById(id);
+  if (t) t.style.display = (id === 'view-report') ? 'flex' : '';
+}
+
+/* ━━━━━ HTML onclick 호환 함수들 ━━━━━ */
+function rptSwitchSubTab(tab) { reportState.viewMode = tab; if (reportState.activeId) renderReportContent(); }
+function rptSetPeriod(p)       { setReportPeriod(p); }
+function rptApplySearch()      { reportState.searchQuery = (document.getElementById('rpt-search')||{}).value||''; if (reportState.activeId) renderReportTable(getReportChats()); }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    차트 탭 — 추가 시각화
@@ -2483,668 +2672,391 @@ function setLoading(active, msg) {
 const extraCharts = {};
 
 
+/* ━━━━━ AI 차트 탭 ━━━━━ */
+let chartAIPeriod = '7d';
+let chartHistory = [];
+let chartAIChart = null;
 function renderChartExtra() {
-  const el = document.getElementById('view-chart-extra');
-  const brands = Object.keys(store.chatData);
-  if (!brands.length) {
-    el.innerHTML = '<div style="text-align:center;padding:80px;color:#94a3b8;"><div style="font-size:32px">📊</div><p>데이터를 먼저 업로드하세요</p></div>';
-    return;
-  }
-  el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">' +
-    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">브랜드별 채팅 건수</h4><div style="height:200px;position:relative;"><canvas id="ex-brand-bar"></canvas></div></div>' +
-    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">브랜드별 평균 만족도</h4><div style="height:200px;position:relative;"><canvas id="ex-csat-bar"></canvas></div></div>' +
-    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">주차별 응대율 추이</h4><div style="height:200px;position:relative;"><canvas id="ex-rate-line"></canvas></div></div>' +
-    '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">태그 카테고리 분포</h4><div style="height:200px;position:relative;"><canvas id="ex-tag-donut"></canvas></div></div>' +
-    '</div>';
-  const {start, end} = getPeriodDates();
-  const brandCounts = brands.map(b => ({b, n: filterPeriod(store.chatData[b]||[], start, end).length})).sort((a,z) => z.n - a.n);
-  dchart('ex-brand-bar', {type:'bar', data:{labels:brandCounts.map(b=>b.b), datasets:[{data:brandCounts.map(b=>b.n), backgroundColor:'#818cf8', borderRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}});
-  const csatD = brands.map(b => {const cc=filterPeriod(store.chatData[b]||[],start,end), sc=cc.map(c=>c['profile.csat']).filter(v=>v!=null); return {b, avg:sc.length?sc.reduce((a,v)=>a+v,0)/sc.length:0};}).filter(d=>d.avg>0).sort((a,z)=>z.avg-a.avg);
-  dchart('ex-csat-bar', {type:'bar', data:{labels:csatD.map(b=>b.b), datasets:[{data:csatD.map(b=>+b.avg.toFixed(2)), backgroundColor:'#34d399', borderRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:false, min:1, max:5, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}});
-  const allC = Object.values(store.chatData).flat(), wks = [];
-  for (let i=-5;i<=0;i++) {const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);const wc=filterPeriod(allC,ws2,we2);wks.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()), rate:wc.length?+(wc.filter(c=>c.firstAnsweredAt).length/wc.length*100).toFixed(1):0});}
-  dchart('ex-rate-line', {type:'line', data:{labels:wks.map(w=>w.label), datasets:[{data:wks.map(w=>w.rate), borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,0.08)', fill:true, tension:0.3, pointRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, max:100, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}, callback:v=>v+'%'}}}}});
-  const tm = {};
-  allC.filter(c=>{const d=parseDate(c.createdAt||c.managedAt);return d&&d>=start&&d<=end;}).forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
-  const top7 = Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,7);
-  const clrs = ['#818cf8','#34d399','#fb923c','#f472b6','#60a5fa','#a78bfa','#94a3b8'];
-  dchart('ex-tag-donut', {type:'doughnut', data:{labels:top7.map(t=>t[0]), datasets:[{data:top7.map(t=>t[1]), backgroundColor:clrs, borderWidth:2}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{font:{size:10}, boxWidth:12}}}}});
+  // AI 차트 탭 - HTML은 이미 index.html에 있으므로 초기화만
+  updateChartDataContext();
 }
 
-function dchart(id, cfg) {if(extraCharts[id]){extraCharts[id].destroy();}const el=document.getElementById(id);if(el)extraCharts[id]=new Chart(el.getContext('2d'),cfg);}
+function setChartPeriod(p) {
+  chartAIPeriod = p;
+  document.querySelectorAll('.cp-btn').forEach(b => {
+    const isActive = b.id === 'cp-' + p;
+    b.classList.toggle('active', isActive);
+    b.style.background = isActive ? 'var(--primary)' : '#fff';
+    b.style.color      = isActive ? '#fff' : '#64748b';
+    b.style.borderColor= isActive ? 'var(--primary)' : '#e2e8f0';
+  });
+}
+
+function setChartPrompt(text) {
+  const inp = document.getElementById('chart-ai-input');
+  if (inp) { inp.value = text; inp.focus(); }
+}
+
+function updateChartDataContext() {
+  // 현재 데이터 요약 생성 (AI에 전달할 컨텍스트)
+  const allC = Object.values(store.chatData).flat();
+  const now = new Date();
+  const days = chartAIPeriod === '7d' ? 7 : chartAIPeriod === '30d' ? 30 : chartAIPeriod === '60d' ? 60 : 90;
+  const start = new Date(now); start.setDate(now.getDate() - days); start.setHours(0,0,0,0);
+  window._chartCtxChats = filterPeriod(allC, start, now);
+}
+
+async function generateAIChart() {
+  if (!store.geminiKey) { openAISettings(); return; }
+  const inp = document.getElementById('chart-ai-input');
+  const query = inp?.value?.trim();
+  if (!query) { alert('차트 내용을 입력하세요.'); return; }
+
+  const btn = document.getElementById('chart-gen-btn');
+  btn.disabled = true; btn.textContent = '생성 중...';
+  const output = document.getElementById('chart-ai-output');
+  output.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:#6366f1;padding:40px;"><div class="spinner"></div><div style="font-size:13px;">AI가 차트를 만들고 있어요...</div></div>';
+
+  try {
+    updateChartDataContext();
+    const chats = window._chartCtxChats || [];
+    const tagMap = {};
+    chats.forEach(c => { const t=(c.tags||'기타').split('/')[0]; tagMap[t]=(tagMap[t]||0)+1; });
+    const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const managers = {};
+    chats.forEach(c => { if(!c.assigneeId) return; const n=store.managers[c.assigneeId]||c.assigneeId; managers[n]=(managers[n]||0)+1; });
+
+    // 날짜별 데이터
+    const dailyMap = {};
+    chats.forEach(c => {
+      const d = parseDate(c.createdAt||c.managedAt);
+      if (!d) return;
+      const key = (d.getMonth()+1)+'/'+(d.getDate());
+      if (!dailyMap[key]) dailyMap[key] = {count:0, complaint:0, csat:[], responded:0};
+      dailyMap[key].count++;
+      if (c['profile.csat']!=null && c['profile.csat']<=2) dailyMap[key].complaint++;
+      if (c['profile.csat']!=null) dailyMap[key].csat.push(c['profile.csat']);
+      if (c.firstAnsweredAt) dailyMap[key].responded++;
+    });
+    const dateKeys = Object.keys(dailyMap).sort();
+
+    const prompt = `당신은 데이터 시각화 전문가입니다. 아래 VOC 데이터를 분석하여 사용자가 요청한 차트를 Chart.js JSON 형식으로 만들어주세요.
+
+## 사용자 요청
+"${query}"
+
+## 분석 기간: ${chartAIPeriod}
+## 총 데이터: ${chats.length}건
+
+## 날짜별 현황 (최근 10일)
+${dateKeys.slice(-10).map(k=>`${k}: ${dailyMap[k].count}건, 불만:${dailyMap[k].complaint}건, 만족도:${dailyMap[k].csat.length?((dailyMap[k].csat.reduce((a,v)=>a+v,0)/dailyMap[k].csat.length).toFixed(1))+'점':'-'}`).join('\n')}
+
+## 태그 Top10
+${top10.map((t,i)=>`${i+1}. ${t[0]}: ${t[1]}건`).join('\n')}
+
+## 담당자별 응대
+${Object.entries(managers).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([n,c])=>`${n}: ${c}건`).join('\n')}
+
+## 응답 형식 (반드시 이 JSON만 출력, 다른 텍스트 없이)
+{
+  "title": "차트 제목",
+  "type": "bar|line|doughnut|pie",
+  "labels": [...],
+  "datasets": [{"label":"...", "data":[...], "backgroundColor":["#818cf8",...], "borderColor":["#6366f1",...]}],
+  "options": {"indexAxis":"x", "responsive":true}
+}`;
+
+    const raw = await callGemini(prompt);
+    // JSON 추출
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('차트 데이터를 생성하지 못했습니다.');
+    const config = JSON.parse(jsonMatch[0]);
+
+    // 차트 렌더링
+    output.innerHTML = '<div style="padding:16px;"><div style="font-size:14px;font-weight:600;color:#1e293b;margin-bottom:14px;">'+escHtml(config.title||query)+'</div><div style="height:350px;position:relative;"><canvas id="ai-generated-chart"></canvas></div></div>';
+
+    if (chartAIChart) { chartAIChart.destroy(); }
+    const ctx = document.getElementById('ai-generated-chart');
+    chartAIChart = new Chart(ctx.getContext('2d'), {
+      type: config.type || 'bar',
+      data: { labels: config.labels, datasets: config.datasets },
+      options: Object.assign({responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}, config.options||{})
+    });
+
+    // 히스토리에 추가
+    const histEl = document.getElementById('chart-ai-history');
+    const item = document.createElement('div');
+    item.innerHTML = '<div style="font-size:11px;color:#94a3b8;padding:8px 0;border-top:1px solid #f1f5f9;">이전 쿼리: '+escHtml(query)+'</div>';
+    if (histEl) histEl.insertBefore(item, histEl.firstChild);
+
+    inp.value = '';
+  } catch(e) {
+    output.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;color:#dc2626;font-size:13px;">⚠️ '+e.message+'</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = '차트 생성하기';
+  }
+}
+
+function dchart(id, cfg) {
+  if(extraCharts[id]) extraCharts[id].destroy();
+  const el=document.getElementById(id);
+  if(el) extraCharts[id]=new Chart(el.getContext('2d'),cfg);
+}
 
 /* ━━━━━ 리서치 트렌드 차트 ━━━━━ */
+/* ━━━━━ 리서치 AI 채팅 ━━━━━ */
+let researchPeriod = '30d';
+let researchSessions = []; // [{id, name, messages:[{role,content}]}]
+let researchCurrentId = null;
+
 function renderResearchChart() {
+  // 리서치 탭 초기화
+  if (!researchSessions.length) newResearchChat();
+  document.getElementById('research-usage').textContent = store.geminiKey ? '✓ AI 연결됨' : '좌측 하단 AI 설정 필요';
+}
+
+function setResearchPeriod(p) {
+  researchPeriod = p;
+  document.querySelectorAll('.rp-btn').forEach(b => {
+    const active = b.id === 'rp-' + p;
+    b.style.background  = active ? 'var(--primary-light)' : '#fff';
+    b.style.borderColor = active ? 'var(--primary)' : '#e2e8f0';
+    b.style.color       = active ? 'var(--primary)' : '#64748b';
+  });
+}
+
+function getResearchContext() {
   const allC = Object.values(store.chatData).flat();
-  if (!allC.length) return;
-  const {start} = getPeriodDates();
-  const tm = {};
-  allC.forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
-  const top5 = Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]);
-  const wks = [];
-  for (let i=-3;i<=0;i++) {const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);wks.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()), chats:filterPeriod(allC,ws2,we2)});}
-  const clrs5 = ['#818cf8','#34d399','#fb923c','#f472b6','#60a5fa'];
-  const ctx = document.getElementById('research-trend-chart');
-  if (!ctx) return;
-  dchart('research-trend-chart', {type:'line', data:{labels:wks.map(w=>w.label), datasets:top5.map((cat,i)=>({label:cat, data:wks.map(w=>w.chats.filter(c=>(c.tags||'기타').startsWith(cat)).length), borderColor:clrs5[i], backgroundColor:clrs5[i]+'22', fill:false, tension:0.3, pointRadius:4}))}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{font:{size:10}, boxWidth:12}}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}});
+  const now  = new Date();
+  const days = researchPeriod === 'today' ? 1 : researchPeriod === '7d' ? 7 : researchPeriod === '30d' ? 30 : researchPeriod === '60d' ? 60 : 90;
+  const start = new Date(now); start.setDate(now.getDate() - days); start.setHours(0,0,0,0);
+  const chats = filterPeriod(allC, start, now);
+  const kc = calcKPIs(chats);
+  const tagMap = {};
+  chats.forEach(c => { const t=c.tags||'기타'; tagMap[t]=(tagMap[t]||0)+1; });
+  const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  return `[VOC 데이터 컨텍스트]\n기간: ${days}일 | 총 ${chats.length}건 | 응대율: ${kc.responseRate.toFixed(1)}% | 처리완료율: ${kc.closedRate.toFixed(1)}% | 불만율: ${kc.complaintRate.toFixed(1)}% | 평균 만족도: ${kc.avgSatisfaction?kc.avgSatisfaction.toFixed(2)+'점':'없음'}\n상위 태그: ${top10.map((t,i)=>`${i+1}.${t[0]}(${t[1]}건)`).join(', ')}`;
 }
 
-/* ━━━━━ AI 설정 ━━━━━ */
-function openAISettings() {
-  const m = document.getElementById('ai-modal');
-  m.style.cssText = 'display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;';
-  const inp = document.getElementById('gemini-key-input');
-  if (store.geminiKey) inp.value = store.geminiKey;
-  setTimeout(()=>inp.focus(), 100);
-}
-function closeAISettings() { document.getElementById('ai-modal').style.display = 'none'; }
-function saveAIKey() {
-  const key = document.getElementById('gemini-key-input').value.trim();
-  if (!key) { alert('API 키를 입력하세요'); return; }
-  store.geminiKey = key;
-  document.getElementById('ai-key-status').textContent = '✓ AI 설정 완료';
-  closeAISettings();
+function newResearchChat() {
+  const id = Date.now().toString();
+  const name = '새 대화 ' + (researchSessions.length + 1);
+  researchSessions.push({ id, name, messages: [] });
+  researchCurrentId = id;
+  renderResearchChatList();
+  clearResearchMessages();
 }
 
-/* ━━━━━ Gemini API ━━━━━ */
-async function callGemini(prompt) {
-  if (!store.geminiKey) { openAISettings(); throw new Error('API 키가 설정되지 않았습니다'); }
-  // Try gemini-2.0-flash first, fallback to gemini-1.5-flash-latest
-  const models = ['gemini-2.0-flash','gemini-1.5-flash-latest','gemini-1.5-flash-002'];
-  let res, lastErr;
-  for (const model of models) {
-    try {
-      res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+store.geminiKey, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.3, maxOutputTokens:2048}})});
-      if (res.ok) break;
-      const errData = await res.clone().json().catch(()=>({}));
-      const errMsg = errData?.error?.message || '';
-      // 모델 미지원이면 다음 모델로
-      if (errMsg.includes('not found') || errMsg.includes('not supported')) continue;
-      // 그 외 에러 (키 오류 등)
-      lastErr = errMsg || ('HTTP '+res.status);
-      break;
-    } catch(e) { lastErr = e.message; continue; }
-  }
-  if (!res || !res.ok) {
-    const errData = res ? await res.json().catch(()=>({})) : {};
-    const msg = errData?.error?.message || lastErr || 'Unknown error';
-    if (msg.includes('API_KEY_INVALID') || msg.includes('INVALID_ARGUMENT')) throw new Error('API 키가 유효하지 않습니다. 좌측 하단 AI 설정에서 키를 다시 입력하세요.');
-    throw new Error('Gemini 오류: ' + msg);
-  }
-  const d = await res.json();
-  return d.candidates?.[0]?.content?.parts?.[0]?.text || '응답 없음';
-}
-function showAIThinking(id) {
-  document.getElementById(id).innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:#6366f1;font-size:13px;padding:20px;"><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span><span>AI가 분석 중입니다...</span></div>';
-}
-function renderMarkdown(md) {
-  return md
-    .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:700;color:#1e293b;margin:14px 0 6px;">$1</h3>')
-    .replace(/^## (.+)$/gm,'<h2 style="font-size:14px;font-weight:700;color:#1e293b;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;">$1</h2>')
-    .replace(/^# (.+)$/gm,'<h1 style="font-size:15px;font-weight:700;color:#1e293b;margin:16px 0 10px;">$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/^- (.+)$/gm,'<li style="margin-bottom:4px;padding-left:4px;">$1</li>')
-    .replace(/^---$/gm,'<hr style="border:none;border-top:1px solid #f1f5f9;margin:12px 0;">')
-    .replace(/\n\n/g,'<br><br>');
+function renderResearchChatList() {
+  const el = document.getElementById('research-chat-list');
+  if (!el) return;
+  el.innerHTML = researchSessions.map(s =>
+    '<button onclick="switchResearchChat(\''+s.id+'\')" style="width:100%;text-align:left;padding:8px 10px;border:none;background:'+(s.id===researchCurrentId?'var(--primary-light)':'none')+';border-radius:7px;cursor:pointer;font-size:12px;color:'+(s.id===researchCurrentId?'var(--primary)':'#475569')+';">'+escHtml(s.name)+'</button>'
+  ).join('');
 }
 
-/* ━━━━━ AI 리포트 생성 ━━━━━ */
-async function generateReport() {
-  const btn = document.getElementById('report-gen-btn');
-  if (btn) btn.disabled = true;
-  showAIThinking('report-output');
-  try {
-    const {start,end,prevStart,prevEnd} = getPeriodDates();
-    const dash = store.activeDash || '통합-채팅';
-    const brand = dash.split('-')[0];
-    const allC = brand==='통합' ? Object.values(store.chatData).flat() : (store.chatData[brand]||[]);
-    const cur = filterPeriod(allC,start,end), prev = filterPeriod(allC,prevStart,prevEnd);
-    if (!cur.length) { document.getElementById('report-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">선택 기간에 데이터가 없습니다.</div>'; return; }
-    const kc = calcKPIs(cur), kp = calcKPIs(prev);
-    const tagMap = {};
-    cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
-    const top7 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
-    const total = cur.length||1;
-    const periodStr = (start.getMonth()+1)+'/'+start.getDate()+' ~ '+(end.getMonth()+1)+'/'+end.getDate();
-    const brandLabel = brand==='통합' ? '브랜드 통합' : brand;
-    const mgrMap = {};
-    cur.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;mgrMap[n]=(mgrMap[n]||0)+1;});
-    const prompt = '당신은 CX 전문 분석가입니다. 아래 데이터를 바탕으로 한국어 주간 VOC 리포트를 마크다운으로 작성해주세요.\n\n브랜드: '+brandLabel+'  기간: '+periodStr+'\n핵심 지표:\n- 총 채팅: '+kc.totalChats+'건 (전기간: '+kp.totalChats+'건)\n- 응대율: '+kc.responseRate.toFixed(1)+'% (전: '+kp.responseRate.toFixed(1)+'%)\n- 처리완료율: '+kc.closedRate.toFixed(1)+'% (전: '+kp.closedRate.toFixed(1)+'%)\n- 평균 첫 응대: '+fmtSec(kc.avgFirstReply)+'\n- 평균 처리시간: '+fmtSec(kc.avgHandling)+'\n- 평균 만족도: '+(kc.avgSatisfaction?kc.avgSatisfaction.toFixed(2)+'점':'없음')+'\n- 불만 비율: '+kc.complaintRate.toFixed(1)+'%\n상위 문의 유형:\n'+top7.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건 ('+((t[1]/total)*100).toFixed(1)+'%)').join('\n')+'\n담당자별:\n'+Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]).map(([n,c])=>'- '+n+': '+c+'건').join('\n')+'\n\n# '+periodStr+' VOC 리포트 — '+brandLabel+'\n## 📌 이번 주 요약\n## 📈 주요 변화\n## ⚠️ 주목할 이슈\n## 💡 개선 제안 (3가지)\n## 📊 데이터 노트';
-    const result = await callGemini(prompt);
-    document.getElementById('report-output').innerHTML = '<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
-  } catch(e) {
-    document.getElementById('report-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>';
-  } finally {
-    if (btn) btn.disabled = false;
+function switchResearchChat(id) {
+  researchCurrentId = id;
+  renderResearchChatList();
+  const session = researchSessions.find(s => s.id === id);
+  clearResearchMessages();
+  if (session) {
+    const welcome = document.getElementById('research-welcome');
+    if (session.messages.length > 0) {
+      if (welcome) welcome.style.display = 'none';
+      session.messages.forEach(m => appendResearchMessage(m.role, m.content, false));
+    } else {
+      if (welcome) welcome.style.display = '';
+    }
   }
 }
 
-/* ━━━━━ 리서치 패턴 분석 ━━━━━ */
-async function generatePatterns() {
-  showAIThinking('research-output');
-  try {
-    const {start,end} = getPeriodDates();
-    const allC = Object.values(store.chatData).flat();
-    const cur = filterPeriod(allC,start,end);
-    if (!cur.length) { document.getElementById('research-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">선택 기간에 데이터가 없습니다.</div>'; return; }
-    const tagMap = {};
-    cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
-    const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const hcTags = Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
-    const prompt = 'CX 데이터 분석가입니다. 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
-    const result = await callGemini(prompt);
-    document.getElementById('research-output').innerHTML = '<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
-  } catch(e) { document.getElementById('research-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>'; }
+function clearResearchMessages() {
+  const el = document.getElementById('research-messages');
+  if (!el) return;
+  el.innerHTML = '<div id="research-welcome" style="display:flex;flex-direction:column;align-items:center;padding:30px 20px;gap:16px;"><div style="font-size:16px;font-weight:600;color:#1e293b;">VOC 분석을 무엇부터 시작하면 좋을까?</div><div style="font-size:13px;color:#64748b;text-align:center;">아래 작업 중 하나를 선택하시거나,<br>다른 질문을 직접 입력해주세요.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:600px;"><button onclick="sendResearchPreset(\'voc-top10\')" class="research-preset-btn"><span style="font-size:18px;">💡</span><strong>VOC Top10 이슈 파악</strong><span>선택한 기간 동안에 가장 많이 발생한 Top 10 이슈를 확인합니다</span></button><button onclick="sendResearchPreset(\'complaint\')" class="research-preset-btn"><span style="font-size:18px;">😠</span><strong>주요 불만 VOC 분석하기</strong><span>불만족 VOC를 집중 분석하여 서비스 만족도 개선을 위한 액션 아이템을 찾습니다</span></button><button onclick="sendResearchPreset(\'new-update\')" class="research-preset-btn"><span style="font-size:18px;">🔥</span><strong>신규 업데이트 반응 확인</strong><span>신규 업데이트 혹은 주요 기능에 대한 VOC를 확인합니다</span></button><button onclick="sendResearchPreset(\'specific-issue\')" class="research-preset-btn"><span style="font-size:18px;">🔍</span><strong>특정 불편 사용자 파악</strong><span>특정 불편을 겪고 있는 사용자의 상황을 파악하고 보고서를 작성합니다</span></button><button onclick="sendResearchPreset(\'visualize\')" class="research-preset-btn"><span style="font-size:18px;">📊</span><strong>시각화하기</strong><span>VOC를 기반으로 막대·원형·파이 차트 등 차트를 그립니다</span></button><button onclick="sendResearchPreset(\'free\')" class="research-preset-btn"><span style="font-size:18px;">💬</span><strong>자유롭게 질문하기</strong><span>자유롭게 질문하고 답변을 받습니다</span></button></div></div>';
 }
 
-async function generateImprovement() {
-  showAIThinking('research-output');
-  try {
-    const {start,end} = getPeriodDates();
-    const allC = Object.values(store.chatData).flat();
-    const cur = filterPeriod(allC,start,end);
-    const kc = calcKPIs(cur);
-    const tagMap = {};
-    cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
-    const top5 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    const prompt = '이커머스 CX 개선 컨설턴트입니다.\n\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%, 첫 응대 '+fmtSec(kc.avgFirstReply)+', 처리시간 '+fmtSec(kc.avgHandling)+', 만족도 '+(kc.avgSatisfaction?kc.avgSatisfaction.toFixed(2)+'점':'없음')+'\n주요 문의:\n'+top5.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제 (1개월)\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
-    const result = await callGemini(prompt);
-    document.getElementById('research-output').innerHTML = '<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
-  } catch(e) { document.getElementById('research-output').innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>'; }
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   리포트 탭 — 핵심 로직
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const REPORTS = [
-  {id:'voc-all',    name:'전체 VOC 리포트',          group:'team', desc:'전체 상담을 통합한 VOC 리포트입니다.', filters:{}},
-  {id:'complaint',  name:'불만 고객/개선 요청 리포트', group:'team', desc:'불만(CSAT 1~2점)으로 분류된 VOC 리포트입니다.', filters:{complaint:true}},
-  {id:'defect',     name:'불량 VOC 리포트(통합)',     group:'team', desc:'불량 관련 VOC를 통합한 리포트입니다.', filters:{tagCats:['불량','재불량']}},
-  {id:'return-ex',  name:'교환/반품 상세 리포트',     group:'team', desc:'교환 및 반품 관련 상담 리포트입니다.', filters:{tagCats:['교환','반품']}},
-  {id:'tag-voc',    name:'상담태그 기준 VOC 리포트',  group:'team', desc:'상담 태그 기준으로 분류한 리포트입니다.', filters:{hasTags:true}},
-  {id:'mgr-prod',   name:'담당자별 생산성',           group:'team', desc:'담당자별 상담 처리 현황 리포트입니다.', filters:{hasAssignee:true}},
-  {id:'csat-rep',   name:'CSAT/만족도 리포트',        group:'team', desc:'고객 만족도(CSAT) 측정 상담 리포트입니다.', filters:{hasCsat:true}},
-];
-
-const reportState = {
-  activeId: null,
-  viewMode: 'table',      // 'table' | 'stats'
-  period: '30d',
-  customStart: null,
-  customEnd: null,
-  searchQuery: '',
-  sortCol: null,
-  sortDir: 'desc',
-  detailRow: null,
-  statsCharts: {},
-  dynamicFilters: {},     // 사용자 선택 필터: {status, complaint, manager, tagCat, product}
+const RESEARCH_PRESETS = {
+  'voc-top10':     'VOC Top10 이슈를 파악해주세요. 선택한 기간 동안 가장 많이 발생한 Top 10 이슈와 각 이슈의 주요 내용, 발생 건수, 비율을 분석해주세요.',
+  'complaint':     '주요 불만 VOC를 분석해주세요. 불만족 VOC(CSAT 1~2점, 불만 태그)를 집중 분석하여 서비스 만족도 개선을 위한 구체적인 액션 아이템을 찾아주세요.',
+  'new-update':    '최근 신규 업데이트나 주요 기능에 대한 고객 반응을 VOC 데이터에서 확인해주세요. 긍정/부정 반응과 주요 피드백을 분석해주세요.',
+  'specific-issue':'특정 불편을 겪고 있는 사용자들을 파악해주세요. 반복적으로 나타나는 불편 사항과 해당 사용자 패턴을 분석하고 개선 보고서를 작성해주세요.',
+  'visualize':     'VOC 데이터를 기반으로 주요 지표를 텍스트 차트(막대형/숫자 기반)로 시각화해주세요. 태그별 분포, 기간별 트렌드, 담당자별 현황 등을 포함해주세요.',
+  'free':          ''
 };
 
-function getReportPeriodDates() {
-  const now = new Date();
-  const end = new Date(now); end.setHours(23,59,59,999);
-  let start = new Date(now);
-  const p = reportState.period;
-  if (p === 'today')  { start.setHours(0,0,0,0); }
-  else if (p === '7d')  { start.setDate(now.getDate()-6);  start.setHours(0,0,0,0); }
-  else if (p === '30d') { start.setDate(now.getDate()-29); start.setHours(0,0,0,0); }
-  else if (p === '60d') { start.setDate(now.getDate()-59); start.setHours(0,0,0,0); }
-  else if (p === '90d') { start.setDate(now.getDate()-89); start.setHours(0,0,0,0); }
-  else if (p === 'custom' && reportState.customStart) { start = new Date(reportState.customStart); }
-  const diffMs = end - start;
-  const prevEnd = new Date(start); prevEnd.setMilliseconds(-1);
-  const prevStart = new Date(prevEnd.getTime() - diffMs);
-  return {start, end, prevStart, prevEnd};
-}
-
-function applyReportFilters(chats) {
-  const report = REPORTS.find(r => r.id === reportState.activeId);
-  let result = chats;
-
-  // 리포트 기본 필터 (프리셋)
-  if (report) {
-    const f = report.filters;
-    if (f.complaint) result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] <= 2);
-    if (f.tagCats)   result = result.filter(c => { const cat=(c.tags||'').split('/')[0]; return f.tagCats.some(fc=>cat.includes(fc)); });
-    if (f.hasTags)   result = result.filter(c => c.tags);
-    if (f.hasAssignee) result = result.filter(c => c.assigneeId);
-    if (f.hasCsat)   result = result.filter(c => c['profile.csat'] != null);
-  }
-
-  // 동적 필터 (사용자 선택)
-  const df = reportState.dynamicFilters || {};
-  if (df.status)    result = result.filter(c => c.state === df.status);
-  if (df.complaint === 'yes') result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] <= 2);
-  if (df.complaint === 'no')  result = result.filter(c => c['profile.csat'] != null && c['profile.csat'] > 2);
-  if (df.manager)   result = result.filter(c => (store.managers[c.assigneeId]||c.assigneeId) === df.manager);
-  if (df.tagCat)    result = result.filter(c => (c.tags||'').split('/')[0] === df.tagCat);
-  if (df.product)   result = result.filter(c => (c['profile.product']||'') === df.product);
-
-  // 검색어 필터
-  if (reportState.searchQuery) {
-    const q = reportState.searchQuery.toLowerCase();
-    result = result.filter(c => (c.tags||'').toLowerCase().includes(q) ||
-      (store.managers[c.assigneeId]||'').toLowerCase().includes(q) ||
-      (c.name||'').toLowerCase().includes(q));
-  }
-  return result;
-}
-
-/* 필터 칩 UI 생성 */
-function buildReportFilterUI() {
-  const bar = document.getElementById('rpt-filter-chips');
-  if (!bar) return;
-  const allChats = Object.values(store.chatData).flat();
-  const df = reportState.dynamicFilters || {};
-
-  // 동적 옵션 추출
-  const managers = [...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
-  const tagCats  = [...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
-  const products = [...new Set(allChats.map(c=>c['profile.product']).filter(Boolean))].sort().slice(0,30);
-
-  const sel = (id, label, opts, val) =>
-    `<select id="${id}" onchange="setDynamicFilter('${id}',this.value)"
-      style="padding:4px 8px;border:1px solid ${val?'#6366f1':'#e2e8f0'};border-radius:6px;font-size:11px;color:${val?'#4f46e5':'#64748b'};background:${val?'#eff0fe':'#fff'};cursor:pointer;outline:none;">
-      <option value="">${label}</option>
-      ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
-    </select>`;
-
-  bar.innerHTML =
-    sel('status', '상담 상태', ['closed','initial'].map(v=>v==='closed'?'종료됨':'진행중'), df.status ? (df.status==='closed'?'종료됨':'진행중') : '') +
-    `<select id="complaint" onchange="setDynamicFilter('complaint',this.value)"
-      style="padding:4px 8px;border:1px solid ${df.complaint?'#6366f1':'#e2e8f0'};border-radius:6px;font-size:11px;color:${df.complaint?'#4f46e5':'#64748b'};background:${df.complaint?'#eff0fe':'#fff'};cursor:pointer;outline:none;">
-      <option value="">불만 여부</option>
-      <option value="yes" ${df.complaint==='yes'?'selected':''}>😡 불만 (1~2점)</option>
-      <option value="no"  ${df.complaint==='no'?'selected':''}>😊 만족 (3~5점)</option>
-    </select>` +
-    sel('manager', '담당자', managers, df.manager) +
-    sel('tagCat', '태그 카테고리', tagCats, df.tagCat) +
-    (products.length ? sel('product', '제품명', products, df.product) : '') +
-    (Object.keys(df).some(k=>df[k]) ?
-      `<button onclick="clearAllFilters()" style="padding:4px 10px;border:1px solid #fecaca;background:#fef2f2;border-radius:6px;font-size:11px;color:#ef4444;cursor:pointer;">✕ 초기화</button>` : '');
-}
-
-function setDynamicFilter(key, rawVal) {
-  if (!reportState.dynamicFilters) reportState.dynamicFilters = {};
-  // status 셀렉트는 한글→영문 변환
-  let val = rawVal;
-  if (key === 'status') { val = rawVal === '종료됨' ? 'closed' : rawVal === '진행중' ? 'initial' : rawVal; }
-  if (!val) delete reportState.dynamicFilters[key];
-  else reportState.dynamicFilters[key] = val;
-  if (reportState.activeId) renderReportContent();
-}
-
-function clearAllFilters() {
-  reportState.dynamicFilters = {};
-  if (reportState.activeId) renderReportContent();
-}
-
-function getReportChats() {
-  const allChats = Object.values(store.chatData).flat();
-  const {start, end} = getReportPeriodDates();
-  const period = filterPeriod(allChats, start, end);
-  return applyReportFilters(period);
-}
-
-function getPrevReportChats() {
-  const allChats = Object.values(store.chatData).flat();
-  const {prevStart, prevEnd} = getReportPeriodDates();
-  const period = filterPeriod(allChats, prevStart, prevEnd);
-  return applyReportFilters(period);
-}
-
-/* ━━━━━ 리포트 사이드바 렌더링 ━━━━━ */
-function renderReportList() {
-  const el = document.getElementById('rpt-team-list');
-  if (!el) return;
-  const teamReports = REPORTS.filter(r => r.group === 'team');
-  el.innerHTML =
-    '<div style="padding:10px 8px 6px;">' +
-      '<button onclick="createNewReport()" style="width:100%;display:flex;align-items:center;gap:6px;padding:7px 10px;border:1px dashed #c7d2fe;background:#fafafe;border-radius:7px;cursor:pointer;font-size:12px;color:#6366f1;">' +
-        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>' +
-        '새 리포트 만들기' +
-      '</button>' +
-    '</div>' +
-    '<div style="padding:4px 8px 2px;font-size:10px;font-weight:600;color:#94a3b8;letter-spacing:0.5px;text-transform:uppercase;">팀 스페이스</div>' +
-    teamReports.map(r =>
-      '<button onclick="selectReport(\''+r.id+'\')" style="width:100%;text-align:left;padding:7px 12px;border:none;background:'+(reportState.activeId===r.id?'var(--primary-light)':'none')+';cursor:pointer;font-size:12px;color:'+(reportState.activeId===r.id?'var(--primary)':'#475569')+';border-left:3px solid '+(reportState.activeId===r.id?'var(--primary)':'transparent')+';display:flex;align-items:center;gap:6px;">' +
-        '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="12" rx="1"/><line x1="3" y1="4" x2="9" y2="4"/><line x1="3" y1="6.5" x2="7" y2="6.5"/><line x1="3" y1="9" x2="8" y2="9"/></svg>' +
-        r.name +
-      '</button>'
-    ).join('');
-}
-
-function createNewReport() { alert('새 리포트 만들기 기능은 준비 중입니다.'); }
-
-/* ━━━━━ 리포트 선택 및 렌더링 ━━━━━ */
-function selectReport(id) {
-  reportState.activeId = id;
-  reportState.viewMode = 'table';
-  renderReportList();
-  renderReportContent();
-}
-
-function renderReportContent() {
-  const report = REPORTS.find(r => r.id === reportState.activeId);
-  if (!report) return;
-
-  // 필터 UI 먼저 빌드
-  buildReportFilterUI();
-
-  const cur  = getReportChats();
-  const prev = getPrevReportChats();
-  const {start, end} = getReportPeriodDates();
-
-  document.getElementById('rpt-title').textContent = report.name;
-  document.getElementById('rpt-desc').textContent  = report.desc;
-  document.getElementById('rpt-total-count').textContent = '총 '+cur.length+'개의 상담';
-  const fmt = d => (d.getMonth()+1)+'/'+(d.getDate());
-  const cmpEl = document.getElementById('rpt-compare-label');
-  if (cmpEl) cmpEl.textContent = '기간: '+fmt(start)+' ~ '+fmt(end);
-
-  if (reportState.viewMode === 'table') {
-    document.getElementById('rpt-subtab-table').style.fontWeight = '700';
-    document.getElementById('rpt-subtab-table').style.borderBottom = '2px solid var(--primary)';
-    document.getElementById('rpt-subtab-stats').style.fontWeight = '400';
-    document.getElementById('rpt-subtab-stats').style.borderBottom = 'none';
-    renderReportTable(cur);
-    document.getElementById('rpt-view-table').style.display = '';
-    document.getElementById('rpt-view-stats').style.display = 'none';
-  } else {
-    document.getElementById('rpt-subtab-table').style.fontWeight = '400';
-    document.getElementById('rpt-subtab-table').style.borderBottom = 'none';
-    document.getElementById('rpt-subtab-stats').style.fontWeight = '700';
-    document.getElementById('rpt-subtab-stats').style.borderBottom = '2px solid var(--primary)';
-    renderReportStats(cur, prev, start, end);
-    document.getElementById('rpt-view-table').style.display = 'none';
-    document.getElementById('rpt-view-stats').style.display = '';
-  }
-}
-
-/* ━━━━━ 기간 변경 ━━━━━ */
-function setReportPeriod(p) {
-  reportState.period = p;
-  ['today','7d','30d','60d','90d'].forEach(pp => {
-    const btn = document.getElementById('rpt-p-'+pp);
-    if (btn) { btn.classList.toggle('active', pp===p); }
-  });
-  if (reportState.activeId) renderReportContent();
-}
-
-/* ━━━━━ 상담 테이블 뷰 ━━━━━ */
-function renderReportTable(chats) {
-  const tbody = document.getElementById('rpt-table-body');
-  if (!tbody) return;
-  if (!chats.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#94a3b8;">해당 기간에 데이터가 없습니다</td></tr>';
+function sendResearchPreset(preset) {
+  const msg = RESEARCH_PRESETS[preset];
+  if (!msg && preset === 'free') {
+    const inp = document.getElementById('research-input');
+    if (inp) inp.focus();
     return;
   }
-  tbody.innerHTML = chats.slice(0,200).map(c => {
-    const csat = c['profile.csat'];
-    let csatBadge, csatBg;
-    if (csat == null)  { csatBadge = '— 미측정'; csatBg = '#f8fafc'; }
-    else if (csat <= 2){ csatBadge = '😡 불만';  csatBg = '#fef2f2'; }
-    else if (csat <= 3){ csatBadge = '😐 보통';  csatBg = '#fffbeb'; }
-    else               { csatBadge = '😊 만족';  csatBg = '#f0fdf4'; }
-    const tag  = c.tags || '—';
-    const cat  = tag.split('/')[0];
-    const prod = c['profile.product'] || '—';
-    const mgr  = store.managers[c.assigneeId] || (c.assigneeId ? c.assigneeId : '—');
-    const dt   = parseDate(c.createdAt || c.managedAt);
-    const dtStr = dt ? (dt.getMonth()+1)+'/'+(dt.getDate()) : '—';
-    return '<tr style="cursor:pointer;" onclick="showRowDetail(\''+escHtml(c.id||'')+'\')" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
-      '<td><span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:12px;background:'+csatBg+';">'+csatBadge+'</span></td>' +
-      '<td style="font-size:12px;color:#334155;">'+escHtml(cat)+'</td>' +
-      '<td style="font-size:12px;color:#334155;">'+escHtml(prod)+'</td>' +
-      '<td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</td>' +
-      '<td style="font-size:11px;color:#64748b;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</td>' +
-      '<td style="font-size:11px;color:#64748b;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</td>' +
-      '<td style="font-size:12px;">'+escHtml(c.name||'—')+'</td>' +
-      '<td style="font-size:12px;">'+escHtml(mgr)+'</td>' +
-      '<td style="font-size:11px;color:#64748b;">채널톡</td>' +
-      '<td style="font-size:11px;color:#94a3b8;">'+dtStr+'</td>' +
-    '</tr>';
-  }).join('');
-  const countEl = document.getElementById('rpt-total-count');
-  if(countEl) countEl.textContent = '총 '+chats.length+'개의 상담'+(chats.length>200?' (상위 200개 표시)':'');
+  const inp = document.getElementById('research-input');
+  if (inp) inp.value = msg;
+  sendResearchMessage();
 }
 
-function showRowDetail(id) {
-  const allC = Object.values(store.chatData).flat();
-  const row  = allC.find(c => c.id === id);
-  if (!row) return;
-  const panel = document.getElementById('rpt-detail-panel');
-  if (!panel) return;
-  const csat = row['profile.csat'];
-  const mgr  = store.managers[row.assigneeId] || row.assigneeId || '미배정';
-  const dt   = parseDate(row.createdAt || row.managedAt);
-  const panelContent = document.getElementById('rpt-detail-content');
-  if(!panelContent) return;
-  panelContent.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
-      '<div style="font-size:13px;font-weight:600;color:#1e293b;">상담 상세</div>' +
-      '<button onclick="document.getElementById(\'rpt-detail-panel\').style.display=\'none\'" style="border:none;background:none;cursor:pointer;font-size:16px;color:#94a3b8;">×</button>' +
-    '</div>' +
-    '<div style="font-size:11px;color:#64748b;line-height:2;">' +
-      '<div><b>고객명</b>: '+escHtml(row.name||'—')+'</div>' +
-      '<div><b>담당자</b>: '+escHtml(mgr)+'</div>' +
-      '<div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div>' +
-      '<div><b>제품명</b>: '+escHtml(row['profile.product']||'—')+'</div>' +
-      '<div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div>' +
-      '<div><b>상담 상태</b>: '+(row.state==='closed'?'종료됨':'진행중')+'</div>' +
-      '<div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div>' +
-      '<div><b>처리완료</b>: '+escHtml(row.closedAt||'—')+'</div>' +
-      '<div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div>' +
-      '<div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div>' +
-    '</div>';
-  panel.style.display = 'block';
-}
+function appendResearchMessage(role, content, save = true) {
+  const msgsEl = document.getElementById('research-messages');
+  if (!msgsEl) return;
+  const welcome = document.getElementById('research-welcome');
+  if (welcome) welcome.style.display = 'none';
 
-function searchReportTable() {
-  reportState.searchQuery = document.getElementById('rpt-search-input')?.value || '';
-  if (reportState.activeId) renderReportTable(getReportChats());
-}
-
-function downloadReportExcel() {
-  const chats = getReportChats();
-  if (!chats.length) return alert('데이터가 없습니다.');
-  const data = [['불만여부','대표문의유형','제품명','상담태그','고객명','담당자','만족도','인입경로','날짜'],
-    ...chats.map(c=>{
-      const csat=c['profile.csat'];
-      return [csat==null?'미측정':csat<=2?'불만':csat<=3?'보통':'만족', (c.tags||'').split('/')[0], c['profile.product']||'', c.tags||'', c.name||'', store.managers[c.assigneeId]||c.assigneeId||'', csat!=null?csat:'', '채널톡', c.createdAt||''];
-    })];
-  const ws = XLSX.utils.aoa_to_sheet(data), wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '리포트');
-  const r = REPORTS.find(r=>r.id===reportState.activeId);
-  XLSX.writeFile(wb, (r?r.name:'리포트')+'_'+reportState.period+'.xlsx');
-}
-
-/* ━━━━━ 상담 통계 뷰 ━━━━━ */
-function renderReportStats(cur, prev, start, end) {
-  renderReportSummary(cur, prev);
-  renderReportTrend(cur, start, end);
-  renderTagLeaderboard(cur, prev);
-  renderManagerLeaderboard(cur, prev);
-  renderStatCharts(cur);
-  renderChangeDetection(cur, prev);
-}
-
-function renderReportSummary(cur, prev) {
-  const kc = calcKPIs(cur), kp = calcKPIs(prev);
-  const compCount = prev.length;
-  const delta = cur.length - compCount;
-  const deltaSign = delta >= 0 ? '+' : '';
-  const deltaPct = compCount ? ((delta/compCount)*100).toFixed(0) : '—';
-  const complaint = cur.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;
-  const prevComplaint = prev.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;
-  const cd = complaint - prevComplaint;
-  const cpct = prevComplaint ? ((cd/prevComplaint)*100).toFixed(0) : '—';
-  const inbound = cur.filter(c=>c.direction==='INBOUND'||!c.direction).length;
-  const total = cur.length||1;
-  const inPct = Math.round(inbound/total*100);
-  const el = document.getElementById('rpt-summary-cards');
-  if (!el) return;
-  el.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">' +
-      '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;">' +
-        '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">전체 문의 건수 및 증감</div>' +
-        '<div style="font-size:22px;font-weight:700;color:#1e293b;">'+cur.length+'건</div>' +
-        '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">' +
-          '<span style="font-size:12px;color:'+(delta<=0?'#10b981':'#ef4444')+';">'+(delta<=0?'↓':'↑')+' '+Math.abs(delta)+'건 ('+deltaSign+deltaPct+'%)</span>' +
-        '</div>' +
-        '<div style="font-size:11px;color:#94a3b8;margin-top:6px;">현재: '+cur.length+'건 / 비교: '+compCount+'건</div>' +
-      '</div>' +
-      '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;">' +
-        '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">불만 건수 및 증감</div>' +
-        '<div style="font-size:22px;font-weight:700;color:#ef4444;">'+complaint+'건</div>' +
-        '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">' +
-          '<span style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+(cd>=0?'+':'')+cpct+'%)</span>' +
-        '</div>' +
-        '<div style="font-size:11px;color:#94a3b8;margin-top:6px;">현재: '+complaint+'건 / 비교: '+prevComplaint+'건</div>' +
-      '</div>' +
-      '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;">' +
-        '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">인바운드 / 아웃바운드</div>' +
-        '<canvas id="rpt-inbound-chart" height="80"></canvas>' +
-        '<div style="display:flex;gap:12px;margin-top:8px;font-size:11px;">' +
-          '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#818cf8;margin-right:3px;"></span>인바운드 '+inPct+'%</span>' +
-          '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e2e8f0;margin-right:3px;"></span>아웃바운드 '+(100-inPct)+'%</span>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  setTimeout(()=>{
-    const ctx = document.getElementById('rpt-inbound-chart');
-    if (ctx) {
-      if (reportState.statsCharts['inbound']) reportState.statsCharts['inbound'].destroy();
-      reportState.statsCharts['inbound'] = new Chart(ctx.getContext('2d'), {
-        type:'doughnut', data:{labels:['인바운드','아웃바운드'], datasets:[{data:[inPct,100-inPct], backgroundColor:['#818cf8','#e2e8f0'], borderWidth:2}]},
-        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}
-      });
-    }
-  }, 50);
-}
-
-function renderReportTrend(chats, start, end) {
-  const el = document.getElementById('rpt-trend');
-  if (!el) return;
-  const days = Math.round((end-start)/(1000*60*60*24));
-  const interval = days <= 7 ? 'day' : 'week';
-  const buckets = [];
-  if (interval === 'day') {
-    for (let i=0;i<=days;i++) {const d=new Date(start);d.setDate(start.getDate()+i);const e=new Date(d);e.setHours(23,59,59,999);const dc=filterPeriod(chats,d,e);buckets.push({label:(d.getMonth()+1)+'/'+(d.getDate()), count:dc.length, complaint:dc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}
-  } else {
-    const totalWks = Math.ceil(days/7);
-    for (let i=0;i<totalWks;i++) {const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);const wc=filterPeriod(chats,ws2,we2);buckets.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()),count:wc.length,complaint:wc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}
-  }
-  // write to pre-existing HTML elements
-  const trendTable = document.getElementById('rpt-trend-table');
-  if(trendTable) trendTable.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#f8fafc;"><th style="padding:6px 10px;text-align:left;color:#64748b;">기간</th><th style="padding:6px 10px;text-align:right;color:#64748b;">문의수</th><th style="padding:6px 10px;text-align:right;color:#64748b;">불만수</th><th style="padding:6px 10px;text-align:right;color:#64748b;">불만율</th></tr></thead><tbody>'+buckets.map(b=>'<tr><td style="padding:5px 10px;">'+b.label+'</td><td style="padding:5px 10px;text-align:right;">'+b.count+'건</td><td style="padding:5px 10px;text-align:right;color:#ef4444;">'+b.complaint+'건</td><td style="padding:5px 10px;text-align:right;color:#94a3b8;">'+(b.count?((b.complaint/b.count*100).toFixed(1)+'%'):'—')+'</td></tr>').join('')+'</tbody></table></div>';
-  setTimeout(()=>{
-    const ctx = document.getElementById('rpt-trend-chart');
-    if (ctx) {
-      if (reportState.statsCharts['trend']) reportState.statsCharts['trend'].destroy();
-      reportState.statsCharts['trend'] = new Chart(ctx.getContext('2d'), {
-        type:'line', data:{labels:buckets.map(b=>b.label), datasets:[{label:'문의수', data:buckets.map(b=>b.count), borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,0.08)', fill:true, tension:0.3, pointRadius:3},{label:'불만수', data:buckets.map(b=>b.complaint), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.05)', fill:true, tension:0.3, pointRadius:3}]},
-        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{font:{size:10}, boxWidth:10}}}, scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{beginAtZero:true, grid:{color:'#f1f5f9'}, ticks:{font:{size:10}}}}}
-      });
-    }
-  }, 50);
-}
-
-function renderTagLeaderboard(cur, prev) {
-  const el = document.getElementById('rpt-tag-leaderboard');
-  if (!el) return;
-  const tagMap = {}, prevMap = {};
-  cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
-  prev.forEach(c=>{const t=c.tags||'태그없음';prevMap[t]=(prevMap[t]||0)+1;});
-  const sorted = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
-  const maxVal = sorted[0]?.[1] || 1;
-  const total  = cur.length || 1;
-  const rows = sorted.slice(0,8).map(([tag,cnt],i) => {
-    const pCnt = prevMap[tag]||0;
-    const delta = cnt - pCnt;
-    const dStr = pCnt ? ((delta>=0?'+':'')+((delta/pCnt*100).toFixed(0))+'%') : (delta>0?'신규':'—');
-    const dColor = delta > 0 ? '#ef4444' : delta < 0 ? '#10b981' : '#94a3b8';
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
-      '<span style="font-size:11px;font-weight:600;color:#94a3b8;min-width:20px;text-align:right;">'+(i+1)+'</span>' +
-      '<span style="font-size:11px;color:#334155;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</span>' +
-      '<div style="flex:1;background:#f1f5f9;border-radius:4px;height:12px;overflow:hidden;"><div style="height:100%;background:#818cf8;border-radius:4px;width:'+Math.round(cnt/maxVal*100)+'%;"></div></div>' +
-      '<span style="font-size:11px;font-weight:600;color:#1e293b;min-width:32px;text-align:right;">'+cnt+'</span>' +
-      '<span style="font-size:10px;color:'+dColor+';min-width:36px;text-align:right;">'+dStr+'</span>' +
-    '</div>';
-  }).join('');
-  el.innerHTML = '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
-      '<div style="font-size:13px;font-weight:600;">🏆 태그별 리더보드</div>' +
-      '<span style="font-size:11px;color:#94a3b8;">총 '+sorted.length+'개 태그</span>' +
-    '</div>' +
-    rows +
-    (sorted.length > 8 ? '<button onclick="toggleTagBoard(this)" style="width:100%;padding:6px;border:1px solid #e2e8f0;background:none;border-radius:6px;cursor:pointer;font-size:12px;color:#64748b;margin-top:4px;">더보기 ('+sorted.slice(8).length+'개)</button>' : '') +
-  '</div>';
-}
-
-function toggleTagBoard(btn) {
-  const cur = getReportChats(), prev = getPrevReportChats();
-  const tagMap={},prevMap={};
-  cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
-  prev.forEach(c=>{const t=c.tags||'태그없음';prevMap[t]=(prevMap[t]||0)+1;});
-  const all = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
-  const maxVal=all[0]?.[1]||1;
-  const container = btn.parentElement.querySelector('.extra-tags');
-  if (container) { container.remove(); btn.textContent='더보기 ('+all.slice(8).length+'개)'; return; }
   const div = document.createElement('div');
-  div.className = 'extra-tags';
-  div.innerHTML = all.slice(8).map(([tag,cnt],i)=>{
-    const pCnt=prevMap[tag]||0,delta=cnt-pCnt;
-    const dStr=pCnt?((delta>=0?'+':'')+((delta/pCnt*100).toFixed(0))+'%'):(delta>0?'신규':'—');
-    const dColor=delta>0?'#ef4444':delta<0?'#10b981':'#94a3b8';
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:11px;font-weight:600;color:#94a3b8;min-width:20px;text-align:right;">'+(i+9)+'</span><span style="font-size:11px;color:#334155;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(tag)+'</span><div style="flex:1;background:#f1f5f9;border-radius:4px;height:12px;overflow:hidden;"><div style="height:100%;background:#818cf8;border-radius:4px;width:'+Math.round(cnt/maxVal*100)+'%;"></div></div><span style="font-size:11px;font-weight:600;color:#1e293b;min-width:32px;text-align:right;">'+cnt+'</span><span style="font-size:10px;color:'+dColor+';min-width:36px;text-align:right;">'+dStr+'</span></div>';
-  }).join('');
-  btn.before(div);
-  btn.textContent = '접기';
+  div.className = 'chat-msg ' + (role === 'user' ? 'user' : '');
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble ' + (role === 'user' ? 'user' : 'ai');
+  if (role === 'user') {
+    bubble.textContent = content;
+  } else {
+    bubble.innerHTML = renderMarkdown(content);
+  }
+  div.appendChild(bubble);
+  msgsEl.appendChild(div);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+
+  if (save && researchCurrentId) {
+    const session = researchSessions.find(s => s.id === researchCurrentId);
+    if (session) {
+      session.messages.push({ role, content });
+      if (session.messages.length === 1 && role === 'user') {
+        session.name = content.slice(0, 20) + (content.length > 20 ? '...' : '');
+        renderResearchChatList();
+      }
+    }
+  }
 }
 
-function renderManagerLeaderboard(cur, prev) {
-  const el = document.getElementById('rpt-manager-leaderboard');
-  if (!el) return;
-  const mgrMap={},prevMap={};
-  cur.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;mgrMap[n]=(mgrMap[n]||0)+1;});
-  prev.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;prevMap[n]=(prevMap[n]||0)+1;});
-  const sorted = Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]);
-  if (!sorted.length) { el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;"><div style="font-size:13px;font-weight:600;margin-bottom:12px;">😊 담당자별 리더보드</div><p style="color:#94a3b8;font-size:12px;">담당자 데이터가 없습니다</p></div>'; return; }
-  const rows = sorted.slice(0,8).map(([name,cnt],i)=>{
-    const items=cur.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===name);
-    const kc=calcKPIs(items);
-    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
-    return '<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 10px;font-size:12px;text-align:center;">'+medal+'</td><td style="padding:8px 10px;font-size:12px;font-weight:500;color:#1e293b;">'+escHtml(name)+'</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+cnt+'건</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+kc.closedRate.toFixed(0)+'%</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+(kc.avgSatisfaction?kc.avgSatisfaction.toFixed(1)+'점':'—')+'</td></tr>';
-  }).join('');
-  el.innerHTML = '<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;margin-bottom:14px;">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div style="font-size:13px;font-weight:600;">😊 담당자별 리더보드</div><span style="font-size:11px;color:#94a3b8;">'+sorted.length+'명</span></div>' +
-    '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f8fafc;"><th style="padding:7px 10px;text-align:center;color:#64748b;font-weight:600;">순위</th><th style="padding:7px 10px;text-align:left;color:#64748b;font-weight:600;">담당자명</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">응대수</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">처리완료율</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">평균만족도</th></tr></thead><tbody>'+rows+'</tbody></table>' +
-    (sorted.length>8 ? '<button onclick="this.style.display=\'none\'" style="width:100%;padding:6px;border:1px solid #e2e8f0;background:none;border-radius:6px;cursor:pointer;font-size:12px;color:#64748b;margin-top:4px;">더보기</button>' : '') +
-  '</div>';
+function showResearchTyping() {
+  const msgsEl = document.getElementById('research-messages');
+  if (!msgsEl) return null;
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.id = 'research-typing';
+  div.innerHTML = '<div class="chat-bubble ai"><div class="chat-typing"><span></span><span></span><span></span></div></div>';
+  msgsEl.appendChild(div);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  return div;
 }
 
-function renderStatCharts(chats) {
-  // canvas IDs match the HTML directly: rpt-csat-chart, rpt-tag-donut, rpt-hour-chart, rpt-dow-chart
-  const csatDist = [0,0,0,0,0];
-  chats.forEach(c=>{const v=c['profile.csat'];if(v!=null&&v>=1&&v<=5)csatDist[Math.round(v)-1]++;});
-  const hourDist = new Array(24).fill(0);
-  chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)hourDist[d.getHours()]++;});
-  const dayDist = new Array(7).fill(0);
-  chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)dayDist[d.getDay()]++;});
-  // tag donut
-  const tm={};chats.filter(c=>{const d=parseDate(c.createdAt||c.managedAt);return d;}).forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
-  const top7d=Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,7),clrsD=['#818cf8','#34d399','#fb923c','#f472b6','#60a5fa','#a78bfa','#94a3b8'];
-  setTimeout(()=>{
-    const cc=document.getElementById('rpt-csat-chart');
-    if(cc){if(reportState.statsCharts['csat'])reportState.statsCharts['csat'].destroy();reportState.statsCharts['csat']=new Chart(cc.getContext('2d'),{type:'bar',data:{labels:['1점','2점','3점','4점','5점'],datasets:[{data:csatDist,backgroundColor:['#ef4444','#f97316','#eab308','#84cc16','#22c55e'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10},stepSize:1}}}}});}
-    const hc=document.getElementById('rpt-hour-chart');
-    if(hc){if(reportState.statsCharts['hour'])reportState.statsCharts['hour'].destroy();reportState.statsCharts['hour']=new Chart(hc.getContext('2d'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+'시'),datasets:[{data:hourDist,backgroundColor:'#818cf8',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}
-    const dc2=document.getElementById('rpt-dow-chart');
-    if(dc2){if(reportState.statsCharts['day'])reportState.statsCharts['day'].destroy();reportState.statsCharts['day']=new Chart(dc2.getContext('2d'),{type:'bar',data:{labels:['일','월','화','수','목','금','토'],datasets:[{data:dayDist,backgroundColor:['#f472b6','#818cf8','#818cf8','#818cf8','#818cf8','#818cf8','#60a5fa'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}
-  },50);
+async function sendResearchMessage() {
+  if (!store.geminiKey) { openAISettings(); return; }
+  const inp = document.getElementById('research-input');
+  const msg = inp?.value?.trim();
+  if (!msg) return;
+  inp.value = '';
+
+  const sendBtn = document.getElementById('research-send-btn');
+  if (sendBtn) sendBtn.disabled = true;
+
+  appendResearchMessage('user', msg);
+  const typingEl = showResearchTyping();
+
+  try {
+    const ctx = getResearchContext();
+    // 이전 대화 히스토리 포함
+    const session = researchSessions.find(s => s.id === researchCurrentId);
+    const history = session ? session.messages.slice(-6).map(m => `${m.role === 'user' ? '사용자' : 'AI'}: ${m.content.slice(0,200)}`).join('\n') : '';
+
+    const prompt = `당신은 CX(고객경험) 데이터 분석 전문가입니다. VOC 데이터를 분석하여 실용적인 인사이트를 제공합니다.
+
+${ctx}
+
+${history ? '이전 대화:\n' + history + '\n' : ''}
+사용자 질문: ${msg}
+
+한국어로 답변해주세요. 마크다운 형식으로 구조화하여 답변하되, 구체적인 수치와 실행 가능한 인사이트를 포함해주세요.`;
+
+    const result = await callGemini(prompt);
+    if (typingEl) typingEl.remove();
+    appendResearchMessage('assistant', result);
+  } catch(e) {
+    if (typingEl) typingEl.remove();
+    appendResearchMessage('assistant', '⚠️ ' + e.message);
+  } finally {
+    if (sendBtn) sendBtn.disabled = false;
+  }
 }
+
+/* ━━━━━ 대시보드 필터 ━━━━━ */
+let dashboardFilters = { brand: '', status: '', manager: '' };
+let filterPanelOpen = false;
+
+function toggleDashboardFilter() {
+  const panel = document.getElementById('dash-filter-panel');
+  if (!panel) return;
+  filterPanelOpen = !filterPanelOpen;
+  panel.style.display = filterPanelOpen ? '' : 'none';
+  if (filterPanelOpen) populateDashboardFilterOptions();
+  updateFilterLabel();
+}
+
+function populateDashboardFilterOptions() {
+  // 브랜드 옵션
+  const brandSel = document.getElementById('df-brand');
+  if (brandSel) {
+    const brands = Object.keys(store.chatData);
+    brandSel.innerHTML = '<option value="">전체 브랜드</option>' +
+      brands.map(b => '<option value="'+escHtml(b)+'" '+(dashboardFilters.brand===b?'selected':'')+'>'+escHtml(b)+'</option>').join('');
+  }
+  // 담당자 옵션
+  const mgrSel = document.getElementById('df-manager');
+  if (mgrSel) {
+    const allC = Object.values(store.chatData).flat();
+    const mgrs = [...new Set(allC.map(c => store.managers[c.assigneeId]).filter(Boolean))].sort();
+    mgrSel.innerHTML = '<option value="">전체 담당자</option>' +
+      mgrs.map(m => '<option value="'+escHtml(m)+'" '+(dashboardFilters.manager===m?'selected':'')+'>'+escHtml(m)+'</option>').join('');
+  }
+  // 상태 복원
+  const statusSel = document.getElementById('df-status');
+  if (statusSel) statusSel.value = dashboardFilters.status || '';
+}
+
+function applyDashboardFilter() {
+  dashboardFilters.brand   = document.getElementById('df-brand')?.value || '';
+  dashboardFilters.status  = document.getElementById('df-status')?.value || '';
+  dashboardFilters.manager = document.getElementById('df-manager')?.value || '';
+  updateFilterLabel();
+  renderDashboard(currentDashboardId);
+}
+
+function clearDashboardFilter() {
+  dashboardFilters = { brand: '', status: '', manager: '' };
+  populateDashboardFilterOptions();
+  updateFilterLabel();
+  renderDashboard(currentDashboardId);
+}
+
+function updateFilterLabel() {
+  const active = Object.values(dashboardFilters).filter(Boolean).length;
+  const el = document.getElementById('dash-filter-label');
+  if (el) el.textContent = active ? '필터 보기 ('+active+')' : '필터';
+  const btn = document.getElementById('dash-filter-btn');
+  if (btn) btn.style.color = active ? 'var(--primary)' : '';
+}
+
+// getAllChatData에 필터 적용
+const _origGetAllChatData = getAllChatData;
+function getAllChatData() {
+  let chats = Object.values(store.chatData).flat();
+  if (dashboardFilters.brand)   chats = Object.entries(store.chatData)
+    .filter(([b]) => b === dashboardFilters.brand).flatMap(([,c]) => c);
+  if (dashboardFilters.status)  chats = chats.filter(c => c.state === dashboardFilters.status);
+  if (dashboardFilters.manager) chats = chats.filter(c => (store.managers[c.assigneeId]||c.assigneeId) === dashboardFilters.manager);
+  return chats;
+}
+
+// 외부 클릭 시 패널 닫기
+document.addEventListener('click', e => {
+  const panel = document.getElementById('dash-filter-panel');
+  const btn   = document.getElementById('dash-filter-btn');
+  if (filterPanelOpen && panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+    filterPanelOpen = false;
+    panel.style.display = 'none';
+  }
+});
 
 function renderChangeDetection(cur, prev) {
   const el = document.getElementById('rpt-change-detect');
@@ -3153,67 +3065,411 @@ function renderChangeDetection(cur, prev) {
   cur.forEach(c=>{const t=c.tags||'기타'; curMap[t]=(curMap[t]||0)+1;});
   prev.forEach(c=>{const t=c.tags||'기타'; prevMap[t]=(prevMap[t]||0)+1;});
   const changes = Object.entries(curMap).filter(([t,n])=>{
-    const p=prevMap[t]||0; return p>0 && Math.abs(n-p)/p>0.5;
+    const p=prevMap[t]||0; return p>0&&Math.abs(n-p)/p>0.5;
   }).map(([t,n])=>({tag:t,cur:n,prev:prevMap[t],delta:n-prevMap[t],pct:((n-prevMap[t])/prevMap[t]*100).toFixed(0)}))
     .sort((a,b)=>Math.abs(b.pct)-Math.abs(a.pct));
-  const surge = changes.filter(c=>c.delta>0).slice(0,3);
-  const drop  = changes.filter(c=>c.delta<0).slice(0,3);
-  if (!surge.length && !drop.length) {
-    el.innerHTML='<div style="color:#94a3b8;font-size:13px;padding:20px 0;text-align:center;">특별한 변화가 관찰되지 않았어요</div>';
-    return;
-  }
-  const mkRow = c => '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155;">'+escHtml(c.tag)+'</span><span style="font-size:11px;font-weight:600;color:'+(c.delta>0?'#ef4444':'#10b981')+'">'+(c.delta>0?'↑+':'↓')+c.delta+'건 ('+c.pct+'%)</span><span style="font-size:10px;color:#94a3b8;">'+c.prev+'→'+c.cur+'건</span></div>';
-  el.innerHTML =
-    (surge.length?'<div style="font-size:11px;font-weight:600;color:#ef4444;margin-bottom:6px;">📈 급증 VOC</div>'+surge.map(mkRow).join(''):'') +
-    (drop.length?'<div style="font-size:11px;font-weight:600;color:#10b981;margin:'+(surge.length?'10px':'0')+'px 0 6px;">📉 급감 VOC</div>'+drop.map(mkRow).join(''):'');
+  const surge=changes.filter(c=>c.delta>0).slice(0,3);
+  const drop=changes.filter(c=>c.delta<0).slice(0,3);
+  if(!surge.length&&!drop.length){el.innerHTML='<div style="color:#94a3b8;font-size:13px;padding:20px 0;text-align:center;">특별한 변화가 관찰되지 않았어요</div>';return;}
+  const mkRow=c=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155;">'+escHtml(c.tag)+'</span><span style="font-size:11px;font-weight:600;color:'+(c.delta>0?'#ef4444':'#10b981')+'">'+(c.delta>0?'↑+':'↓')+c.delta+'건 ('+c.pct+'%)</span><span style="font-size:10px;color:#94a3b8;">'+c.prev+'→'+c.cur+'건</span></div>';
+  el.innerHTML=(surge.length?'<div style="font-size:11px;font-weight:600;color:#ef4444;margin-bottom:6px;">📈 급증 VOC</div>'+surge.map(mkRow).join(''):'')+(drop.length?'<div style="font-size:11px;font-weight:600;color:#10b981;margin:8px 0 6px;">📉 급감 VOC</div>'+drop.map(mkRow).join(''):'');
 }
 
-/* ━━━ 리포트 탭 추가 핸들러 ━━━ */
-function rptBack() { renderReportList(); }
-function rptDownload() { downloadReportExcel(); }
-function rptRefreshData() { if (reportState.activeId) renderReportContent(); }
-function rptAITag() {
-  reportState.viewMode = 'stats';
-  renderReportContent();
-  setTimeout(() => rptRunAIAnalysis('pattern'), 300);
+/* ━━━ 필터 UI ━━━ */
+function buildReportFilterUI() {
+  const bar=document.getElementById('rpt-filter-chips');
+  if(!bar)return;
+  const allChats=Object.values(store.chatData).flat();
+  const df=reportState.dynamicFilters||{};
+  const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
+  const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
+  const products=[...new Set(allChats.map(c=>c['profile.product']).filter(Boolean))].sort().slice(0,30);
+  const sel=(id,label,opts,val)=>'<select id="'+id+'" onchange="setDynamicFilter(\''+id+'\',this.value)" style="padding:4px 8px;border:1px solid '+(val?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(val?'#4f46e5':'#64748b')+';background:'+(val?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">'+label+'</option>'+opts.map(o=>'<option value="'+escHtml(o)+'" '+(val===o?'selected':'')+'>'+escHtml(o)+'</option>').join('')+'</select>';
+  bar.innerHTML=
+    '<select id="status" onchange="setDynamicFilter(\'status\',this.value)" style="padding:4px 8px;border:1px solid '+(df.status?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(df.status?'#4f46e5':'#64748b')+';background:'+(df.status?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">상담 상태</option><option value="closed" '+(df.status==='closed'?'selected':'')+'>종료됨</option><option value="initial" '+(df.status==='initial'?'selected':'')+'>진행중</option></select>'+
+    '<select id="complaint" onchange="setDynamicFilter(\'complaint\',this.value)" style="padding:4px 8px;border:1px solid '+(df.complaint?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(df.complaint?'#4f46e5':'#64748b')+';background:'+(df.complaint?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">불만 여부</option><option value="yes" '+(df.complaint==='yes'?'selected':'')+'>😡 불만 (1~2점)</option><option value="no" '+(df.complaint==='no'?'selected':'')+'>😊 만족 (3~5점)</option></select>'+
+    sel('manager','담당자',managers,df.manager)+
+    sel('tagCat','태그 카테고리',tagCats,df.tagCat)+
+    (products.length?sel('product','제품명',products,df.product):'')+
+    (Object.keys(df).some(k=>df[k])?'<button onclick="clearAllFilters()" style="padding:4px 10px;border:1px solid #fecaca;background:#fef2f2;border-radius:6px;font-size:11px;color:#ef4444;cursor:pointer;">✕ 초기화</button>':'');
 }
-function rptResearch() {
-  reportState.viewMode = 'stats';
-  renderReportContent();
-  setTimeout(() => rptRunAIAnalysis('pattern'), 300);
-}
-function rptAddFilter() { alert('필터는 상단 드롭다운을 사용하세요.'); }
-function rptNewReport() { createNewReport(); }
-function rptCloseDetail() {
-  const p = document.getElementById('rpt-detail-panel');
-  if(p) p.style.display='none';
-}
-function searchReportTable() { rptApplySearch(); }
 
-async function rptRunAIAnalysis(type) {
-  if (!store.geminiKey) { openAISettings(); return; }
-  const outputEl = document.getElementById('rpt-ai-output');
-  if (!outputEl) return;
-  outputEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:#6366f1;padding:12px 0;font-size:12px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;"></span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;"></span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;"></span>&nbsp;분석 중...</div>';
-  document.getElementById('rpt-ai-section')?.scrollIntoView({behavior:'smooth', block:'start'});
-  try {
-    const cur = getReportChats();
-    const tagMap = {};
-    cur.forEach(c => { const t=c.tags||'기타'; tagMap[t]=(tagMap[t]||0)+1; });
-    const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const kc = calcKPIs(cur);
+function setDynamicFilter(key,rawVal){
+  if(!reportState.dynamicFilters)reportState.dynamicFilters={};
+  let val=rawVal;
+  if(key==='status'){val=rawVal==='종료됨'?'closed':rawVal==='진행중'?'initial':rawVal;}
+  if(!val)delete reportState.dynamicFilters[key];
+  else reportState.dynamicFilters[key]=val;
+  if(reportState.activeId)renderReportContent();
+}
+
+function clearAllFilters(){reportState.dynamicFilters={};if(reportState.activeId)renderReportContent();}
+
+/* ━━━ 리포트 탭 핸들러 ━━━ */
+function rptBack(){renderReportList();}
+function rptDownload(){downloadReportExcel();}
+function rptRefreshData(){if(reportState.activeId)renderReportContent();}
+function rptAITag(){reportState.viewMode='stats';renderReportContent();setTimeout(()=>rptRunAIAnalysis('pattern'),300);}
+function rptResearch(){reportState.viewMode='stats';renderReportContent();setTimeout(()=>rptRunAIAnalysis('pattern'),300);}
+function rptAddFilter(){alert('필터는 상단 드롭다운을 사용하세요.');}
+function rptNewReport(){createNewReport();}
+function rptCloseDetail(){const p=document.getElementById('rpt-detail-panel');if(p)p.style.display='none';}
+function searchReportTable(){rptApplySearch();}
+
+async function rptRunAIAnalysis(type){
+  if(!store.geminiKey){openAISettings();return;}
+  const outputEl=document.getElementById('rpt-ai-output');
+  if(!outputEl)return;
+  outputEl.innerHTML='<div style="display:flex;align-items:center;gap:8px;color:#6366f1;padding:12px 0;font-size:12px;"><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span>&nbsp;분석 중...</div>';
+  document.getElementById('rpt-ai-section')?.scrollIntoView({behavior:'smooth',block:'start'});
+  try{
+    const cur=getReportChats();
+    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
+    const top10=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const kc=calcKPIs(cur);
     let prompt;
-    if (type === 'pattern') {
-      const hcTags = Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
-      prompt = 'CX 데이터 분석가입니다. 이 리포트 데이터에서 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
-    } else {
-      prompt = '이커머스 CX 개선 컨설턴트입니다.\n\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%\n주요 문의:\n'+top10.slice(0,5).map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
+    if(type==='pattern'){
+      const hcTags=Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
+      prompt='CX 데이터 분석가입니다. 이 리포트 데이터에서 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
+    }else{
+      prompt='이커머스 CX 개선 컨설턴트입니다.\n\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%\n주요 문의:\n'+top10.slice(0,5).map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
     }
-    const result = await callGemini(prompt);
-    outputEl.innerHTML = '<div style="font-size:12px;line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
-  } catch(e) {
-    outputEl.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:12px;color:#dc2626;font-size:12px;">⚠️ '+e.message+'</div>';
+    const result=await callGemini(prompt);
+    outputEl.innerHTML='<div style="font-size:12px;line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  }catch(e){
+    outputEl.innerHTML='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:12px;color:#dc2626;font-size:12px;">⚠️ '+e.message+'</div>';
   }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Gemini API
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+async function callGemini(prompt) {
+  if (!store.geminiKey) { openAISettings(); throw new Error('API 키가 설정되지 않았습니다'); }
+  const models = ['gemini-2.0-flash','gemini-1.5-flash-latest','gemini-1.5-flash-002'];
+  let res, lastErr;
+  for (const model of models) {
+    try {
+      res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+store.geminiKey,
+        {method:'POST',headers:{'Content-Type':'application/json'},
+         body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:2048}})});
+      if (res.ok) break;
+      const ed = await res.clone().json().catch(()=>({}));
+      const em = ed?.error?.message||'';
+      if (em.includes('not found')||em.includes('not supported')) continue;
+      lastErr = em||('HTTP '+res.status); break;
+    } catch(e) { lastErr=e.message; continue; }
+  }
+  if (!res||!res.ok) {
+    const ed=res?await res.json().catch(()=>({})):{};
+    const msg=ed?.error?.message||lastErr||'Unknown error';
+    if (msg.includes('API_KEY_INVALID')||msg.includes('INVALID_ARGUMENT')) throw new Error('API 키가 유효하지 않습니다. 좌측 하단 AI 설정에서 키를 다시 입력하세요.');
+    throw new Error('Gemini 오류: '+msg);
+  }
+  const d=await res.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'응답 없음';
+}
+
+function showAIThinking(id){document.getElementById(id).innerHTML='<div style="display:flex;align-items:center;gap:8px;color:#6366f1;font-size:13px;padding:20px;"><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span><span>AI가 분석 중입니다...</span></div>';}
+
+function renderMarkdown(md){return md.replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:700;color:#1e293b;margin:12px 0 5px;">$1</h3>').replace(/^## (.+)$/gm,'<h2 style="font-size:14px;font-weight:700;color:#1e293b;margin:14px 0 7px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;">$1</h2>').replace(/^# (.+)$/gm,'<h1 style="font-size:15px;font-weight:700;color:#1e293b;margin:16px 0 8px;">$1</h1>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/^- (.+)$/gm,'<li style="margin-bottom:4px;padding-left:4px;">$1</li>').replace(/^---$/gm,'<hr style="border:none;border-top:1px solid #f1f5f9;margin:12px 0;">').replace(/\n\n/g,'<br><br>');}
+
+function openAISettings(){const m=document.getElementById('ai-modal');m.style.cssText='display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;';const inp=document.getElementById('gemini-key-input');if(store.geminiKey)inp.value=store.geminiKey;setTimeout(()=>inp.focus(),100);}
+function closeAISettings(){document.getElementById('ai-modal').style.display='none';}
+function saveAIKey(){const key=document.getElementById('gemini-key-input').value.trim();if(!key){alert('API 키를 입력하세요');return;}store.geminiKey=key;document.getElementById('ai-key-status').textContent='✓ AI 설정 완료';closeAISettings();}
+
+async function generateReport(){
+  const btn=document.getElementById('report-gen-btn');if(btn)btn.disabled=true;
+  showAIThinking('report-output');
+  try{
+    const {start,end,prevStart,prevEnd}=getPeriodDates();
+    const dash=store.activeDash||'통합-채팅';const brand=dash.split('-')[0];
+    const allC=brand==='통합'?Object.values(store.chatData).flat():(store.chatData[brand]||[]);
+    const cur=filterPeriod(allC,start,end),prev=filterPeriod(allC,prevStart,prevEnd);
+    if(!cur.length){document.getElementById('report-output').innerHTML='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">선택 기간에 데이터가 없습니다.</div>';return;}
+    const kc=calcKPIs(cur),kp=calcKPIs(prev);
+    const tagMap={};cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
+    const top7=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
+    const total=cur.length||1;
+    const periodStr=(start.getMonth()+1)+'/'+start.getDate()+' ~ '+(end.getMonth()+1)+'/'+end.getDate();
+    const brandLabel=brand==='통합'?'브랜드 통합':brand;
+    const mgrMap={};cur.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;mgrMap[n]=(mgrMap[n]||0)+1;});
+    const prompt='당신은 CX 전문 분석가입니다. 아래 데이터를 바탕으로 한국어 주간 VOC 리포트를 마크다운으로 작성해주세요.\n\n브랜드: '+brandLabel+' 기간: '+periodStr+'\n총 채팅: '+kc.totalChats+'건 (전기간: '+kp.totalChats+'건)\n응대율: '+kc.responseRate.toFixed(1)+'% / 처리완료율: '+kc.closedRate.toFixed(1)+'% / 불만율: '+kc.complaintRate.toFixed(1)+'%\n상위 문의:\n'+top7.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n담당자:\n'+Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]).map(([n,c])=>'- '+n+': '+c+'건').join('\n')+'\n\n# '+periodStr+' VOC 리포트\n## 📌 이번 주 요약\n## 📈 주요 변화\n## ⚠️ 주목할 이슈\n## 💡 개선 제안 (3가지)';
+    const result=await callGemini(prompt);
+    document.getElementById('report-output').innerHTML='<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  }catch(e){document.getElementById('report-output').innerHTML='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>';}
+  finally{if(btn)btn.disabled=false;}
+}
+
+async function generatePatterns(){
+  showAIThinking('research-output');
+  try{
+    const {start,end}=getPeriodDates();const allC=Object.values(store.chatData).flat();const cur=filterPeriod(allC,start,end);
+    if(!cur.length){document.getElementById('research-output').innerHTML='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">선택 기간에 데이터가 없습니다.</div>';return;}
+    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
+    const top10=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const hcTags=Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
+    const prompt='CX 데이터 분석가입니다. 반복 VOC 패턴을 분석해주세요.\n상위 VOC:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
+    const result=await callGemini(prompt);
+    document.getElementById('research-output').innerHTML='<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  }catch(e){document.getElementById('research-output').innerHTML='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>';}
+}
+
+async function generateImprovement(){
+  showAIThinking('research-output');
+  try{
+    const {start,end}=getPeriodDates();const allC=Object.values(store.chatData).flat();const cur=filterPeriod(allC,start,end);const kc=calcKPIs(cur);
+    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
+    const top5=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const prompt='이커머스 CX 개선 컨설턴트입니다.\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%\n주요 문의:\n'+top5.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
+    const result=await callGemini(prompt);
+    document.getElementById('research-output').innerHTML='<div style="line-height:1.8;color:#334155;">'+renderMarkdown(result)+'</div>';
+  }catch(e){document.getElementById('research-output').innerHTML='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:14px;color:#dc2626;">⚠️ '+e.message+'</div>';}
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   리포트 탭 — REPORTS 상수 & 상태
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const REPORTS = [
+  {id:'voc-all',   name:'전체 VOC 리포트',          group:'team', desc:'전체 상담을 통합한 VOC 리포트입니다.', filters:{}},
+  {id:'complaint', name:'불만 고객/개선 요청 리포트', group:'team', desc:'불만(CSAT 1~2점)으로 분류된 VOC 리포트입니다.', filters:{complaint:true}},
+  {id:'defect',    name:'불량 VOC 리포트(통합)',     group:'team', desc:'불량 관련 VOC를 통합한 리포트입니다.', filters:{tagCats:['불량','재불량']}},
+  {id:'return-ex', name:'교환/반품 상세 리포트',     group:'team', desc:'교환 및 반품 관련 상담 리포트입니다.', filters:{tagCats:['교환','반품']}},
+  {id:'tag-voc',   name:'상담태그 기준 VOC 리포트',  group:'team', desc:'상담 태그 기준으로 분류한 리포트입니다.', filters:{hasTags:true}},
+  {id:'mgr-prod',  name:'담당자별 생산성',           group:'team', desc:'담당자별 상담 처리 현황 리포트입니다.', filters:{hasAssignee:true}},
+  {id:'csat-rep',  name:'CSAT/만족도 리포트',        group:'team', desc:'고객 만족도(CSAT) 측정 상담 리포트입니다.', filters:{hasCsat:true}},
+];
+
+const reportState = {
+  activeId:null, viewMode:'table', period:'30d',
+  customStart:null, customEnd:null, searchQuery:'',
+  sortCol:null, sortDir:'desc', detailRow:null,
+  statsCharts:{}, dynamicFilters:{},
+};
+
+function getReportPeriodDates(){
+  const now=new Date();const end=new Date(now);end.setHours(23,59,59,999);let start=new Date(now);
+  const p=reportState.period;
+  if(p==='today'){start.setHours(0,0,0,0);}
+  else if(p==='7d'){start.setDate(now.getDate()-6);start.setHours(0,0,0,0);}
+  else if(p==='30d'){start.setDate(now.getDate()-29);start.setHours(0,0,0,0);}
+  else if(p==='60d'){start.setDate(now.getDate()-59);start.setHours(0,0,0,0);}
+  else if(p==='90d'){start.setDate(now.getDate()-89);start.setHours(0,0,0,0);}
+  else if(p==='custom'&&reportState.customStart){start=new Date(reportState.customStart);}
+  const diffMs=end-start;
+  const prevEnd=new Date(start);prevEnd.setMilliseconds(-1);
+  const prevStart=new Date(prevEnd.getTime()-diffMs);
+  return{start,end,prevStart,prevEnd};
+}
+
+function applyReportFilters(chats){
+  const report=REPORTS.find(r=>r.id===reportState.activeId);
+  let result=chats;
+  if(report){
+    const f=report.filters;
+    if(f.complaint)result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2);
+    if(f.tagCats)result=result.filter(c=>{const cat=(c.tags||'').split('/')[0];return f.tagCats.some(fc=>cat.includes(fc));});
+    if(f.hasTags)result=result.filter(c=>c.tags);
+    if(f.hasAssignee)result=result.filter(c=>c.assigneeId);
+    if(f.hasCsat)result=result.filter(c=>c['profile.csat']!=null);
+  }
+  const df=reportState.dynamicFilters||{};
+  if(df.status)result=result.filter(c=>c.state===df.status);
+  if(df.complaint==='yes')result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2);
+  if(df.complaint==='no')result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']>2);
+  if(df.manager)result=result.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===df.manager);
+  if(df.tagCat)result=result.filter(c=>(c.tags||'').split('/')[0]===df.tagCat);
+  if(df.product)result=result.filter(c=>(c['profile.product']||'')===df.product);
+  if(reportState.searchQuery){const q=reportState.searchQuery.toLowerCase();result=result.filter(c=>(c.tags||'').toLowerCase().includes(q)||(store.managers[c.assigneeId]||'').toLowerCase().includes(q)||(c.name||'').toLowerCase().includes(q));}
+  return result;
+}
+
+function getReportChats(){const allChats=Object.values(store.chatData).flat();const{start,end}=getReportPeriodDates();return applyReportFilters(filterPeriod(allChats,start,end));}
+function getPrevReportChats(){const allChats=Object.values(store.chatData).flat();const{prevStart,prevEnd}=getReportPeriodDates();return applyReportFilters(filterPeriod(allChats,prevStart,prevEnd));}
+
+/* ━━━ 리포트 사이드바 ━━━ */
+function renderReportList(){
+  const el=document.getElementById('rpt-team-list');
+  if(!el)return;
+  el.innerHTML=REPORTS.map(r=>'<button onclick="selectReport(\''+r.id+'\')" style="width:100%;text-align:left;padding:7px 12px;border:none;background:'+(reportState.activeId===r.id?'var(--primary-light)':'none')+';cursor:pointer;font-size:12px;color:'+(reportState.activeId===r.id?'var(--primary)':'#475569')+';border-left:3px solid '+(reportState.activeId===r.id?'var(--primary)':'transparent')+';display:flex;align-items:center;gap:6px;"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="12" rx="1"/><line x1="3" y1="4" x2="9" y2="4"/><line x1="3" y1="6.5" x2="7" y2="6.5"/><line x1="3" y1="9" x2="8" y2="9"/></svg>'+r.name+'</button>').join('');
+}
+
+function createNewReport(){alert('새 리포트 만들기 기능은 준비 중입니다.');}
+function selectReport(id){reportState.activeId=id;reportState.viewMode='table';renderReportList();renderReportContent();}
+
+function renderReportContent(){
+  const report=REPORTS.find(r=>r.id===reportState.activeId);
+  if(!report)return;
+  buildReportFilterUI();
+  const cur=getReportChats(),prev=getPrevReportChats();
+  const{start,end}=getReportPeriodDates();
+  const titleEl=document.getElementById('rpt-title');if(titleEl)titleEl.textContent=report.name;
+  const descEl=document.getElementById('rpt-desc');if(descEl)descEl.textContent=report.desc;
+  const cntEl=document.getElementById('rpt-total-count');if(cntEl)cntEl.textContent='총 '+cur.length+'개의 상담';
+  const fmt=d=>(d.getMonth()+1)+'/'+d.getDate();
+  const cmpEl=document.getElementById('rpt-compare-label');if(cmpEl)cmpEl.textContent='기간: '+fmt(start)+' ~ '+fmt(end);
+  const tabTable=document.getElementById('rpt-subtab-table');
+  const tabStats=document.getElementById('rpt-subtab-stats');
+  const viewTable=document.getElementById('rpt-view-table');
+  const viewStats=document.getElementById('rpt-view-stats');
+  if(reportState.viewMode==='table'){
+    if(tabTable){tabTable.style.fontWeight='700';tabTable.style.borderBottom='2px solid var(--primary)';}
+    if(tabStats){tabStats.style.fontWeight='400';tabStats.style.borderBottom='none';}
+    renderReportTable(cur);
+    if(viewTable)viewTable.style.display='';
+    if(viewStats)viewStats.style.display='none';
+  }else{
+    if(tabTable){tabTable.style.fontWeight='400';tabTable.style.borderBottom='none';}
+    if(tabStats){tabStats.style.fontWeight='700';tabStats.style.borderBottom='2px solid var(--primary)';}
+    renderReportStats(cur,prev,start,end);
+    if(viewTable)viewTable.style.display='none';
+    if(viewStats)viewStats.style.display='';
+  }
+}
+
+function setReportPeriod(p){
+  reportState.period=p;
+  ['today','7d','30d','60d','90d'].forEach(pp=>{const btn=document.getElementById('rpt-p-'+pp);if(btn)btn.classList.toggle('active',pp===p);});
+  if(reportState.activeId)renderReportContent();
+}
+
+function renderReportTable(chats){
+  const tbody=document.getElementById('rpt-table-body');if(!tbody)return;
+  if(!chats.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:40px;color:#94a3b8;">해당 기간에 데이터가 없습니다</td></tr>';return;}
+  const cntEl=document.getElementById('rpt-total-count');if(cntEl)cntEl.textContent='총 '+chats.length+'개의 상담'+(chats.length>200?' (상위 200개 표시)':'');
+  tbody.innerHTML=chats.slice(0,200).map(c=>{
+    const csat=c['profile.csat'];
+    let csatBadge,csatBg;
+    if(csat==null){csatBadge='— 미측정';csatBg='#f8fafc';}
+    else if(csat<=2){csatBadge='😡 불만';csatBg='#fef2f2';}
+    else if(csat<=3){csatBadge='😐 보통';csatBg='#fffbeb';}
+    else{csatBadge='😊 만족';csatBg='#f0fdf4';}
+    const tag=c.tags||'—';const cat=tag.split('/')[0];
+    const prod=c['profile.product']||'—';
+    const mgr=store.managers[c.assigneeId]||(c.assigneeId?c.assigneeId:'—');
+    const dt=parseDate(c.createdAt||c.managedAt);
+    const dtStr=dt?(dt.getMonth()+1)+'/'+(dt.getDate()):'—';
+    return '<tr style="cursor:pointer;" onclick="showRowDetail(\''+escHtml(c.id||'')+'\')"><td><span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:12px;background:'+csatBg+';">'+csatBadge+'</span></td><td style="font-size:12px;">'+escHtml(cat)+'</td><td style="font-size:12px;">'+escHtml(prod)+'</td><td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</td><td style="font-size:11px;color:#64748b;">—</td><td style="font-size:11px;color:#64748b;">—</td><td style="font-size:12px;">'+escHtml(c.name||'—')+'</td><td style="font-size:12px;">'+escHtml(mgr)+'</td><td style="font-size:11px;color:#64748b;">채널톡</td><td style="font-size:11px;color:#94a3b8;">'+dtStr+'</td></tr>';
+  }).join('');
+}
+
+function showRowDetail(id){
+  const allC=Object.values(store.chatData).flat();const row=allC.find(c=>c.id===id);if(!row)return;
+  const panel=document.getElementById('rpt-detail-panel');if(!panel)return;
+  const csat=row['profile.csat'];const mgr=store.managers[row.assigneeId]||row.assigneeId||'미배정';
+  const panelContent=document.getElementById('rpt-detail-content');if(!panelContent)return;
+  panelContent.innerHTML='<div style="font-size:11px;color:#64748b;line-height:2;"><div><b>고객명</b>: '+escHtml(row.name||'—')+'</div><div><b>담당자</b>: '+escHtml(mgr)+'</div><div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div><div><b>제품명</b>: '+escHtml(row['profile.product']||'—')+'</div><div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div><div><b>상담 상태</b>: '+(row.state==='closed'?'종료됨':'진행중')+'</div><div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div><div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div><div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div></div>';
+  panel.style.display='block';
+}
+
+function rptApplySearch(){reportState.searchQuery=(document.getElementById('rpt-search')||{}).value||'';if(reportState.activeId)renderReportTable(getReportChats());}
+
+function downloadReportExcel(){
+  const chats=getReportChats();if(!chats.length)return alert('데이터가 없습니다.');
+  const data=[['불만여부','대표문의유형','제품명','상담태그','고객명','담당자','만족도','날짜'],
+    ...chats.map(c=>{const csat=c['profile.csat'];return[csat==null?'미측정':csat<=2?'불만':csat<=3?'보통':'만족',(c.tags||'').split('/')[0],c['profile.product']||'',c.tags||'',c.name||'',store.managers[c.assigneeId]||c.assigneeId||'',csat!=null?csat:'',c.createdAt||''];})];
+  const ws=XLSX.utils.aoa_to_sheet(data),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'리포트');
+  const r=REPORTS.find(r=>r.id===reportState.activeId);
+  XLSX.writeFile(wb,(r?r.name:'리포트')+'_'+reportState.period+'.xlsx');
+}
+
+/* ━━━ 리포트 통계 뷰 ━━━ */
+function renderReportStats(cur,prev,start,end){
+  renderReportSummary(cur,prev);
+  renderReportTrend(cur,start,end);
+  renderTagLeaderboard(cur,prev);
+  renderManagerLeaderboard(cur,prev);
+  renderStatCharts(cur);
+  renderChangeDetection(cur,prev);
+}
+
+function renderReportSummary(cur,prev){
+  const kc=calcKPIs(cur),kp=calcKPIs(prev);
+  const compCount=prev.length,delta=cur.length-compCount;
+  const deltaPct=compCount?((delta/compCount)*100).toFixed(0):'—';
+  const complaint=cur.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;
+  const prevComplaint=prev.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;
+  const cd=complaint-prevComplaint,cpct=prevComplaint?((cd/prevComplaint)*100).toFixed(0):'—';
+  const inbound=cur.filter(c=>c.direction==='INBOUND'||!c.direction).length;
+  const total=cur.length||1,inPct=Math.round(inbound/total*100);
+  const el=document.getElementById('rpt-summary-cards');if(!el)return;
+  el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">전체 문의 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#1e293b;">'+cur.length+'건</div><div style="font-size:12px;color:'+(delta<=0?'#10b981':'#ef4444')+';">'+(delta<=0?'↓':'↑')+' '+Math.abs(delta)+'건 ('+((delta>=0?'+':'')+deltaPct+'%))</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+cur.length+'건 / 비교 '+compCount+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">불만 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#ef4444;">'+complaint+'건</div><div style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+((cd>=0?'+':'')+cpct+'%))</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+complaint+'건 / 비교 '+prevComplaint+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">인바운드 / 아웃바운드</div><canvas id="rpt-inbound-chart" height="80"></canvas><div style="display:flex;gap:12px;margin-top:8px;font-size:11px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#818cf8;margin-right:3px;"></span>인바운드 '+inPct+'%&nbsp;&nbsp;<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e2e8f0;margin-right:3px;"></span>아웃바운드 '+(100-inPct)+'%</div></div>';
+  setTimeout(()=>{const ctx=document.getElementById('rpt-inbound-chart');if(ctx){if(reportState.statsCharts['inbound'])reportState.statsCharts['inbound'].destroy();reportState.statsCharts['inbound']=new Chart(ctx.getContext('2d'),{type:'doughnut',data:{labels:['인바운드','아웃바운드'],datasets:[{data:[inPct,100-inPct],backgroundColor:['#818cf8','#e2e8f0'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}},50);
+}
+
+function renderReportTrend(chats,start,end){
+  const trendTable=document.getElementById('rpt-trend-table');
+  const days=Math.round((end-start)/(1000*60*60*24));
+  const interval=days<=7?'day':'week';
+  const buckets=[];
+  if(interval==='day'){for(let i=0;i<=days;i++){const d=new Date(start);d.setDate(start.getDate()+i);const e=new Date(d);e.setHours(23,59,59,999);const dc=filterPeriod(chats,d,e);buckets.push({label:(d.getMonth()+1)+'/'+(d.getDate()),count:dc.length,complaint:dc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}}
+  else{const tw=Math.ceil(days/7);for(let i=0;i<tw;i++){const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);const wc=filterPeriod(chats,ws2,we2);buckets.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()),count:wc.length,complaint:wc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}}
+  if(trendTable)trendTable.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#f8fafc;"><th style="padding:6px 10px;text-align:left;color:#64748b;">기간</th><th style="padding:6px 10px;text-align:right;color:#64748b;">문의수</th><th style="padding:6px 10px;text-align:right;color:#64748b;">불만수</th><th style="padding:6px 10px;text-align:right;color:#64748b;">불만율</th></tr></thead><tbody>'+buckets.map(b=>'<tr><td style="padding:5px 10px;">'+b.label+'</td><td style="padding:5px 10px;text-align:right;">'+b.count+'건</td><td style="padding:5px 10px;text-align:right;color:#ef4444;">'+b.complaint+'건</td><td style="padding:5px 10px;text-align:right;color:#94a3b8;">'+(b.count?((b.complaint/b.count*100).toFixed(1)+'%'):'—')+'</td></tr>').join('')+'</tbody></table></div>';
+  setTimeout(()=>{const ctx=document.getElementById('rpt-trend-chart');if(ctx){if(reportState.statsCharts['trend'])reportState.statsCharts['trend'].destroy();reportState.statsCharts['trend']=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:buckets.map(b=>b.label),datasets:[{label:'문의수',data:buckets.map(b=>b.count),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.08)',fill:true,tension:0.3,pointRadius:3},{label:'불만수',data:buckets.map(b=>b.complaint),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.05)',fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}}  ,50);
+}
+
+function renderTagLeaderboard(cur,prev){
+  const el=document.getElementById('rpt-tag-leaderboard');if(!el)return;
+  const tagMap={},prevMap={};
+  cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
+  prev.forEach(c=>{const t=c.tags||'태그없음';prevMap[t]=(prevMap[t]||0)+1;});
+  const sorted=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
+  const maxVal=sorted[0]?.[1]||1;
+  el.innerHTML=sorted.slice(0,8).map(([tag,cnt],i)=>{
+    const pCnt=prevMap[tag]||0,delta=cnt-pCnt;
+    const dStr=pCnt?((delta>=0?'+':'')+((delta/pCnt*100).toFixed(0))+'%'):(delta>0?'신규':'—');
+    const dColor=delta>0?'#ef4444':delta<0?'#10b981':'#94a3b8';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:11px;font-weight:600;color:#94a3b8;min-width:20px;text-align:right;">'+(i+1)+'</span><span style="font-size:11px;color:#334155;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</span><div style="flex:1;background:#f1f5f9;border-radius:4px;height:12px;overflow:hidden;"><div style="height:100%;background:#818cf8;border-radius:4px;width:'+Math.round(cnt/maxVal*100)+'%;"></div></div><span style="font-size:11px;font-weight:600;color:#1e293b;min-width:32px;text-align:right;">'+cnt+'</span><span style="font-size:10px;color:'+dColor+';min-width:36px;text-align:right;">'+dStr+'</span></div>';
+  }).join('')+(sorted.length>8?'<button onclick="toggleTagBoard(this)" style="width:100%;padding:6px;border:1px solid #e2e8f0;background:none;border-radius:6px;cursor:pointer;font-size:12px;color:#64748b;margin-top:4px;">더보기 ('+(sorted.length-8)+'개)</button>':'');
+}
+
+function toggleTagBoard(btn){
+  const cur=getReportChats(),prev=getPrevReportChats();
+  const tagMap={},prevMap={};
+  cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
+  prev.forEach(c=>{const t=c.tags||'태그없음';prevMap[t]=(prevMap[t]||0)+1;});
+  const all=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]);
+  const maxVal=all[0]?.[1]||1;
+  const container=btn.parentElement.querySelector('.extra-tags');
+  if(container){container.remove();btn.textContent='더보기 ('+(all.length-8)+'개)';return;}
+  const div=document.createElement('div');div.className='extra-tags';
+  div.innerHTML=all.slice(8).map(([tag,cnt],i)=>{const pCnt=prevMap[tag]||0,delta=cnt-pCnt;const dStr=pCnt?((delta>=0?'+':'')+((delta/pCnt*100).toFixed(0))+'%'):(delta>0?'신규':'—');const dColor=delta>0?'#ef4444':delta<0?'#10b981':'#94a3b8';return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:11px;font-weight:600;color:#94a3b8;min-width:20px;text-align:right;">'+(i+9)+'</span><span style="font-size:11px;color:#334155;min-width:160px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(tag)+'</span><div style="flex:1;background:#f1f5f9;border-radius:4px;height:12px;overflow:hidden;"><div style="height:100%;background:#818cf8;border-radius:4px;width:'+Math.round(cnt/maxVal*100)+'%;"></div></div><span style="font-size:11px;font-weight:600;color:#1e293b;min-width:32px;text-align:right;">'+cnt+'</span><span style="font-size:10px;color:'+dColor+';min-width:36px;text-align:right;">'+dStr+'</span></div>';}).join('');
+  btn.before(div);btn.textContent='접기';
+}
+
+function renderManagerLeaderboard(cur,prev){
+  const el=document.getElementById('rpt-manager-leaderboard');if(!el)return;
+  const mgrMap={},prevMap={};
+  cur.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;mgrMap[n]=(mgrMap[n]||0)+1;});
+  prev.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;prevMap[n]=(prevMap[n]||0)+1;});
+  const sorted=Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]);
+  if(!sorted.length){el.innerHTML='<p style="color:#94a3b8;font-size:12px;">담당자 데이터가 없습니다</p>';return;}
+  const rows=sorted.slice(0,8).map(([name,cnt],i)=>{
+    const items=cur.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===name);
+    const kc=calcKPIs(items);const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+    return '<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 10px;font-size:12px;text-align:center;">'+medal+'</td><td style="padding:8px 10px;font-size:12px;font-weight:500;color:#1e293b;">'+escHtml(name)+'</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+cnt+'건</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+kc.closedRate.toFixed(0)+'%</td><td style="padding:8px 10px;font-size:12px;text-align:right;">'+(kc.avgSatisfaction?kc.avgSatisfaction.toFixed(1)+'점':'—')+'</td></tr>';
+  }).join('');
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f8fafc;"><th style="padding:7px 10px;text-align:center;color:#64748b;font-weight:600;">순위</th><th style="padding:7px 10px;text-align:left;color:#64748b;font-weight:600;">담당자명</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">응대수</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">처리완료율</th><th style="padding:7px 10px;text-align:right;color:#64748b;font-weight:600;">평균만족도</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function renderStatCharts(chats){
+  const csatDist=[0,0,0,0,0];chats.forEach(c=>{const v=c['profile.csat'];if(v!=null&&v>=1&&v<=5)csatDist[Math.round(v)-1]++;});
+  const hourDist=new Array(24).fill(0);chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)hourDist[d.getHours()]++;});
+  const dayDist=new Array(7).fill(0);chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)dayDist[d.getDay()]++;});
+  const tm={};chats.forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
+  const top7d=Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const clrsD=['#818cf8','#34d399','#fb923c','#f472b6','#60a5fa','#a78bfa','#94a3b8'];
+  setTimeout(()=>{
+    const cc=document.getElementById('rpt-csat-chart');
+    if(cc){if(reportState.statsCharts['csat'])reportState.statsCharts['csat'].destroy();reportState.statsCharts['csat']=new Chart(cc.getContext('2d'),{type:'bar',data:{labels:['1점','2점','3점','4점','5점'],datasets:[{data:csatDist,backgroundColor:['#ef4444','#f97316','#eab308','#84cc16','#22c55e'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10},stepSize:1}}}}});}
+    const td=document.getElementById('rpt-tag-donut');
+    if(td){if(reportState.statsCharts['tagd'])reportState.statsCharts['tagd'].destroy();reportState.statsCharts['tagd']=new Chart(td.getContext('2d'),{type:'doughnut',data:{labels:top7d.map(t=>t[0]),datasets:[{data:top7d.map(t=>t[1]),backgroundColor:clrsD,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}}}});}
+    const hc=document.getElementById('rpt-hour-chart');
+    if(hc){if(reportState.statsCharts['hour'])reportState.statsCharts['hour'].destroy();reportState.statsCharts['hour']=new Chart(hc.getContext('2d'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+'시'),datasets:[{data:hourDist,backgroundColor:'#818cf8',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}
+    const dc2=document.getElementById('rpt-dow-chart');
+    if(dc2){if(reportState.statsCharts['day'])reportState.statsCharts['day'].destroy();reportState.statsCharts['day']=new Chart(dc2.getContext('2d'),{type:'bar',data:{labels:['일','월','화','수','목','금','토'],datasets:[{data:dayDist,backgroundColor:['#f472b6','#818cf8','#818cf8','#818cf8','#818cf8','#818cf8','#60a5fa'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'#f1f5f9'},ticks:{font:{size:10}}}}}});}
+  },50);
 }
 
 /* App start */

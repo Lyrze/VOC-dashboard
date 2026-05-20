@@ -1223,7 +1223,7 @@ tbody td:first-child {
         <div id="rpt-filter-bar" style="flex-shrink:0;background:#f8fafc;border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span style="font-size:11px;color:#94a3b8;font-weight:600;">필터:</span>
           <div id="rpt-filter-chips" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;"></div>
-          <button onclick="rptAddFilter()" style="display:flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px dashed #c7d2fe;border-radius:5px;cursor:pointer;font-size:11px;color:#6366f1;">
+          <button onclick="rptAddFilter(this)" style="display:flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px dashed #c7d2fe;border-radius:5px;cursor:pointer;font-size:11px;color:#6366f1;">
             + 필터 추가
           </button>
         </div>
@@ -1967,7 +1967,7 @@ function calcKPIs(chats) {
   const complaints = csatChats.filter(c => Number(c['profile.csat']) <= 2).length;
 
   const firstReplyTimes = chats.map(c => c.timeToFirstAnswerInOperation != null ? Number(c.timeToFirstAnswerInOperation) : null).filter(v => v != null);
-  const replyTimes = chats.map(c => { const v = c.avgReplyTimeInOperation ?? c.avgReplyTime; return v != null ? v / 1000 : null; }).filter(v => v != null);
+  const replyTimes = chats.map(c => { const op = c.avgReplyTimeInOperation; const ms = c.avgReplyTime; if (op != null) return Number(op); if (ms != null) return ms / 1000; return null; }).filter(v => v != null);
   const handlingTimes = chats.map(c => c.memberHandlingTime != null ? c.memberHandlingTime / 1000 : null).filter(v => v != null);
   const csatScores = csatChats.map(c => Number(c['profile.csat']));
 
@@ -3380,14 +3380,37 @@ function clearAllFilters(){reportState.dynamicFilters={};if(reportState.activeId
 function rptBack(){renderReportList();}
 function rptDownload(){downloadReportExcel();}
 function rptRefreshData(){if(reportState.activeId)renderReportContent();}
-function rptAITag(){reportState.viewMode='stats';renderReportContent();setTimeout(()=>rptRunAIAnalysis('pattern'),300);}
+function rptAITag(){
+  if(!isAIReady()){openAISettings();return;}
+  if(reportState.activeId){
+    reportState.viewMode='stats';
+    renderReportContent();
+    setTimeout(()=>rptRunAIAnalysis('pattern'),300);
+  }else{
+    const allChats=Object.values(store.chatData).flat();
+    const{start,end}=getPeriodDates();
+    const cur=filterPeriod(allChats,start,end);
+    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
+    const top10=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const hcTags=Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
+    const prompt='CX 데이터 분석가입니다. 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
+    callGemini(prompt).then(result=>{
+      alert('AI 분석 완료 (전체 데이터 기준)\n리포트를 선택하면 상담 통계 탭에서 상세 확인 가능합니다.\n\n'+result.slice(0,400));
+    }).catch(e=>alert('AI 오류: '+e.message));
+  }
+}
 function rptResearch(){reportState.viewMode='stats';renderReportContent();setTimeout(()=>rptRunAIAnalysis('pattern'),300);}
-function rptAddFilter(){
+function rptAddFilter(btn){
   var _panel = document.getElementById('rpt-filter-panel');
   if (_panel) { _panel.remove(); return; }
   _panel = document.createElement('div');
   _panel.id = 'rpt-filter-panel';
-  _panel.style.cssText = 'position:absolute;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:50;min-width:260px;margin-top:4px;';
+  var _rect = btn ? btn.getBoundingClientRect() : {bottom:60,left:200};
+  var _top = _rect.bottom + 6;
+  var _left = _rect.left;
+  // 화면 오른쪽 넘침 방지
+  if(_left + 280 > window.innerWidth) _left = window.innerWidth - 290;
+  _panel.style.cssText = 'position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:9999;min-width:270px;top:'+_top+'px;left:'+_left+'px;';
   var _allChats = Object.values(store.chatData).flat();
   var _tags = Array.from(new Set(_allChats.map(function(c){return c.tags;}).filter(Boolean))).sort();
   var _products = Array.from(new Set(_allChats.map(function(c){return c['profile.product'];}).filter(Boolean))).sort();
@@ -3417,13 +3440,22 @@ function rptAddFilter(){
     + '<option value="no"'+(_df.complaint==='no'?' selected':'')+'>😊 만족 (3~5점)</option>'
     + '</select></div>'
     + '</div>'
+    + (()=>{
+        const _customTagFields = fieldStore.fields.filter(f=>f.type==='tag'&&f.source==='direct'&&f.name!=='상담 태그');
+        if(!_customTagFields.length) return '';
+        return '<div><div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">커스텀 필드</div>'
+          + _customTagFields.slice(0,3).map(function(cf){
+              return '<select id="rpt-f-custom-'+cf.name+'" data-field="'+cf.name+'" style="width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;margin-bottom:4px;">'
+                + '<option value="">'+cf.name+' 전체</option>'
+                + '</select>';
+            }).join('')+'</div>';
+      })()
     + '<div style="display:flex;gap:8px;margin-top:14px;">'
     + '<button onclick="applyRptFilter()" style="flex:1;padding:7px;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">적용</button>'
     + '<button onclick="clearAllFilters()" style="flex:1;padding:7px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#ef4444;font-size:12px;cursor:pointer;">초기화</button>'
     + '</div>';
   _panel.innerHTML = _h;
-  var _toolbar = document.getElementById('rpt-table-toolbar');
-  if (_toolbar) { _toolbar.style.position='relative'; _toolbar.appendChild(_panel); }
+  document.body.appendChild(_panel);
   document.addEventListener('click', function _closePanel(e){
     if(!_panel.contains(e.target) && !e.target.closest('[onclick*="rptAddFilter"]')){
       _panel.remove(); document.removeEventListener('click', _closePanel);
@@ -3716,7 +3748,7 @@ function applyReportFilters(chats){
   if(df.complaint==='yes')result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2);
   if(df.complaint==='no')result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']>2);
   if(df.manager)result=result.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===df.manager);
-  if(df.tagCat)result=result.filter(c=>(c.tags||'').split('/')[0]===df.tagCat);
+  if(df.tagCat)result=result.filter(c=>(c.tags||'')===df.tagCat||(c.tags||'').split('/')[0]===df.tagCat);
   if(df.product)result=result.filter(c=>(c['profile.product']||'')===df.product);
   if(df.brand)result=result.filter(c=>{
     const brands=Object.keys(store.chatData);
@@ -3788,9 +3820,9 @@ function renderReportContent(){
   }else{
     if(tabTable){tabTable.style.fontWeight='400';tabTable.style.borderBottom='none';}
     if(tabStats){tabStats.style.fontWeight='700';tabStats.style.borderBottom='2px solid var(--primary)';}
-    renderReportStats(cur,prev,start,end);
     if(viewTable)viewTable.style.display='none';
     if(viewStats)viewStats.style.display='';
+    renderReportStats(cur,prev,start,end);
   }
 }
 
@@ -4078,11 +4110,19 @@ function closeNewFieldModal(){document.getElementById('new-field-modal').style.d
 function saveNewField(){
   const name=document.getElementById('nf-name')?.value.trim();
   if(!name){alert('필드 이름을 입력하세요');return;}
+  if(fieldStore.fields.find(f=>f.name===name)){alert('이미 같은 이름의 필드가 있습니다');return;}
   const type=document.querySelector('input[name="nf-type"]:checked')?.value||'tag';
   const now=new Date();
   const dateStr=now.getFullYear()+'.'+(now.getMonth()+1).toString().padStart(2,'0')+'.'+now.getDate().toString().padStart(2,'0');
   fieldStore.fields.unshift({type,name,source:'direct',usedIn:'0개',creator:'나',createdAt:dateStr});
   closeNewFieldModal();
+  renderFieldList();
+}
+function deleteField(name){
+  if(!confirm('"'+name+'" 필드를 삭제할까요?')) return;
+  const idx=fieldStore.fields.findIndex(f=>f.name===name&&f.source==='direct');
+  if(idx===-1) return;
+  fieldStore.fields.splice(idx,1);
   renderFieldList();
 }
 

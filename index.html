@@ -1240,6 +1240,10 @@ tbody td:first-child {
                 <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg>
                 AI로 태그 분류하기
               </button>
+              <button onclick="rptOllamaAutoFill()" id="btn-ollama-autofill" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:6px;cursor:pointer;font-size:11px;color:#16a34a;font-weight:600;">
+                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M5 7l1.5 1.5L9 5"/></svg>
+                AI 필드 자동완성
+              </button>
               <button onclick="rptDownload()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:#fff;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:#64748b;">
                 &#8595; 다운로드
               </button>
@@ -3400,6 +3404,58 @@ function rptAITag(){
     }).catch(e=>alert('AI 오류: '+e.message));
   }
 }
+
+async function rptOllamaAutoFill(){
+  if(!isAIReady()){openAISettings();return;}
+  const allChats=Object.values(store.chatData).flat();
+  const{start,end}=getPeriodDates();
+  const reportChats=reportState.activeId?getReportChats():filterPeriod(allChats,start,end);
+  // summarizedMessage가 있고 tags나 product가 비어있는 상담만 대상
+  const targets=reportChats.filter(c=>{
+    const hasSummary=c.summarizedMessage&&c.summarizedMessage.trim().length>10;
+    const missingTag=!c.tags||c.tags==='—';
+    const missingProd=!c['profile.defective']&&!c['profile.return_product']&&!c['profile.product'];
+    return hasSummary&&(missingTag||missingProd);
+  }).slice(0,30);  // 최대 30건씩
+  if(!targets.length){alert('자동완성할 데이터가 없습니다.\n\nsummarizedMessage가 있는 상담만 분석 가능합니다.');return;}
+  const btn=document.getElementById('btn-ollama-autofill');
+  if(btn){btn.disabled=true;btn.textContent='분석 중... ('+targets.length+'건)';}
+  let filled=0,failed=0;
+  try{
+    for(let i=0;i<targets.length;i++){
+      const c=targets[i];
+      const summary=(c.summarizedMessage||'').slice(0,400);
+      const prompt='당신은 CS 상담 분류 전문가입니다. 아래 상담 요약을 분석해 JSON으로 응답하세요.\n\n상담요약: '+summary+'\n\n응답형식(JSON만, 설명없이):\n{"tag":"태그명","product":"제품명또는빈문자열","issue":"문제유형한줄요약"}\n\ntag는 다음 중 하나: 배송문의/교환반품/상품문의/불량/AS/결제취소/기타\nproduct는 상담에서 언급된 제품명 (없으면 빈 문자열)\nissue는 15자 이내 한국어 요약';
+      try{
+        const result=await callGemini(prompt);
+        // JSON 파싱
+        const jsonMatch=result.match(/\{[^}]+\}/);
+        if(jsonMatch){
+          const parsed=JSON.parse(jsonMatch[0]);
+          // store.chatData에서 해당 chat 찾아서 업데이트
+          for(const brand of Object.keys(store.chatData)){
+            const idx=store.chatData[brand].findIndex(r=>r.id===c.id);
+            if(idx!==-1){
+              if(!store.chatData[brand][idx].tags&&parsed.tag)store.chatData[brand][idx].tags=parsed.tag;
+              if(!store.chatData[brand][idx]['profile.defective']&&parsed.product)store.chatData[brand][idx]['profile.defective']=parsed.product;
+              if(!store.chatData[brand][idx].description&&parsed.issue)store.chatData[brand][idx].description=parsed.issue;
+              break;
+            }
+          }
+          filled++;
+        }
+      }catch(e){failed++;}
+      // 진행상황 업데이트
+      if(btn)btn.textContent='분석 중... ('+(i+1)+'/'+targets.length+'건)';
+      // Ollama 과부하 방지 - 각 요청 후 짧은 딜레이
+      if(store.aiProvider==='ollama')await new Promise(r=>setTimeout(r,200));
+    }
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M5 7l1.5 1.5L9 5"/></svg> AI 필드 자동완성';}
+  }
+  if(reportState.activeId)renderReportTable(getReportChats());
+  alert('AI 자동완성 완료!\n\n✅ 완성: '+filled+'건\n❌ 실패: '+failed+'건\n\n표가 새로고침되었습니다.');
+}
 function rptResearch(){reportState.viewMode='stats';renderReportContent();setTimeout(()=>rptRunAIAnalysis('pattern'),300);}
 function rptAddFilter(btn){
   var _panel = document.getElementById('rpt-filter-panel');
@@ -3845,7 +3901,7 @@ function renderReportTable(chats){
     else if(csat<=3){csatBadge='😐 보통';csatBg='#fffbeb';}
     else{csatBadge='😊 만족';csatBg='#f0fdf4';}
     const tag=c.tags||'—';const cat=tag.split('/')[0];
-    const prod=c['profile.product']||'—';
+    const prod=c['profile.defective']||c['profile.return_product']||c['profile.product']||'—';
     const mgr=store.managers[c.assigneeId]||(c.assigneeId?c.assigneeId:'—');
     const dt=parseDate(c.createdAt||c.managedAt);
     const dtStr=dt?(dt.getMonth()+1)+'/'+(dt.getDate()):'—';
@@ -3895,7 +3951,7 @@ function renderReportSummary(cur,prev){
   const inbound=cur.filter(c=>c.direction==='INBOUND'||!c.direction).length;
   const total=cur.length||1,inPct=Math.round(inbound/total*100);
   const el=document.getElementById('rpt-summary-cards');if(!el)return;
-  el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">전체 문의 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#1e293b;">'+cur.length+'건</div><div style="font-size:12px;color:'+(delta<=0?'#10b981':'#ef4444')+';">'+(delta<=0?'↓':'↑')+' '+Math.abs(delta)+'건 ('+(delta>=0?'+':'')+deltaPct+'%)</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+cur.length+'건 / 비교 '+compCount+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">불만 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#ef4444;">'+complaint+'건</div><div style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+(cd>=0?'+':'')+cpct+'%)</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+complaint+'건 / 비교 '+prevComplaint+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">인바운드 / 아웃바운드</div><canvas id="rpt-inbound-chart" height="80"></canvas><div style="display:flex;gap:12px;margin-top:8px;font-size:11px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#818cf8;margin-right:3px;"></span>인바운드 '+inPct+'%&nbsp;&nbsp;<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e2e8f0;margin-right:3px;"></span>아웃바운드 '+(100-inPct)+'%</div></div>';
+  el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">전체 문의 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#1e293b;">'+cur.length+'건</div><div style="font-size:12px;color:'+(delta<=0?'#10b981':'#ef4444')+';">'+(delta<=0?'↓':'↑')+' '+Math.abs(delta)+'건 ('+(delta>=0?'+':'')+deltaPct+'%)</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+cur.length+'건 / 비교 '+compCount+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">불만 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#ef4444;">'+complaint+'건</div><div style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+(cd>=0?'+':'')+cpct+'%)</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+complaint+'건 / 비교 '+prevComplaint+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">인바운드 / 아웃바운드</div><div style="height:80px;position:relative;min-height:80px;max-height:80px;overflow:hidden;"><canvas id="rpt-inbound-chart"></canvas></div><div style="display:flex;gap:12px;margin-top:8px;font-size:11px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#818cf8;margin-right:3px;"></span>인바운드 '+inPct+'%&nbsp;&nbsp;<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e2e8f0;margin-right:3px;"></span>아웃바운드 '+(100-inPct)+'%</div></div>';
   setTimeout(()=>{const ctx=document.getElementById('rpt-inbound-chart');if(ctx){if(reportState.statsCharts['inbound'])reportState.statsCharts['inbound'].destroy();reportState.statsCharts['inbound']=new Chart(ctx.getContext('2d'),{type:'doughnut',data:{labels:['인바운드','아웃바운드'],datasets:[{data:[inPct,100-inPct],backgroundColor:['#818cf8','#e2e8f0'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}},50);
 }
 

@@ -660,6 +660,7 @@ tbody td:first-child {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
+  table-layout: fixed;
 }
 .rpt-data-table th {
   padding: 9px 12px;
@@ -1252,15 +1253,15 @@ tbody td:first-child {
               <table id="rpt-table" class="rpt-data-table">
                 <thead>
                   <tr>
-                    <th>불만여부</th>
-                    <th>대표 문의유형</th>
-                    <th>제품명</th>
-                    <th>상담 태그</th>
-                    <th>문제 상황</th>
-                    <th>고객명</th>
-                    <th>담당자</th>
-                    <th>인입 경로</th>
-                    <th>날짜</th>
+                    <th style="width:80px;">불만여부</th>
+                    <th style="width:90px;">대표 문의유형</th>
+                    <th style="width:130px;">제품명</th>
+                    <th style="width:160px;">상담 태그</th>
+                    <th style="width:180px;">문제 상황</th>
+                    <th style="width:100px;">고객명</th>
+                    <th style="width:80px;">담당자</th>
+                    <th style="width:70px;">인입 경로</th>
+                    <th style="width:55px;">날짜</th>
                   </tr>
                 </thead>
                 <tbody id="rpt-table-body"></tbody>
@@ -3387,22 +3388,46 @@ function rptDownload(){downloadReportExcel();}
 function rptRefreshData(){if(reportState.activeId)renderReportContent();}
 function rptAITag(){
   if(!isAIReady()){openAISettings();return;}
-  if(reportState.activeId){
-    reportState.viewMode='stats';
-    renderReportContent();
-    setTimeout(()=>rptRunAIAnalysis('pattern'),300);
-  }else{
-    const allChats=Object.values(store.chatData).flat();
-    const{start,end}=getPeriodDates();
-    const cur=filterPeriod(allChats,start,end);
-    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
-    const top10=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const hcTags=Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
-    const prompt='CX 데이터 분석가입니다. 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
-    callGemini(prompt).then(result=>{
-      alert('AI 분석 완료 (전체 데이터 기준)\n리포트를 선택하면 상담 통계 탭에서 상세 확인 가능합니다.\n\n'+result.slice(0,400));
-    }).catch(e=>alert('AI 오류: '+e.message));
-  }
+  var chats=reportState.activeId?getReportChats():(function(){var a=Object.values(store.chatData).flat();var p=getPeriodDates();return filterPeriod(a,p.start,p.end);})();
+  if(!chats.length){alert('분석할 데이터가 없습니다.');return;}
+  var tagMap={};
+  chats.forEach(function(c){var t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
+  var top10=Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  var hcTags=Object.entries(tagMap).filter(function(e){
+    var tag=e[0],n=e[1];
+    var items=chats.filter(function(c){return c.tags===tag;});
+    var comp=items.filter(function(c){return c['profile.csat']!=null&&c['profile.csat']<=2;}).length;
+    return n>=3&&comp/n>0.3;
+  }).slice(0,5);
+  var untagged=chats.filter(function(c){return !c.tags;}).length;
+  var prompt='CX 데이터 분석가입니다. 아래 상담 태그 분포를 분석해주세요.\n\n총 상담: '+chats.length+'건 (태그없음: '+untagged+'건)\n\n상위 VOC 유형:\n'+top10.map(function(t,i){return (i+1)+'. '+t[0]+': '+t[1]+'건';}).join('\n')+'\n\n불만율 높은 태그:\n'+(hcTags.map(function(e){return '- '+e[0]+': '+e[1]+'건';}).join('\n')||'없음')+'\n\n반복 VOC 패턴 요약\n고위험 VOC 유형\n개선 우선순위 TOP3';
+  var btn=document.querySelector('[onclick="rptAITag()"]');
+  if(btn){btn.disabled=true;btn.textContent='분석 중...';}
+  callGemini(prompt).then(function(result){
+    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI로 태그 분류하기';}
+    var old=document.getElementById('ai-tag-result-popup');if(old)old.remove();
+    var pop=document.createElement('div');
+    pop.id='ai-tag-result-popup';
+    pop.style.cssText='position:fixed;top:60px;right:20px;width:380px;max-height:70vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;padding:20px;';
+    var hdr=document.createElement('div');
+    hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;';
+    var ttl=document.createElement('span');
+    ttl.style.cssText='font-size:13px;font-weight:700;color:#1e293b;';
+    ttl.textContent='AI 태그 분석 결과';
+    var cBtn=document.createElement('button');
+    cBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:16px;color:#94a3b8;line-height:1;';
+    cBtn.textContent='x';
+    cBtn.onclick=function(){pop.remove();};
+    hdr.appendChild(ttl);hdr.appendChild(cBtn);
+    var bdy=document.createElement('div');
+    bdy.style.cssText='font-size:12px;color:#334155;line-height:1.7;white-space:pre-wrap;';
+    bdy.textContent=result;
+    pop.appendChild(hdr);pop.appendChild(bdy);
+    document.body.appendChild(pop);
+  }).catch(function(e){
+    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI로 태그 분류하기';}
+    alert('AI 오류: '+e.message);
+  });
 }
 
 async function rptOllamaAutoFill(){
@@ -3410,21 +3435,23 @@ async function rptOllamaAutoFill(){
   const allChats=Object.values(store.chatData).flat();
   const{start,end}=getPeriodDates();
   const reportChats=reportState.activeId?getReportChats():filterPeriod(allChats,start,end);
-  // summarizedMessage가 있고 tags나 product가 비어있는 상담만 대상
+  // 태그나 제품명이 비어있는 상담 대상 (summarizedMessage OR description 활용)
   const targets=reportChats.filter(c=>{
-    const hasSummary=c.summarizedMessage&&c.summarizedMessage.trim().length>10;
-    const missingTag=!c.tags||c.tags==='—';
+    const hasSummary=!!(c.summarizedMessage&&c.summarizedMessage.trim().length>10);
+    const hasDesc=!!(c.description&&c.description.trim().length>5);
+    const hasText=hasSummary||hasDesc;
+    const missingTag=!c.tags||c.tags==='기타'||c.tags==='—';
     const missingProd=!c['profile.defective']&&!c['profile.return_product']&&!c['profile.product'];
-    return hasSummary&&(missingTag||missingProd);
-  }).slice(0,30);  // 최대 30건씩
-  if(!targets.length){alert('자동완성할 데이터가 없습니다.\n\nsummarizedMessage가 있는 상담만 분석 가능합니다.');return;}
+    return hasText&&(missingTag||missingProd);
+  }).slice(0,50);
+  if(!targets.length){alert('자동완성할 데이터가 없습니다.\n\n분석 가능한 텍스트가 없습니다.');return;}
   const btn=document.getElementById('btn-ollama-autofill');
   if(btn){btn.disabled=true;btn.textContent='분석 중... ('+targets.length+'건)';}
   let filled=0,failed=0;
   try{
     for(let i=0;i<targets.length;i++){
       const c=targets[i];
-      const summary=(c.summarizedMessage||'').slice(0,400);
+      const summary=(c.summarizedMessage||c.description||'').replace(/\d{15,}/g,'').trim().slice(0,400);
       const prompt='당신은 CS 상담 분류 전문가입니다. 아래 상담 요약을 분석해 JSON으로 응답하세요.\n\n상담요약: '+summary+'\n\n응답형식(JSON만, 설명없이):\n{"tag":"태그명","product":"제품명또는빈문자열","issue":"문제유형한줄요약"}\n\ntag는 다음 중 하나: 배송문의/교환반품/상품문의/불량/AS/결제취소/기타\nproduct는 상담에서 언급된 제품명 (없으면 빈 문자열)\nissue는 15자 이내 한국어 요약';
       try{
         const result=await callGemini(prompt);
@@ -3952,7 +3979,7 @@ function renderReportSummary(cur,prev){
   const total=cur.length||1,inPct=Math.round(inbound/total*100);
   const el=document.getElementById('rpt-summary-cards');if(!el)return;
   el.innerHTML='<div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">전체 문의 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#1e293b;">'+cur.length+'건</div><div style="font-size:12px;color:'+(delta<=0?'#10b981':'#ef4444')+';">'+(delta<=0?'↓':'↑')+' '+Math.abs(delta)+'건 ('+(delta>=0?'+':'')+deltaPct+'%)</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+cur.length+'건 / 비교 '+compCount+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">불만 건수 및 증감</div><div style="font-size:22px;font-weight:700;color:#ef4444;">'+complaint+'건</div><div style="font-size:12px;color:'+(cd<=0?'#10b981':'#ef4444')+';">'+(cd<=0?'↓':'↑')+' '+Math.abs(cd)+'건 ('+(cd>=0?'+':'')+cpct+'%)</div><div style="font-size:11px;color:#94a3b8;margin-top:4px;">현재 '+complaint+'건 / 비교 '+prevComplaint+'건</div></div><div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;"><div style="font-size:11px;color:#64748b;margin-bottom:8px;">인바운드 / 아웃바운드</div><div style="height:80px;position:relative;min-height:80px;max-height:80px;overflow:hidden;"><canvas id="rpt-inbound-chart"></canvas></div><div style="display:flex;gap:12px;margin-top:8px;font-size:11px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#818cf8;margin-right:3px;"></span>인바운드 '+inPct+'%&nbsp;&nbsp;<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e2e8f0;margin-right:3px;"></span>아웃바운드 '+(100-inPct)+'%</div></div>';
-  setTimeout(()=>{const ctx=document.getElementById('rpt-inbound-chart');if(ctx){if(reportState.statsCharts['inbound'])reportState.statsCharts['inbound'].destroy();reportState.statsCharts['inbound']=new Chart(ctx.getContext('2d'),{type:'doughnut',data:{labels:['인바운드','아웃바운드'],datasets:[{data:[inPct,100-inPct],backgroundColor:['#818cf8','#e2e8f0'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});}},50);
+  setTimeout(()=>{const ctx=document.getElementById('rpt-inbound-chart');if(ctx){if(reportState.statsCharts['inbound'])reportState.statsCharts['inbound'].destroy();reportState.statsCharts['inbound']=new Chart(ctx.getContext('2d'),{type:'doughnut',data:{labels:['인바운드','아웃바운드'],datasets:[{data:[inPct,100-inPct],backgroundColor:['#818cf8','#e2e8f0'],borderWidth:2}]},options:{responsive:false,maintainAspectRatio:true,plugins:{legend:{display:false}}}});}},50);
 }
 
 function renderReportTrend(chats,start,end){

@@ -2864,6 +2864,7 @@ function showOnlyView(id) {
     const el = document.getElementById(v);
     if (el) el.style.display = 'none';
   });
+  const _pf=document.getElementById('panel-fields');if(_pf)_pf.style.display='none';
   document.getElementById('dashboard-content').style.display = '';
   document.getElementById('empty-state').style.display = 'none';
   const t = document.getElementById(id);
@@ -3354,7 +3355,7 @@ function buildReportFilterUI() {
   const df=reportState.dynamicFilters||{};
   const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
   const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
-  const products=[...new Set(allChats.map(c=>c['profile.product']).filter(Boolean))].sort().slice(0,30);
+  const products=[...new Set(allChats.map(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product'])).filter(Boolean))].sort().slice(0,30);
   const sel=(id,label,opts,val)=>'<select id="'+id+'" onchange="setDynamicFilter(\''+id+'\',this.value)" style="padding:4px 8px;border:1px solid '+(val?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(val?'#4f46e5':'#64748b')+';background:'+(val?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">'+label+'</option>'+opts.map(o=>'<option value="'+escHtml(o)+'" '+(val===o?'selected':'')+'>'+escHtml(o)+'</option>').join('')+'</select>';
   bar.innerHTML=
     '<select id="status" onchange="setDynamicFilter(\'status\',this.value)" style="padding:4px 8px;border:1px solid '+(df.status?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(df.status?'#4f46e5':'#64748b')+';background:'+(df.status?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">상담 상태</option><option value="closed" '+(df.status==='closed'?'selected':'')+'>종료됨</option><option value="initial" '+(df.status==='initial'?'selected':'')+'>진행중</option></select>'+
@@ -3413,7 +3414,7 @@ function rptAddFilter(btn){
   _panel.style.cssText = 'position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:9999;min-width:270px;top:'+_top+'px;left:'+_left+'px;';
   var _allChats = Object.values(store.chatData).flat();
   var _tags = Array.from(new Set(_allChats.map(function(c){return c.tags;}).filter(Boolean))).sort();
-  var _products = Array.from(new Set(_allChats.map(function(c){return c['profile.product'];}).filter(Boolean))).sort();
+  var _products = Array.from(new Set(_allChats.map(function(c){return c['profile.defective']||c['profile.return_product']||c['profile.product'];}).filter(Boolean))).sort();
   var _managers = Array.from(new Set(_allChats.filter(function(c){return c.assigneeId;}).map(function(c){return store.managers[c.assigneeId]||c.assigneeId;}))).sort();
   var _df = reportState.dynamicFilters || {};
   var _h = '<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:12px;">필터 설정</div>'
@@ -3749,7 +3750,7 @@ function applyReportFilters(chats){
   if(df.complaint==='no')result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']>2);
   if(df.manager)result=result.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===df.manager);
   if(df.tagCat)result=result.filter(c=>(c.tags||'')===df.tagCat||(c.tags||'').split('/')[0]===df.tagCat);
-  if(df.product)result=result.filter(c=>(c['profile.product']||'')===df.product);
+  if(df.product)result=result.filter(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')===df.product);
   if(df.brand)result=result.filter(c=>{
     const brands=Object.keys(store.chatData);
     const matchBrand=brands.find(b=>(store.chatData[b]||[]).includes(c));
@@ -3848,7 +3849,7 @@ function renderReportTable(chats){
     const mgr=store.managers[c.assigneeId]||(c.assigneeId?c.assigneeId:'—');
     const dt=parseDate(c.createdAt||c.managedAt);
     const dtStr=dt?(dt.getMonth()+1)+'/'+(dt.getDate()):'—';
-    return '<tr style="cursor:pointer;" onclick="showRowDetail(\''+escHtml(c.id||'')+'\')"><td><span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:12px;background:'+csatBg+';">'+csatBadge+'</span></td><td style="font-size:12px;">'+escHtml(cat)+'</td><td style="font-size:12px;">'+escHtml(prod)+'</td><td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</td><td style="font-size:11px;color:#64748b;">—</td><td style="font-size:11px;color:#64748b;">—</td><td style="font-size:12px;">'+escHtml(c.name||'—')+'</td><td style="font-size:12px;">'+escHtml(mgr)+'</td><td style="font-size:11px;color:#64748b;">채널톡</td><td style="font-size:11px;color:#94a3b8;">'+dtStr+'</td></tr>';
+    return '<tr style="cursor:pointer;" onclick="showRowDetail(\''+escHtml(c.id||'')+'\')"><td><span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:12px;background:'+csatBg+';">'+csatBadge+'</span></td><td style="font-size:12px;">'+escHtml(cat)+'</td><td style="font-size:12px;">'+escHtml(prod)+'</td><td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</td><td style="font-size:11px;color:#64748b;">'+((c.description&&c.description.trim())?(c.description.trim().slice(0,30)+(c.description.trim().length>30?'…':'')):'-')+'</td><td style="font-size:12px;">'+escHtml(c.name||'—')+'</td><td style="font-size:12px;">'+escHtml(mgr)+'</td><td style="font-size:11px;color:#64748b;">채널톡</td><td style="font-size:11px;color:#94a3b8;">'+dtStr+'</td></tr>';
   }).join('');
 }
 
@@ -3857,7 +3858,7 @@ function showRowDetail(id){
   const panel=document.getElementById('rpt-detail-panel');if(!panel)return;
   const csat=row['profile.csat'];const mgr=store.managers[row.assigneeId]||row.assigneeId||'미배정';
   const panelContent=document.getElementById('rpt-detail-content');if(!panelContent)return;
-  panelContent.innerHTML='<div style="font-size:11px;color:#64748b;line-height:2;"><div><b>고객명</b>: '+escHtml(row.name||'—')+'</div><div><b>담당자</b>: '+escHtml(mgr)+'</div><div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div><div><b>제품명</b>: '+escHtml(row['profile.product']||'—')+'</div><div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div><div><b>상담 상태</b>: '+(row.state==='closed'?'종료됨':'진행중')+'</div><div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div><div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div><div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div></div>';
+  panelContent.innerHTML='<div style="font-size:11px;color:#64748b;line-height:2;"><div><b>고객명</b>: '+escHtml(row.name||'—')+'</div><div><b>담당자</b>: '+escHtml(mgr)+'</div><div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div><div><b>제품명</b>: '+escHtml(row['profile.defective']||row['profile.return_product']||row['profile.product']||'—')+'</div><div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div><div><b>상담 상태</b>: '+(row.state==='closed'?'종료됨':'진행중')+'</div><div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div><div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div><div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div></div>';
   panel.style.display='block';
 }
 
@@ -3866,7 +3867,7 @@ function rptApplySearch(){reportState.searchQuery=(document.getElementById('rpt-
 function downloadReportExcel(){
   const chats=getReportChats();if(!chats.length)return alert('데이터가 없습니다.');
   const data=[['불만여부','대표문의유형','제품명','상담태그','고객명','담당자','만족도','날짜'],
-    ...chats.map(c=>{const csat=c['profile.csat'];return[csat==null?'미측정':csat<=2?'불만':csat<=3?'보통':'만족',(c.tags||'').split('/')[0],c['profile.product']||'',c.tags||'',c.name||'',store.managers[c.assigneeId]||c.assigneeId||'',csat!=null?csat:'',c.createdAt||''];})];
+    ...chats.map(c=>{const csat=c['profile.csat'];return[csat==null?'미측정':csat<=2?'불만':csat<=3?'보통':'만족',(c.tags||'').split('/')[0],c['profile.defective']||c['profile.return_product']||c['profile.product']||'',c.tags||'',c.name||'',store.managers[c.assigneeId]||c.assigneeId||'',csat!=null?csat:'',c.createdAt||''];})];
   const ws=XLSX.utils.aoa_to_sheet(data),wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'리포트');
   const r=savedReports.find(r=>r.id===reportState.activeId);
@@ -3875,6 +3876,7 @@ function downloadReportExcel(){
 
 /* ━━━ 리포트 통계 뷰 ━━━ */
 function renderReportStats(cur,prev,start,end){
+  Object.values(reportState.statsCharts).forEach(function(c){try{c.destroy();}catch(e){}});reportState.statsCharts={};
   renderReportSummary(cur,prev);
   renderReportTrend(cur,start,end);
   renderTagLeaderboard(cur,prev);
@@ -3997,7 +3999,7 @@ function openReportCreationModal(){
   const brands=Object.keys(store.chatData);
   const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
   const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
-  const products=[...new Set(allChats.map(c=>c['profile.product']).filter(Boolean))].sort().slice(0,30);
+  const products=[...new Set(allChats.map(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product'])).filter(Boolean))].sort().slice(0,30);
   const fill=(id,opts)=>{
     const el=document.getElementById(id);if(!el)return;
     const cur=el.children[0].outerHTML;

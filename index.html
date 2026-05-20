@@ -1142,6 +1142,11 @@ tbody td:first-child {
                 <button onclick="setChartPeriod('30d')" id="cp-30d" class="cp-btn" style="padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;cursor:pointer;">30일</button>
                 <button onclick="setChartPeriod('60d')" id="cp-60d" class="cp-btn" style="padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;cursor:pointer;">60일</button>
                 <button onclick="setChartPeriod('90d')" id="cp-90d" class="cp-btn" style="padding:4px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:6px;font-size:11px;cursor:pointer;">90일</button>
+                <span style="color:#e2e8f0;">|</span>
+                <span style="font-size:11px;color:#64748b;">직접설정:</span>
+                <input type="date" id="chart-date-from" style="padding:3px 6px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px;outline:none;" onchange="applyChartCustomDate()">
+                <span style="font-size:11px;color:#94a3b8;">~</span>
+                <input type="date" id="chart-date-to" style="padding:3px 6px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px;outline:none;" onchange="applyChartCustomDate()">
               </div>
             </div>
             <!-- 차트 내용 -->
@@ -1367,6 +1372,11 @@ tbody td:first-child {
                 <button onclick="setResearchPeriod('30d')"  id="rp-30d"  class="rp-btn active" style="padding:3px 8px;border:1px solid var(--primary);background:var(--primary-light);border-radius:5px;font-size:10px;cursor:pointer;color:var(--primary);">30일</button>
                 <button onclick="setResearchPeriod('60d')"  id="rp-60d"  class="rp-btn" style="padding:3px 8px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;font-size:10px;cursor:pointer;color:#64748b;">60일</button>
                 <button onclick="setResearchPeriod('90d')"  id="rp-90d"  class="rp-btn" style="padding:3px 8px;border:1px solid #e2e8f0;background:#fff;border-radius:5px;font-size:10px;cursor:pointer;color:#64748b;">90일</button>
+                <span style="color:#e2e8f0;">|</span>
+                <span style="font-size:11px;color:#64748b;">직접설정:</span>
+                <input type="date" id="research-date-from" style="padding:3px 6px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px;outline:none;" onchange="applyResearchCustomDate()">
+                <span style="font-size:11px;color:#94a3b8;">~</span>
+                <input type="date" id="research-date-to" style="padding:3px 6px;border:1px solid #e2e8f0;border-radius:5px;font-size:11px;outline:none;" onchange="applyResearchCustomDate()">
               </div>
             </div>
             <!-- 대화 목록 -->
@@ -1598,6 +1608,39 @@ tbody td:first-child {
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
       <button onclick="closeReportCreationModal()" style="padding:8px 16px;border:1px solid #e2e8f0;background:#fff;border-radius:7px;cursor:pointer;font-size:13px;color:#64748b;">취소</button>
       <button onclick="saveNewReport()" style="padding:8px 20px;background:#6366f1;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">리포트 만들기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 새 필드 추가 모달 -->
+<div id="new-field-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:600;align-items:center;justify-content:center;" onclick="if(event.target===this)closeNewFieldModal()">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">+ 새 필드 추가</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:20px;">상담 데이터에 사용할 새 필드를 정의하세요</div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">필드 이름 *</label>
+        <input id="nf-name" type="text" placeholder="예: 불량 유형" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">타입</label>
+        <div style="display:flex;gap:8px;">
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;flex:1;" onclick="this.style.borderColor='#6366f1';document.getElementById('nf-type-text').style.borderColor='#e2e8f0';">
+            <input type="radio" name="nf-type" value="tag" id="nf-type-tag" checked style="accent-color:#6366f1;"> &#x1F3F7; 태그
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;flex:1;" id="nf-type-text" onclick="this.style.borderColor='#6366f1';document.getElementById('nf-type-tag').parentElement.style.borderColor='#e2e8f0';">
+            <input type="radio" name="nf-type" value="text" style="accent-color:#6366f1;"> &#x2261; 텍스트
+          </label>
+        </div>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">설명 (선택)</label>
+        <input id="nf-desc" type="text" placeholder="이 필드의 용도를 설명하세요" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+      <button onclick="closeNewFieldModal()" style="padding:8px 16px;border:1px solid #e2e8f0;background:#fff;border-radius:7px;cursor:pointer;font-size:13px;color:#64748b;">취소</button>
+      <button onclick="saveNewField()" style="padding:8px 20px;background:#6366f1;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">필드 추가</button>
     </div>
   </div>
 </div>
@@ -1923,7 +1966,7 @@ function calcKPIs(chats) {
   const csatChats = chats.filter(c => c['profile.csat'] != null);
   const complaints = csatChats.filter(c => Number(c['profile.csat']) <= 2).length;
 
-  const firstReplyTimes = chats.map(c => c.timeToFirstAnswerInOperation != null ? c.timeToFirstAnswerInOperation / 1000 : null).filter(v => v != null);
+  const firstReplyTimes = chats.map(c => c.timeToFirstAnswerInOperation != null ? Number(c.timeToFirstAnswerInOperation) : null).filter(v => v != null);
   const replyTimes = chats.map(c => { const v = c.avgReplyTimeInOperation ?? c.avgReplyTime; return v != null ? v / 1000 : null; }).filter(v => v != null);
   const handlingTimes = chats.map(c => c.memberHandlingTime != null ? c.memberHandlingTime / 1000 : null).filter(v => v != null);
   const csatScores = csatChats.map(c => Number(c['profile.csat']));
@@ -2797,7 +2840,7 @@ function switchMainTab(tab) {
   if (tab === 'report')    {
     showOnlyView('view-report');
     renderReportList();
-    if (!reportState.activeId && REPORTS.length) selectReport(REPORTS[0].id);
+    if (!reportState.activeId && savedReports.length) selectReport(savedReports[0].id);
     else if (reportState.activeId) renderReportContent();
     return;
   }
@@ -2840,6 +2883,8 @@ const extraCharts = {};
 
 /* ━━━━━ AI 차트 탭 ━━━━━ */
 let chartAIPeriod = '7d';
+let chartAIStart = null;
+let chartAIEnd = null;
 let chartHistory = [];
 let chartAIChart = null;
 function renderChartExtra() {
@@ -2858,6 +2903,29 @@ function setChartPeriod(p) {
   });
 }
 
+function applyChartCustomDate(){
+  const from = document.getElementById('chart-date-from')?.value;
+  const to = document.getElementById('chart-date-to')?.value;
+  if(!from || !to) return;
+  const start = new Date(from+'T00:00:00');
+  const end = new Date(to+'T23:59:59');
+  if(start > end){ alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
+  // 기간 버튼 active 해제
+  ['7d','30d','60d','90d'].forEach(d=>{
+    const btn = document.getElementById('cp-'+d);
+    if(btn){
+      btn.classList.remove('active');
+      btn.style.background='#fff';
+      btn.style.color='#64748b';
+      btn.style.borderColor='#e2e8f0';
+    }
+  });
+  chartAIStart = start;
+  chartAIEnd = end;
+  updateChartDataContext();
+  renderChartExtra();
+}
+
 function setChartPrompt(text) {
   const inp = document.getElementById('chart-ai-input');
   if (inp) { inp.value = text; inp.focus(); }
@@ -2867,9 +2935,16 @@ function updateChartDataContext() {
   // 현재 데이터 요약 생성 (AI에 전달할 컨텍스트)
   const allC = Object.values(store.chatData).flat();
   const now = new Date();
-  const days = chartAIPeriod === '7d' ? 7 : chartAIPeriod === '30d' ? 30 : chartAIPeriod === '60d' ? 60 : 90;
-  const start = new Date(now); start.setDate(now.getDate() - days); start.setHours(0,0,0,0);
-  window._chartCtxChats = filterPeriod(allC, start, now);
+  let start, end;
+  if (chartAIStart && chartAIEnd) {
+    start = chartAIStart;
+    end = chartAIEnd;
+  } else {
+    const days = chartAIPeriod === '7d' ? 7 : chartAIPeriod === '30d' ? 30 : chartAIPeriod === '60d' ? 60 : 90;
+    start = new Date(now); start.setDate(now.getDate() - days); start.setHours(0,0,0,0);
+    end = now;
+  }
+  window._chartCtxChats = filterPeriod(allC, start, end);
 }
 
 async function generateAIChart() {
@@ -2972,6 +3047,8 @@ function dchart(id, cfg) {
 /* ━━━━━ 리서치 트렌드 차트 ━━━━━ */
 /* ━━━━━ 리서치 AI 채팅 ━━━━━ */
 let researchPeriod = '30d';
+let researchCustomStart = null;
+let researchCustomEnd = null;
 let researchSessions = []; // [{id, name, messages:[{role,content}]}]
 let researchCurrentId = null;
 
@@ -2991,12 +3068,40 @@ function setResearchPeriod(p) {
   });
 }
 
+function applyResearchCustomDate(){
+  const from = document.getElementById('research-date-from')?.value;
+  const to = document.getElementById('research-date-to')?.value;
+  if(!from || !to) return;
+  const start = new Date(from+'T00:00:00');
+  const end = new Date(to+'T23:59:59');
+  if(start > end){ alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
+  // 버튼 active 해제
+  ['today','7d','30d','60d','90d'].forEach(d=>{
+    const btn = document.getElementById('rp-'+d);
+    if(btn){
+      btn.style.background='#fff';
+      btn.style.borderColor='#e2e8f0';
+      btn.style.color='#64748b';
+    }
+  });
+  researchCustomStart = start;
+  researchCustomEnd = end;
+  renderResearchChart();
+}
+
 function getResearchContext() {
   const allC = Object.values(store.chatData).flat();
   const now  = new Date();
-  const days = researchPeriod === 'today' ? 1 : researchPeriod === '7d' ? 7 : researchPeriod === '30d' ? 30 : researchPeriod === '60d' ? 60 : 90;
-  const start = new Date(now); start.setDate(now.getDate() - days); start.setHours(0,0,0,0);
-  const chats = filterPeriod(allC, start, now);
+  let start, end;
+  if (researchCustomStart && researchCustomEnd) {
+    start = researchCustomStart;
+    end = researchCustomEnd;
+  } else {
+    const days = researchPeriod === 'today' ? 1 : researchPeriod === '7d' ? 7 : researchPeriod === '30d' ? 30 : researchPeriod === '60d' ? 60 : 90;
+    start = new Date(now); start.setDate(now.getDate() - days); start.setHours(0,0,0,0);
+    end = now;
+  }
+  const chats = filterPeriod(allC, start, end);
   const kc = calcKPIs(chats);
   const tagMap = {};
   chats.forEach(c => { const t=c.tags||'기타'; tagMap[t]=(tagMap[t]||0)+1; });
@@ -3957,7 +4062,28 @@ function renderFieldList(){
 }
 
 function openNewFieldModal(){
-  alert('새 필드 추가 기능은 준비 중입니다.');
+  const m=document.getElementById('new-field-modal');
+  m.style.cssText='display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:600;';
+  document.getElementById('nf-name').value='';
+  document.getElementById('nf-desc').value='';
+  const tagRadio=document.getElementById('nf-type-tag');
+  if(tagRadio) tagRadio.checked=true;
+  const tagLabel=tagRadio?tagRadio.parentElement:null;
+  const textLabel=document.getElementById('nf-type-text');
+  if(tagLabel) tagLabel.style.borderColor='#6366f1';
+  if(textLabel) textLabel.style.borderColor='#e2e8f0';
+  setTimeout(()=>document.getElementById('nf-name').focus(),100);
+}
+function closeNewFieldModal(){document.getElementById('new-field-modal').style.display='none';}
+function saveNewField(){
+  const name=document.getElementById('nf-name')?.value.trim();
+  if(!name){alert('필드 이름을 입력하세요');return;}
+  const type=document.querySelector('input[name="nf-type"]:checked')?.value||'tag';
+  const now=new Date();
+  const dateStr=now.getFullYear()+'.'+(now.getMonth()+1).toString().padStart(2,'0')+'.'+now.getDate().toString().padStart(2,'0');
+  fieldStore.fields.unshift({type,name,source:'direct',usedIn:'0개',creator:'나',createdAt:dateStr});
+  closeNewFieldModal();
+  renderFieldList();
 }
 
 init();

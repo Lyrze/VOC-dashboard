@@ -1428,25 +1428,65 @@ tbody td:first-child {
 
 <!-- ── AI 설정 모달 ── -->
 <div id="ai-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeAISettings()">
-  <div style="background:#fff;border-radius:12px;padding:28px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
-    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">🤖 Gemini AI 설정</div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:20px;">무료 API 키로 AI 리포트 기능을 사용합니다</div>
+  <div style="background:#fff;border-radius:12px;padding:28px;width:480px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">&#x1F916; AI 연동 설정</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:16px;">AI 공급자를 선택하고 설정을 완료하세요</div>
 
-    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#0369a1;line-height:1.7;">
-      <strong>🔑 API 키 발급 방법 (무료, 5분)</strong><br>
-      1. <a href="https://ai.google.dev" target="_blank" style="color:#6366f1;">ai.google.dev</a> 접속 → <strong>Get API key</strong> 클릭<br>
-      2. Google 계정으로 로그인<br>
-      3. <strong>Create API key</strong> → 키 복사<br>
-      <span style="color:#64748b;">※ 무료 한도: 하루 1,500회 (월 VOC 분석엔 충분)</span>
+    <!-- 공급자 토글 -->
+    <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <button id="ai-tab-gemini" onclick="switchAITab('gemini')"
+        style="flex:1;padding:8px;border:2px solid #6366f1;background:#eef2ff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#6366f1;">
+        ☁️ Gemini (무료 API)
+      </button>
+      <button id="ai-tab-ollama" onclick="switchAITab('ollama')"
+        style="flex:1;padding:8px;border:2px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#94a3b8;">
+        &#x1F4BB; Ollama (로컬 AI)
+      </button>
     </div>
 
-    <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Gemini API Key</label>
-    <input id="gemini-key-input" type="password"
-      placeholder="AIzaSy..."
-      style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;margin-bottom:16px;"
-      onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'">
+    <!-- Gemini 패널 -->
+    <div id="ai-panel-gemini">
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#0369a1;line-height:1.7;">
+        <strong>&#x1F511; API 키 발급 방법 (무료, 5분)</strong><br>
+        1. <a href="https://ai.google.dev" target="_blank" style="color:#6366f1;">ai.google.dev</a> 접속 → <strong>Get API key</strong> 클릭<br>
+        2. Google 계정으로 로그인<br>
+        3. <strong>Create API key</strong> → 키 복사<br>
+        <span style="color:#64748b;">※ 무료 한도: 하루 1,500회 (월 VOC 분석엔 충분)</span>
+      </div>
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Gemini API Key</label>
+      <input id="gemini-key-input" type="password"
+        placeholder="AIzaSy..."
+        style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;margin-bottom:4px;box-sizing:border-box;"
+        onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'">
+    </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
+    <!-- Ollama 패널 -->
+    <div id="ai-panel-ollama" style="display:none;">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:#166534;line-height:1.7;">
+        <strong>&#x1F4BB; Ollama 로컬 AI 사용 방법</strong><br>
+        1. <a href="https://ollama.com" target="_blank" style="color:#6366f1;">ollama.com</a> 에서 Ollama 설치<br>
+        2. 터미널에서: <code style="background:#dcfce7;padding:1px 4px;border-radius:3px;">ollama pull exaone3.5:7.8b</code><br>
+        3. CORS 허용: <code style="background:#dcfce7;padding:1px 4px;border-radius:3px;">OLLAMA_ORIGINS=* ollama serve</code><br>
+        <span style="color:#166534;">※ 인터넷 연결 불필요 · 데이터 외부 전송 없음</span>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:4px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">모델명</label>
+          <input id="ollama-model-input" type="text"
+            placeholder="exaone3.5:7.8b"
+            style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;"
+            onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">연결 확인</label>
+          <button onclick="testOllama()" style="width:100%;padding:9px 8px;border:1px solid #22c55e;background:#f0fdf4;border-radius:7px;cursor:pointer;font-size:12px;color:#166534;font-weight:600;">연결 테스트</button>
+        </div>
+      </div>
+      <div id="ollama-test-result" style="font-size:11px;color:#64748b;min-height:16px;margin-bottom:4px;"></div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">서버 주소: http://localhost:11434 (고정)</div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
       <button onclick="closeAISettings()" style="padding:8px 16px;border:1px solid #e2e8f0;background:#fff;border-radius:7px;cursor:pointer;font-size:13px;color:#64748b;">취소</button>
       <button onclick="saveAIKey()" style="padding:8px 20px;background:#6366f1;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">저장</button>
     </div>
@@ -1536,6 +1576,12 @@ const store = {
   activeDash: '통합-채팅',
   // Gemini API 키 (메모리에만 저장)
   geminiKey: null,
+  // AI 공급자: 'gemini' | 'ollama'
+  aiProvider: 'gemini',
+  // Ollama 모델명
+  ollamaModel: 'exaone3.5:7.8b',
+  // Ollama 서버 주소
+  ollamaUrl: 'http://localhost:11434',
 };
 
 // UI 상태
@@ -2768,7 +2814,7 @@ function updateChartDataContext() {
 }
 
 async function generateAIChart() {
-  if (!store.geminiKey) { openAISettings(); return; }
+  if (!isAIReady()) { openAISettings(); return; }
   const inp = document.getElementById('chart-ai-input');
   const query = inp?.value?.trim();
   if (!query) { alert('차트 내용을 입력하세요.'); return; }
@@ -2873,7 +2919,7 @@ let researchCurrentId = null;
 function renderResearchChart() {
   // 리서치 탭 초기화
   if (!researchSessions.length) newResearchChat();
-  document.getElementById('research-usage').textContent = store.geminiKey ? '✓ AI 연결됨' : '좌측 하단 AI 설정 필요';
+  document.getElementById('research-usage').textContent = isAIReady() ? (store.aiProvider==='ollama'?'✓ Ollama 로컬 AI':'✓ Gemini AI 연결됨') : '좌측 하단 AI 설정 필요';
 }
 
 function setResearchPeriod(p) {
@@ -3003,7 +3049,7 @@ function showResearchTyping() {
 }
 
 async function sendResearchMessage() {
-  if (!store.geminiKey) { openAISettings(); return; }
+  if (!isAIReady()) { openAISettings(); return; }
   const inp = document.getElementById('research-input');
   const msg = inp?.value?.trim();
   if (!msg) return;
@@ -3178,7 +3224,7 @@ function rptCloseDetail(){const p=document.getElementById('rpt-detail-panel');if
 function searchReportTable(){rptApplySearch();}
 
 async function rptRunAIAnalysis(type){
-  if(!store.geminiKey){openAISettings();return;}
+  if(!isAIReady()){openAISettings();return;}
   const outputEl=document.getElementById('rpt-ai-output');
   if(!outputEl)return;
   outputEl.innerHTML='<div style="display:flex;align-items:center;gap:8px;color:#6366f1;padding:12px 0;font-size:12px;"><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span>&nbsp;분석 중...</div>';
@@ -3203,9 +3249,15 @@ async function rptRunAIAnalysis(type){
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Gemini API
+   AI API (Gemini / Ollama 라우팅)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function isAIReady() {
+  if (store.aiProvider === 'ollama') return true;
+  return !!store.geminiKey;
+}
+
 async function callGemini(prompt) {
+  if (store.aiProvider === 'ollama') return callLocalAI(prompt);
   if (!store.geminiKey) { openAISettings(); throw new Error('API 키가 설정되지 않았습니다'); }
   const models = ['gemini-2.0-flash','gemini-1.5-flash-latest','gemini-1.5-flash-002'];
   let res, lastErr;
@@ -3231,13 +3283,117 @@ async function callGemini(prompt) {
   return d.candidates?.[0]?.content?.parts?.[0]?.text||'응답 없음';
 }
 
+async function callLocalAI(prompt) {
+  const model = store.ollamaModel || 'exaone3.5:7.8b';
+  const url = (store.ollamaUrl || 'http://localhost:11434') + '/api/chat';
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: model,
+        messages: [{role:'user', content: prompt}],
+        stream: false,
+        options: {temperature: 0.3, num_predict: 2048}
+      })
+    });
+  } catch(e) {
+    throw new Error('Ollama 연결 실패: '+e.message+'\n\n터미널에서 OLLAMA_ORIGINS=* ollama serve 를 실행한 뒤 다시 시도하세요.');
+  }
+  if (!res.ok) {
+    const txt = await res.text().catch(()=>'');
+    throw new Error('Ollama 오류 (HTTP '+res.status+'): '+txt.slice(0,200));
+  }
+  const d = await res.json();
+  return d.message?.content || d.response || '응답 없음';
+}
+
+async function testOllama() {
+  const btn = document.querySelector('[onclick="testOllama()"]');
+  const result = document.getElementById('ollama-test-result');
+  const model = document.getElementById('ollama-model-input').value.trim() || store.ollamaModel;
+  if (btn) btn.disabled = true;
+  result.textContent = '⏳ 연결 확인 중...';
+  result.style.color = '#64748b';
+  try {
+    const res = await fetch((store.ollamaUrl||'http://localhost:11434')+'/api/tags');
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const d = await res.json();
+    const models = (d.models||[]).map(m=>m.name);
+    const found = models.some(m=>m.startsWith(model.split(':')[0]));
+    if (found) {
+      result.textContent = '✅ 연결 성공! 모델 사용 가능: '+model;
+      result.style.color = '#16a34a';
+    } else {
+      result.textContent = '⚠️ Ollama 연결됨, 모델 없음. 설치된 모델: '+(models.join(', ')||'없음');
+      result.style.color = '#d97706';
+    }
+  } catch(e) {
+    result.textContent = '❌ 연결 실패: '+e.message+' — OLLAMA_ORIGINS=* ollama serve 실행 필요';
+    result.style.color = '#dc2626';
+  }
+  if (btn) btn.disabled = false;
+}
+
+function switchAITab(tab) {
+  store.aiProvider = tab;
+  const gBtn = document.getElementById('ai-tab-gemini');
+  const oBtn = document.getElementById('ai-tab-ollama');
+  const gPanel = document.getElementById('ai-panel-gemini');
+  const oPanel = document.getElementById('ai-panel-ollama');
+  if (!gBtn||!oBtn||!gPanel||!oPanel) return;
+  if (tab === 'gemini') {
+    gBtn.style.cssText = 'flex:1;padding:8px;border:2px solid #6366f1;background:#eef2ff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#6366f1;';
+    oBtn.style.cssText = 'flex:1;padding:8px;border:2px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#94a3b8;';
+    gPanel.style.display = '';
+    oPanel.style.display = 'none';
+  } else {
+    oBtn.style.cssText = 'flex:1;padding:8px;border:2px solid #22c55e;background:#f0fdf4;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#166534;';
+    gBtn.style.cssText = 'flex:1;padding:8px;border:2px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#94a3b8;';
+    gPanel.style.display = 'none';
+    oPanel.style.display = '';
+    const inp = document.getElementById('ollama-model-input');
+    if (inp) inp.value = store.ollamaModel || 'exaone3.5:7.8b';
+  }
+}
+
 function showAIThinking(id){document.getElementById(id).innerHTML='<div style="display:flex;align-items:center;gap:8px;color:#6366f1;font-size:13px;padding:20px;"><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#6366f1;animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span><span>AI가 분석 중입니다...</span></div>';}
 
 function renderMarkdown(md){return md.replace(/^### (.+)$/gm,'<h3 style="font-size:13px;font-weight:700;color:#1e293b;margin:12px 0 5px;">$1</h3>').replace(/^## (.+)$/gm,'<h2 style="font-size:14px;font-weight:700;color:#1e293b;margin:14px 0 7px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;">$1</h2>').replace(/^# (.+)$/gm,'<h1 style="font-size:15px;font-weight:700;color:#1e293b;margin:16px 0 8px;">$1</h1>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/^- (.+)$/gm,'<li style="margin-bottom:4px;padding-left:4px;">$1</li>').replace(/^---$/gm,'<hr style="border:none;border-top:1px solid #f1f5f9;margin:12px 0;">').replace(/\n\n/g,'<br><br>');}
 
-function openAISettings(){const m=document.getElementById('ai-modal');m.style.cssText='display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;';const inp=document.getElementById('gemini-key-input');if(store.geminiKey)inp.value=store.geminiKey;setTimeout(()=>inp.focus(),100);}
+function openAISettings(){
+  const m=document.getElementById('ai-modal');
+  m.style.cssText='display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;';
+  switchAITab(store.aiProvider||'gemini');
+  if(store.geminiKey){const inp=document.getElementById('gemini-key-input');if(inp)inp.value=store.geminiKey;}
+  const oInp=document.getElementById('ollama-model-input');
+  if(oInp)oInp.value=store.ollamaModel||'exaone3.5:7.8b';
+}
 function closeAISettings(){document.getElementById('ai-modal').style.display='none';}
-function saveAIKey(){const key=document.getElementById('gemini-key-input').value.trim();if(!key){alert('API 키를 입력하세요');return;}store.geminiKey=key;document.getElementById('ai-key-status').textContent='✓ AI 설정 완료';closeAISettings();}
+function saveAIKey(){
+  if(store.aiProvider==='ollama'){
+    const model=(document.getElementById('ollama-model-input').value.trim()||'exaone3.5:7.8b');
+    store.ollamaModel=model;
+    updateAIKeyStatus();
+    closeAISettings();
+  } else {
+    const key=document.getElementById('gemini-key-input').value.trim();
+    if(!key){alert('API 키를 입력하세요');return;}
+    store.geminiKey=key;
+    updateAIKeyStatus();
+    closeAISettings();
+  }
+}
+function updateAIKeyStatus(){
+  const el=document.getElementById('ai-key-status');
+  if(!el)return;
+  if(store.aiProvider==='ollama'){
+    el.textContent='✓ Ollama: '+(store.ollamaModel||'exaone3.5:7.8b');
+  } else {
+    el.textContent=store.geminiKey?'✓ Gemini AI 연결됨':'AI 설정 (API 키 없음)';
+  }
+}
 
 async function generateReport(){
   const btn=document.getElementById('report-gen-btn');if(btn)btn.disabled=true;

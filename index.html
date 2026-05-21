@@ -2663,12 +2663,15 @@ function normalizeProductName(str) {
 
 // ── 태그 카테고리 확장: ALF+다른태그 복합값 → 개별 배열 ──
 function expandTagCategories(rawTag) {
-  var main = String(rawTag||'').split('/')[0].trim() || '기타';
-  // 쉼표 구분: "ALF미해결,불량" → ["ALF미해결","불량"]
-  if (main.indexOf(',') >= 0) {
-    var parts = main.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-    if (parts.length > 1) return parts;
+  var raw = String(rawTag||'').trim();
+  // 쉼표로 구분된 복수 태그 처리: "반품/반품신청, ALF오류" → ["반품","ALF오류"]
+  // "ALF미해결, 불량/불량확정" → ["ALF미해결","불량"]
+  if (raw.indexOf(',') >= 0) {
+    var items = raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    var mains = items.map(function(item){ return item.split('/')[0].trim() || '기타'; });
+    if (mains.length > 1) return mains;
   }
+  var main = raw.split('/')[0].trim() || '기타';
   // 공백 구분 (ALF 접두사인 경우만): "ALF미해결 불량" → ["ALF미해결","불량"]
   if (/^ALF/i.test(main) && /\s/.test(main)) {
     var sp = main.split(/\s+/).filter(Boolean);

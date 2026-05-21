@@ -658,6 +658,7 @@ tbody td:first-child {
 
 .rpt-data-table {
   width: 100%;
+  min-width: 945px;
   border-collapse: collapse;
   font-size: 12px;
   table-layout: fixed;
@@ -978,6 +979,10 @@ tbody td:first-child {
             <option value="">전체 담당자</option>
           </select>
         </div>
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:6px 0;">
+          <input type="checkbox" id="df-exclude-alf" onchange="toggleExcludeALF()" style="cursor:pointer;accent-color:var(--primary);width:14px;height:14px;">
+          <span style="font-size:12px;color:#334155;line-height:1.4;">ALF 단독 확인불가 건 제외</span>
+        </label>
         <button onclick="clearDashboardFilter()" style="padding:7px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#ef4444;font-size:12px;cursor:pointer;width:100%;">필터 초기화</button>
       </div>
     </div>
@@ -1002,7 +1007,7 @@ tbody td:first-child {
     </div>
 
     <!-- 대시보드 콘텐츠 -->
-    <div id="dashboard-content" style="display:none;">
+    <div id="dashboard-content" style="display:none;overflow:hidden;">
 
       <!-- ─── 채팅 탭 콘텐츠 ─── -->
       <div id="view-chat" style="display:none;">
@@ -1244,6 +1249,10 @@ tbody td:first-child {
           <button onclick="rptAddFilter(this)" style="display:flex;align-items:center;gap:3px;padding:3px 8px;background:#fff;border:1px dashed #c7d2fe;border-radius:5px;cursor:pointer;font-size:11px;color:#6366f1;">
             + 필터 추가
           </button>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:2px 0;" title="태그 미분류 + 상담원 미배정 건 제외">
+            <input type="checkbox" id="rpt-exclude-alf" onchange="toggleRptExcludeALF()" style="cursor:pointer;accent-color:var(--primary);">
+            <span style="font-size:11px;color:#64748b;white-space:nowrap;">ALF 확인불가 제외</span>
+          </label>
         </div>
 
         <!-- 뷰 영역 -->
@@ -1266,7 +1275,7 @@ tbody td:first-child {
                 &#8595; 다운로드
               </button>
             </div>
-            <div id="rpt-table-wrap" style="overflow-x:auto;overflow-y:visible;">
+            <div id="rpt-table-wrap" style="min-width:945px;">
               <table id="rpt-table" class="rpt-data-table">
                 <thead>
                   <tr>
@@ -1687,6 +1696,7 @@ const store = {
   lastUpdated: null,
   // 현재 활성 대시보드 id (AI 탭에서 컨텍스트 파악용)
   activeDash: '통합-채팅',
+  excludeALF: false,
   // Gemini API 키 (메모리에만 저장)
   geminiKey: null,
   // AI 공급자: 'gemini' | 'ollama'
@@ -1847,6 +1857,7 @@ function dashboardItemHTML(id, label) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function selectDashboard(id) {
   currentDashboardId = id;
+  store.activeDash = id;
 
   // 사이드바 active 갱신
   document.querySelectorAll('.dashboard-item').forEach(btn => {
@@ -3129,9 +3140,12 @@ function switchMainTab(tab) {
   if (tab === 'research')  { showOnlyView('view-research'); renderResearchChart(); return; }
   if (tab === 'fields') {
     var _fieldsPanel = document.getElementById('panel-fields');
-    ['view-chart-extra','view-report','view-research'].forEach(function(id){
+    ['view-chat','view-phone','view-all','view-voc','view-defect',
+     'view-chart-extra','view-report','view-research'].forEach(function(id){
       var el = document.getElementById(id); if(el) el.style.display = 'none';
     });
+    var _dc2=document.getElementById('dashboard-content');
+    if(_dc2){_dc2.style.display='none';_dc2.style.height='';}
     if(_fieldsPanel) _fieldsPanel.style.display = 'block';
     if (sidebarList) sidebarList.style.display = 'none';
     if (reportList)  reportList.style.display  = 'none';
@@ -3593,6 +3607,26 @@ function updateFilterLabel() {
   if (btn) btn.style.color = active ? 'var(--primary)' : '';
 }
 
+// ALF 단독 확인 불가 판별
+function isALFUnknown(c){
+  var noAgent=!c.assigneeId;
+  var tag=String(c.tags||c.tag||'').trim().split('/')[0].trim();
+  var noTag=!tag||tag==='—'||tag==='-'||tag==='태그없음'||tag==='기타'||tag==='없음'||tag==='';
+  return noAgent&&noTag;
+}
+function toggleExcludeALF(){
+  var cb=document.getElementById('df-exclude-alf');
+  store.excludeALF=cb?cb.checked:false;
+  var cbR=document.getElementById('rpt-exclude-alf');if(cbR)cbR.checked=store.excludeALF;
+  renderDashboard(currentDashboardId||store.activeDash||'통합-채팅');
+}
+function toggleRptExcludeALF(){
+  var cb=document.getElementById('rpt-exclude-alf');
+  store.excludeALF=cb?cb.checked:false;
+  var cbD=document.getElementById('df-exclude-alf');if(cbD)cbD.checked=store.excludeALF;
+  if(reportState.activeId)renderReportContent();
+}
+
 // getAllChatData에 필터 적용
 const _origGetAllChatData = getAllChatData;
 function getAllChatData() {
@@ -3601,6 +3635,7 @@ function getAllChatData() {
     .filter(([b]) => b === dashboardFilters.brand).flatMap(([,c]) => c);
   if (dashboardFilters.status)  chats = chats.filter(c => c.state === dashboardFilters.status);
   if (dashboardFilters.manager) chats = chats.filter(c => (store.managers[c.assigneeId]||c.assigneeId) === dashboardFilters.manager);
+  if(store.excludeALF) chats=chats.filter(c=>!isALFUnknown(c));
   return chats;
 }
 
@@ -3650,6 +3685,7 @@ function buildReportFilterUI() {
     sel('tagCat','태그 카테고리',tagCats,df.tagCat)+
     (products.length?sel('product','제품명',products,df.product):'')+
     (Object.keys(df).some(k=>df[k])?'<button onclick="clearAllFilters()" style="padding:4px 10px;border:1px solid #fecaca;background:#fef2f2;border-radius:6px;font-size:11px;color:#ef4444;cursor:pointer;">✕ 초기화</button>':'');
+  var cbR=document.getElementById('rpt-exclude-alf');if(cbR)cbR.checked=store.excludeALF;
 }
 
 function setDynamicFilter(key,rawVal){
@@ -3666,7 +3702,17 @@ function clearAllFilters(){reportState.dynamicFilters={};if(reportState.activeId
 /* ━━━ 리포트 탭 핸들러 ━━━ */
 function rptBack(){renderReportList();}
 function rptDownload(){downloadReportExcel();}
-function rptRefreshData(){if(reportState.activeId)renderReportContent();}
+function rptRefreshData(){
+  var btn=document.querySelector('[onclick="rptRefreshData()"]');
+  if(btn){btn.disabled=true;btn.textContent='새로고침 중...';}
+  init().then(function(){
+    if(btn){btn.disabled=false;btn.innerHTML='&#8635; 새로고침';}
+    if(reportState.activeId)renderReportContent();
+  }).catch(function(){
+    if(btn){btn.disabled=false;btn.innerHTML='&#8635; 새로고침';}
+    if(reportState.activeId)renderReportContent();
+  });
+}
 function rptAITag(){
   if(!isAIReady()){openAISettings();return;}
   var allChats=Object.values(store.chatData).flat();
@@ -3674,82 +3720,103 @@ function rptAITag(){
   var chats=reportState.activeId?getReportChats():filterPeriod(allChats,pd.start,pd.end);
   if(!chats.length){alert('분석할 데이터가 없습니다.');return;}
   var df=reportState.dynamicFilters||{};
+  var usedTags=new Set(df.tagCat?[df.tagCat]:[]);
+  var usedProds=new Set(df.product?[df.product]:[]);
   var tagMap={};var prodMap={};
   chats.forEach(function(c){
     var t=String(c.tags||c.tag||'').split('/')[0].trim();
-    if(t&&t!=='기타'&&t!=='—')tagMap[t]=(tagMap[t]||0)+1;
+    if(t&&t!=='기타'&&t!=='—'&&t!=='태그없음'&&!usedTags.has(t))tagMap[t]=(tagMap[t]||0)+1;
     var p=c['profile.defective']||c['profile.return_product']||c['profile.product']||'';
-    if(p)prodMap[p]=(prodMap[p]||0)+1;
+    if(p&&!usedProds.has(p))prodMap[p]=(prodMap[p]||0)+1;
   });
-  var topTags=Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];}).slice(0,15).map(function(e){return e[0]+':'+e[1];});
-  var topProds=Object.entries(prodMap).sort(function(a,b){return b[1]-a[1];}).slice(0,10).map(function(e){return e[0]+':'+e[1];});
-  var prompt='당신은 CX 필터 분류 전문가입니다. 상담 데이터에서 필터로 활용할 수 있는 값들을 추천해주세요.\n\n총 상담: '+chats.length+'건\n태그 분포: '+topTags.join(', ')+'\n제품 분포: '+topProds.join(', ')+'\n이미 사용 중: 태그='+(df.tagCat||'없음')+', 제품='+(df.product||'없음')+'\n\n아래 JSON 형식으로만 응답 (다른 텍스트 없이):{"recommendations":[{"category":"대표 문의유형","field":"tagCat","values":["값1","값2","값3"],"reason":"이유 한줄"},{"category":"제품명","field":"product","values":["값1","값2"],"reason":"이유 한줄"}]}';
+  var topTags=Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];}).slice(0,12);
+  var topProds=Object.entries(prodMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  if(!topTags.length&&!topProds.length){alert('추천할 새 필터 데이터가 없습니다.');return;}
+  var prompt='당신은 CS 필터 분류 전문가입니다. 상담 데이터 값을 분석해 필터명을 추천해주세요.\\n\\n태그값(건수): '+topTags.map(function(e){return e[0]+'('+e[1]+')';}).join(', ')+'\\n제품값(건수): '+topProds.map(function(e){return e[0]+'('+e[1]+')';}).join(', ')+'\\n\\nJSON 형식으로만 응답:\\n{"items":[{"value":"원래값","label":"추천필터명","field":"tagCat","reason":"이유"},{"value":"제품명","label":"추천필터명","field":"product","reason":"이유"}]}\\n\\n규칙: field는 tagCat 또는 product, label은 10자이내 한국어 필터명, 최대20개';
   var btn=document.querySelector('[onclick="rptAITag()"]');
   if(btn){btn.disabled=true;btn.textContent='분석 중...';}
   callGemini(prompt).then(function(result){
     if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI 필터 추천';}
-    var recs=null;
-    try{var cleaned=result.trim();var si=cleaned.indexOf('{');var ei=cleaned.lastIndexOf('}');if(si>=0&&ei>si)cleaned=cleaned.slice(si,ei+1);recs=JSON.parse(cleaned).recommendations;}catch(e){recs=null;}
+    var items=null;
+    try{var cleaned=result.trim();var si2=cleaned.indexOf('{');var ei2=cleaned.lastIndexOf('}');if(si2>=0&&ei2>si2)cleaned=cleaned.slice(si2,ei2+1);items=JSON.parse(cleaned).items;}catch(ex){items=null;}
     var old=document.getElementById('ai-tag-result-popup');if(old)old.remove();
     var pop=document.createElement('div');
     pop.id='ai-tag-result-popup';
-    pop.style.cssText='position:fixed;top:60px;right:20px;width:420px;max-height:80vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;font-family:inherit;';
+    pop.style.cssText='position:fixed;top:60px;right:20px;width:540px;max-height:80vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;font-family:inherit;';
     var hdr=document.createElement('div');
-    hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;';
+    hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:#fff;z-index:1;';
     var ttl=document.createElement('div');
-    ttl.innerHTML='<div style="font-size:13px;font-weight:700;color:#1e293b;">AI 필터 추천</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">항목 클릭 시 필터에 즉시 적용됩니다</div>';
+    ttl.innerHTML='<div style="font-size:13px;font-weight:700;color:#1e293b;">AI 필터 추천</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">필터명 수정 후 [필터 등록] 버튼으로 적용</div>';
     var cBtn=document.createElement('button');
-    cBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8;line-height:1;padding:0 4px;';
-    cBtn.textContent='x';
-    cBtn.onclick=function(){pop.remove();};
-    hdr.appendChild(ttl);hdr.appendChild(cBtn);
-    pop.appendChild(hdr);
+    cBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:20px;color:#94a3b8;line-height:1;padding:0 4px;';
+    cBtn.textContent='×';cBtn.onclick=function(){pop.remove();};
+    hdr.appendChild(ttl);hdr.appendChild(cBtn);pop.appendChild(hdr);
     var body=document.createElement('div');
-    body.style.cssText='padding:16px 20px;';
-    if(recs&&recs.length){
-      recs.forEach(function(rec){
-        var sec=document.createElement('div');
-        sec.style.marginBottom='16px';
-        var catDiv=document.createElement('div');
-        catDiv.style.cssText='font-size:10px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;';
-        catDiv.textContent=rec.category;
-        sec.appendChild(catDiv);
-        if(rec.reason){
-          var rDiv=document.createElement('div');
-          rDiv.style.cssText='font-size:11px;color:#94a3b8;margin-bottom:8px;line-height:1.5;';
-          rDiv.textContent=rec.reason;
-          sec.appendChild(rDiv);
-        }
-        var chips=document.createElement('div');
-        chips.style.cssText='display:flex;flex-wrap:wrap;gap:5px;';
-        (rec.values||[]).forEach(function(val){
-          var isUsed=(df[rec.field]===val);
-          var chip=document.createElement('button');
-          chip.style.cssText='padding:4px 10px;border-radius:20px;border:1.5px solid '+(isUsed?'#6366f1':'#e2e8f0')+';background:'+(isUsed?'#eff0fe':'#fff')+';color:'+(isUsed?'#4f46e5':'#334155')+';font-size:11px;cursor:'+(isUsed?'default':'pointer')+';font-family:inherit;transition:all 0.12s;';
-          chip.textContent=(isUsed?'✓ ':'')+val;
-          if(!isUsed){
-            chip.onmouseenter=function(){this.style.borderColor='#818cf8';this.style.background='#f8f8ff';};
-            chip.onmouseleave=function(){this.style.borderColor='#e2e8f0';this.style.background='#fff';};
-            chip.onclick=(function(f,v,c){return function(){
-              setDynamicFilter(f,v);
-              c.style.borderColor='#6366f1';c.style.background='#eff0fe';c.style.color='#4f46e5';
-              c.textContent='✓ '+v;c.style.cursor='default';
-              c.onmouseenter=null;c.onmouseleave=null;c.onclick=null;
-            };})(rec.field,val,chip);
-          }
-          chips.appendChild(chip);
-        });
-        sec.appendChild(chips);
-        body.appendChild(sec);
+    body.style.cssText='padding:12px 20px 20px;';
+    if(items&&items.length){
+      var tbl=document.createElement('table');
+      tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12px;';
+      var thead=document.createElement('thead');
+      thead.innerHTML='<tr style="background:#f8fafc;"><th style="padding:8px 10px;text-align:left;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #e8eaf0;">데이터 값</th><th style="padding:8px 10px;text-align:center;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #e8eaf0;">건수</th><th style="padding:8px 10px;text-align:left;font-size:11px;color:#6366f1;font-weight:600;border-bottom:1px solid #e8eaf0;">추천 필터명 <span style="color:#94a3b8;font-weight:400;">(수정가능)</span></th><th style="padding:8px 10px;border-bottom:1px solid #e8eaf0;"></th></tr>';
+      tbl.appendChild(thead);
+      var tbody=document.createElement('tbody');
+      items.forEach(function(item,i){
+        var cntMap=(item.field==='tagCat'?tagMap:prodMap);
+        var cnt=cntMap[item.value]||0;
+        var tr=document.createElement('tr');
+        tr.style.cssText='border-bottom:1px solid #f1f5f9;'+(i%2===1?'background:#fafbff;':'');
+        var tdVal=document.createElement('td');
+        tdVal.style.cssText='padding:8px 10px;color:#334155;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        tdVal.textContent=item.value;
+        tdVal.title=item.value+' ('+(item.field==='tagCat'?'태그':'제품')+')';
+        var tdCnt=document.createElement('td');
+        tdCnt.style.cssText='padding:8px 10px;text-align:center;color:#94a3b8;font-size:11px;white-space:nowrap;';
+        tdCnt.textContent=cnt+'건';
+        var tdLabel=document.createElement('td');
+        tdLabel.style.cssText='padding:5px 10px;';
+        var inp=document.createElement('input');
+        inp.type='text';inp.value=item.label||item.value;inp.title=item.reason||'';
+        inp.style.cssText='padding:4px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;width:100%;min-width:100px;outline:none;font-family:inherit;';
+        inp.onfocus=function(){this.style.borderColor='#6366f1';};
+        inp.onblur=function(){this.style.borderColor='#e2e8f0';};
+        tdLabel.appendChild(inp);
+        var tdBtn=document.createElement('td');
+        tdBtn.style.cssText='padding:5px 10px;white-space:nowrap;';
+        var regBtn=document.createElement('button');
+        regBtn.textContent='필터 등록';
+        regBtn.style.cssText='padding:4px 10px;background:#fff;border:1.5px solid #6366f1;border-radius:5px;color:#6366f1;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;font-family:inherit;';
+        regBtn.onmouseenter=function(){if(!this.dataset.done)this.style.background='#eff0fe';};
+        regBtn.onmouseleave=function(){if(!this.dataset.done)this.style.background='#fff';};
+        (function(fld,ip,rb,tr2){
+          rb.onclick=function(){
+            var v=ip.value.trim();if(!v)return;
+            setDynamicFilter(fld,v);
+            rb.textContent='✓ 등록됨';
+            rb.style.cssText='padding:4px 10px;background:#eff0fe;border:1.5px solid #6366f1;border-radius:5px;color:#4f46e5;font-size:11px;cursor:default;font-weight:600;white-space:nowrap;font-family:inherit;';
+            rb.dataset.done='1';rb.onclick=null;rb.onmouseenter=null;rb.onmouseleave=null;
+            tr2.style.background='#f0fdf4';
+          };
+        })(item.field,inp,regBtn,tr);
+        tdBtn.appendChild(regBtn);
+        tr.appendChild(tdVal);tr.appendChild(tdCnt);tr.appendChild(tdLabel);tr.appendChild(tdBtn);
+        tbody.appendChild(tr);
       });
-    } else {
+      tbl.appendChild(tbody);body.appendChild(tbl);
+      var allBtn=document.createElement('button');
+      allBtn.innerHTML='✨ 모두 등록하기';
+      allBtn.style.cssText='margin-top:12px;width:100%;padding:8px;background:var(--primary);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;';
+      allBtn.onclick=function(){
+        tbody.querySelectorAll('button:not([data-done])').forEach(function(b){b.click();});
+        allBtn.innerHTML='✓ 모두 등록됨';allBtn.disabled=true;allBtn.style.background='#94a3b8';
+      };
+      body.appendChild(allBtn);
+    }else{
       var rd=document.createElement('div');
-      rd.style.cssText='font-size:12px;color:#334155;line-height:1.7;white-space:pre-wrap;';
-      rd.textContent=result;
+      rd.style.cssText='font-size:12px;color:#334155;line-height:1.7;white-space:pre-wrap;padding:12px 0;';
+      rd.textContent='AI 분석 결과를 불러오지 못했습니다.\n\n원본:\n'+result;
       body.appendChild(rd);
     }
-    pop.appendChild(body);
-    document.body.appendChild(pop);
+    pop.appendChild(body);document.body.appendChild(pop);
   }).catch(function(e){
     if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI 필터 추천';}
     alert('AI 오류: '+e.message);
@@ -4168,6 +4235,7 @@ function applyReportFilters(chats){
     const brandSet=new Set(store.chatData[df.brand]||[]);
     result=result.filter(c=>brandSet.has(c));
   }
+  if(store.excludeALF)result=result.filter(c=>!isALFUnknown(c));
   if(reportState.searchQuery){const q=reportState.searchQuery.toLowerCase();result=result.filter(c=>(c.tags||'').toLowerCase().includes(q)||(store.managers[c.assigneeId]||'').toLowerCase().includes(q)||(c.name||'').toLowerCase().includes(q));}
   return result;
 }
@@ -4247,7 +4315,7 @@ function setReportPeriod(p){
 
 function renderReportTable(chats){
   const tbody=document.getElementById('rpt-table-body');if(!tbody)return;
-  if(!chats.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:40px;color:#94a3b8;">해당 기간에 데이터가 없습니다</td></tr>';return;}
+  if(!chats.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;">해당 기간에 데이터가 없습니다</td></tr>';return;}
   const cntEl=document.getElementById('rpt-total-count');if(cntEl)cntEl.textContent='총 '+chats.length+'개의 상담'+(chats.length>200?' (상위 200개 표시)':'');
   tbody.innerHTML=chats.slice(0,200).map(c=>{
     const csat=c['profile.csat'];

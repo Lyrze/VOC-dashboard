@@ -2850,6 +2850,9 @@ function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
     if (cat === '기타' && vocState.metric === 'mainInquiryType') {
       var fullTag = String(c.tags||'').trim();
       if (vocState.aiEtcMap[fullTag]) return vocState.aiEtcMap[fullTag];
+      // AI가 "기타/" 접두사를 제거하고 반환한 경우 fallback
+      var subTag = fullTag.indexOf('/') >= 0 ? fullTag.split('/').slice(1).join('/').trim() : fullTag;
+      if (subTag && vocState.aiEtcMap[subTag]) return vocState.aiEtcMap[subTag];
     }
     return cat;
   };

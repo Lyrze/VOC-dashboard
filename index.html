@@ -1052,6 +1052,23 @@ tbody td:first-child {
           </div>
         </div>
 
+        <!-- 섹션3b: 주요 문의 유형 분포 차트 -->
+        <div class="chart-section" id="voc-dist-section">
+          <div class="section-header">
+            <span class="section-title">
+              <span class="channel-badge">채팅</span>
+              주요 문의 유형 분포
+            </span>
+            <span class="table-date-range" id="voc-dist-date-range"></span>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;padding-top:4px;">
+            <div style="flex:1;min-width:0;position:relative;height:220px;">
+              <canvas id="voc-dist-chart"></canvas>
+            </div>
+            <div style="width:190px;flex-shrink:0;padding-top:4px;" id="voc-dist-legend"></div>
+          </div>
+        </div>
+
         <!-- 섹션4: 상담 태그 -->
         <div class="table-section" id="tag-section">
           <div class="table-section-header">
@@ -1230,9 +1247,9 @@ tbody td:first-child {
         </div>
 
         <!-- 뷰 영역 -->
-        <div id="rpt-view-area" style="flex:1;min-height:0;position:relative;">
+        <div id="rpt-view-area" style="flex:1;min-height:0;position:relative;overflow:hidden;">
           <!-- 상담 테이블 뷰 -->
-          <div id="rpt-view-table" style="overflow:auto;padding:0;">
+          <div id="rpt-view-table" style="overflow:auto;padding:0;height:100%;">
             <div id="rpt-table-toolbar" style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;">
               <span id="rpt-total-count" style="font-size:13px;font-weight:600;color:#1e293b;"></span>
               <input id="rpt-search" type="text" placeholder="검색..." oninput="rptApplySearch()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;width:180px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
@@ -1270,7 +1287,7 @@ tbody td:first-child {
           </div>
 
           <!-- 상담 통계 뷰 -->
-          <div id="rpt-view-stats" style="display:none;overflow:visible;padding:20px;">
+          <div id="rpt-view-stats" style="display:none;overflow:auto;padding:20px;height:100%;">
             <!-- 비교기간 -->
             <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
               <div id="rpt-compare-label" style="font-size:11px;color:#64748b;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:4px 10px;"></div>
@@ -1858,10 +1875,11 @@ function updateToolbarTitle(id) {
 
 function renderDashboard(id) {
   // 모든 뷰 숨기기
-  ['chat','phone','all','voc','defect'].forEach(v => {
+  ['chat','phone','all','voc','defect','report','chart-extra','research'].forEach(v => {
     const el = document.getElementById('view-' + v);
     if (el) el.style.display = 'none';
   });
+  var _pfx=document.getElementById('panel-fields'); if(_pfx) _pfx.style.display='none';
 
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('dashboard-content').style.display = '';
@@ -1878,6 +1896,7 @@ function renderDashboard(id) {
     document.getElementById('view-chat').style.display = '';
     renderChatBarChart(allChats, start);
     renderChatKPIs(cur, prev, dateRangeStr);
+    renderTagDistChart(cur, dateRangeStr);
     renderManagerTable(cur, prev, dateRangeStr);
     renderTagTable(cur, prev, dateRangeStr);
 
@@ -2293,6 +2312,62 @@ function renderManagerTable(cur, prev, dateRangeStr) {
 }
 
 /* 섹션4: 상담 태그 테이블 */
+function renderTagDistChart(chats, dateStr, canvasId, legendId, dateRangeId) {
+  canvasId = canvasId || 'voc-dist-chart';
+  legendId = legendId || 'voc-dist-legend';
+  dateRangeId = dateRangeId || 'voc-dist-date-range';
+  var dateEl = document.getElementById(dateRangeId);
+  if(dateEl) dateEl.textContent = dateStr;
+  var PALETTE = ['#818cf8','#34d399','#f59e0b','#f87171','#60a5fa','#a78bfa','#fb923c','#4ade80','#38bdf8','#f472b6'];
+  var tagMap = {};
+  chats.forEach(function(c){
+    var t = String(c.tags||c.tag||'태그없음').split('/')[0].trim() || '태그없음';
+    tagMap[t] = (tagMap[t]||0) + 1;
+  });
+  var sorted = Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];});
+  var TOP = 8;
+  var topE = sorted.slice(0,TOP);
+  var otherCnt = sorted.slice(TOP).reduce(function(s,e){return s+e[1];},0);
+  if(otherCnt > 0) topE.push(['기타', otherCnt]);
+  var total = chats.length || 1;
+  var labels = topE.map(function(e){return e[0];});
+  var data   = topE.map(function(e){return e[1];});
+  var colors = topE.map(function(e,i){return PALETTE[i%PALETTE.length];});
+  if(chartInstances[canvasId]){try{chartInstances[canvasId].destroy();}catch(e){}
+    var oldCanvas=document.getElementById(canvasId);
+    if(oldCanvas){var nc=document.createElement('canvas');nc.id=canvasId;nc.style.cssText=oldCanvas.style.cssText;oldCanvas.parentNode.replaceChild(nc,oldCanvas);}
+  }
+  var canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderRadius: 4, borderSkipped: false }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(ctx){ return ctx.raw+'건 ('+(ctx.raw/total*100).toFixed(1)+'%)'; } } },
+      },
+      scales: {
+        x: { grid: { color: '#f8fafc' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#475569' } },
+      },
+    },
+  });
+  var lgd = document.getElementById(legendId);
+  if(lgd){
+    lgd.innerHTML = topE.map(function(e,i){
+      return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
+        +'<span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:'+PALETTE[i%PALETTE.length]+'"></span>'
+        +'<span style="font-size:11px;color:#334155;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(e[0])+'">'+escHtml(e[0])+'</span>'
+        +'<span style="font-size:11px;color:#64748b;font-weight:600;">'+e[1]+'건</span>'
+        +'<span style="font-size:10px;color:#94a3b8;min-width:32px;text-align:right;">'+(e[1]/total*100).toFixed(1)+'%</span>'
+        +'</div>';
+    }).join('');
+  }
+}
+
 function renderTagTable(cur, prev, dateRangeStr) {
   document.getElementById('tag-date-range').textContent = dateRangeStr;
 
@@ -3076,6 +3151,8 @@ function showOnlyView(id) {
   document.getElementById('empty-state').style.display = 'none';
   const t = document.getElementById(id);
   if (t) t.style.display = (id === 'view-report') ? 'flex' : '';
+  var _dc=document.getElementById('dashboard-content');
+  if(_dc)_dc.style.height=(id==='view-report')?'100%':'';
 }
 
 /* ━━━━━ HTML onclick 호환 함수들 ━━━━━ */
@@ -3563,8 +3640,10 @@ function buildReportFilterUI() {
   const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
   const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
   const products=[...new Set(allChats.map(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product'])).filter(Boolean))].sort().slice(0,30);
+  const brands=Object.keys(store.chatData).sort();
   const sel=(id,label,opts,val)=>'<select id="'+id+'" onchange="setDynamicFilter(\''+id+'\',this.value)" style="padding:4px 8px;border:1px solid '+(val?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(val?'#4f46e5':'#64748b')+';background:'+(val?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">'+label+'</option>'+opts.map(o=>'<option value="'+escHtml(o)+'" '+(val===o?'selected':'')+'>'+escHtml(o)+'</option>').join('')+'</select>';
   bar.innerHTML=
+    (brands.length>1?sel('brand','전체 브랜드',brands,df.brand):'')+
     '<select id="status" onchange="setDynamicFilter(\'status\',this.value)" style="padding:4px 8px;border:1px solid '+(df.status?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(df.status?'#4f46e5':'#64748b')+';background:'+(df.status?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">상담 상태</option><option value="closed" '+(df.status==='closed'?'selected':'')+'>종료됨</option><option value="initial" '+(df.status==='initial'?'selected':'')+'>진행중</option></select>'+
     '<select id="complaint" onchange="setDynamicFilter(\'complaint\',this.value)" style="padding:4px 8px;border:1px solid '+(df.complaint?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(df.complaint?'#4f46e5':'#64748b')+';background:'+(df.complaint?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">불만 여부</option><option value="yes" '+(df.complaint==='yes'?'selected':'')+'>😡 불만 (1~2점)</option><option value="no" '+(df.complaint==='no'?'selected':'')+'>😊 만족 (3~5점)</option></select>'+
     sel('manager','담당자',managers,df.manager)+
@@ -3590,47 +3669,93 @@ function rptDownload(){downloadReportExcel();}
 function rptRefreshData(){if(reportState.activeId)renderReportContent();}
 function rptAITag(){
   if(!isAIReady()){openAISettings();return;}
-  var chats=reportState.activeId?getReportChats():(function(){var a=Object.values(store.chatData).flat();var p=getPeriodDates();return filterPeriod(a,p.start,p.end);})();
+  var allChats=Object.values(store.chatData).flat();
+  var pd=getPeriodDates();
+  var chats=reportState.activeId?getReportChats():filterPeriod(allChats,pd.start,pd.end);
   if(!chats.length){alert('분석할 데이터가 없습니다.');return;}
-  var tagMap={};
-  chats.forEach(function(c){var t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
-  var top10=Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
-  var hcTags=Object.entries(tagMap).filter(function(e){
-    var tag=e[0],n=e[1];
-    var items=chats.filter(function(c){return c.tags===tag;});
-    var comp=items.filter(function(c){return c['profile.csat']!=null&&c['profile.csat']<=2;}).length;
-    return n>=3&&comp/n>0.3;
-  }).slice(0,5);
-  var untagged=chats.filter(function(c){return !c.tags;}).length;
-  var prompt='CX 데이터 분석가입니다. 아래 상담 태그 분포를 분석해주세요.\n\n총 상담: '+chats.length+'건 (태그없음: '+untagged+'건)\n\n상위 VOC 유형:\n'+top10.map(function(t,i){return (i+1)+'. '+t[0]+': '+t[1]+'건';}).join('\n')+'\n\n불만율 높은 태그:\n'+(hcTags.map(function(e){return '- '+e[0]+': '+e[1]+'건';}).join('\n')||'없음')+'\n\n반복 VOC 패턴 요약\n고위험 VOC 유형\n개선 우선순위 TOP3';
+  var df=reportState.dynamicFilters||{};
+  var tagMap={};var prodMap={};
+  chats.forEach(function(c){
+    var t=String(c.tags||c.tag||'').split('/')[0].trim();
+    if(t&&t!=='기타'&&t!=='—')tagMap[t]=(tagMap[t]||0)+1;
+    var p=c['profile.defective']||c['profile.return_product']||c['profile.product']||'';
+    if(p)prodMap[p]=(prodMap[p]||0)+1;
+  });
+  var topTags=Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];}).slice(0,15).map(function(e){return e[0]+':'+e[1];});
+  var topProds=Object.entries(prodMap).sort(function(a,b){return b[1]-a[1];}).slice(0,10).map(function(e){return e[0]+':'+e[1];});
+  var prompt='당신은 CX 필터 분류 전문가입니다. 상담 데이터에서 필터로 활용할 수 있는 값들을 추천해주세요.\n\n총 상담: '+chats.length+'건\n태그 분포: '+topTags.join(', ')+'\n제품 분포: '+topProds.join(', ')+'\n이미 사용 중: 태그='+(df.tagCat||'없음')+', 제품='+(df.product||'없음')+'\n\n아래 JSON 형식으로만 응답 (다른 텍스트 없이):{"recommendations":[{"category":"대표 문의유형","field":"tagCat","values":["값1","값2","값3"],"reason":"이유 한줄"},{"category":"제품명","field":"product","values":["값1","값2"],"reason":"이유 한줄"}]}';
   var btn=document.querySelector('[onclick="rptAITag()"]');
   if(btn){btn.disabled=true;btn.textContent='분석 중...';}
   callGemini(prompt).then(function(result){
-    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI로 태그 분류하기';}
+    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI 필터 추천';}
+    var recs=null;
+    try{var cleaned=result.trim();var si=cleaned.indexOf('{');var ei=cleaned.lastIndexOf('}');if(si>=0&&ei>si)cleaned=cleaned.slice(si,ei+1);recs=JSON.parse(cleaned).recommendations;}catch(e){recs=null;}
     var old=document.getElementById('ai-tag-result-popup');if(old)old.remove();
     var pop=document.createElement('div');
     pop.id='ai-tag-result-popup';
-    pop.style.cssText='position:fixed;top:60px;right:20px;width:380px;max-height:70vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;padding:20px;';
+    pop.style.cssText='position:fixed;top:60px;right:20px;width:420px;max-height:80vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;font-family:inherit;';
     var hdr=document.createElement('div');
-    hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;';
-    var ttl=document.createElement('span');
-    ttl.style.cssText='font-size:13px;font-weight:700;color:#1e293b;';
-    ttl.textContent='AI 태그 분석 결과';
+    hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;';
+    var ttl=document.createElement('div');
+    ttl.innerHTML='<div style="font-size:13px;font-weight:700;color:#1e293b;">AI 필터 추천</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">항목 클릭 시 필터에 즉시 적용됩니다</div>';
     var cBtn=document.createElement('button');
-    cBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:16px;color:#94a3b8;line-height:1;';
+    cBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:18px;color:#94a3b8;line-height:1;padding:0 4px;';
     cBtn.textContent='x';
     cBtn.onclick=function(){pop.remove();};
     hdr.appendChild(ttl);hdr.appendChild(cBtn);
-    var bdy=document.createElement('div');
-    bdy.style.cssText='font-size:12px;color:#334155;line-height:1.7;white-space:pre-wrap;';
-    bdy.textContent=result;
-    pop.appendChild(hdr);pop.appendChild(bdy);
+    pop.appendChild(hdr);
+    var body=document.createElement('div');
+    body.style.cssText='padding:16px 20px;';
+    if(recs&&recs.length){
+      recs.forEach(function(rec){
+        var sec=document.createElement('div');
+        sec.style.marginBottom='16px';
+        var catDiv=document.createElement('div');
+        catDiv.style.cssText='font-size:10px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;';
+        catDiv.textContent=rec.category;
+        sec.appendChild(catDiv);
+        if(rec.reason){
+          var rDiv=document.createElement('div');
+          rDiv.style.cssText='font-size:11px;color:#94a3b8;margin-bottom:8px;line-height:1.5;';
+          rDiv.textContent=rec.reason;
+          sec.appendChild(rDiv);
+        }
+        var chips=document.createElement('div');
+        chips.style.cssText='display:flex;flex-wrap:wrap;gap:5px;';
+        (rec.values||[]).forEach(function(val){
+          var isUsed=(df[rec.field]===val);
+          var chip=document.createElement('button');
+          chip.style.cssText='padding:4px 10px;border-radius:20px;border:1.5px solid '+(isUsed?'#6366f1':'#e2e8f0')+';background:'+(isUsed?'#eff0fe':'#fff')+';color:'+(isUsed?'#4f46e5':'#334155')+';font-size:11px;cursor:'+(isUsed?'default':'pointer')+';font-family:inherit;transition:all 0.12s;';
+          chip.textContent=(isUsed?'✓ ':'')+val;
+          if(!isUsed){
+            chip.onmouseenter=function(){this.style.borderColor='#818cf8';this.style.background='#f8f8ff';};
+            chip.onmouseleave=function(){this.style.borderColor='#e2e8f0';this.style.background='#fff';};
+            chip.onclick=(function(f,v,c){return function(){
+              setDynamicFilter(f,v);
+              c.style.borderColor='#6366f1';c.style.background='#eff0fe';c.style.color='#4f46e5';
+              c.textContent='✓ '+v;c.style.cursor='default';
+              c.onmouseenter=null;c.onmouseleave=null;c.onclick=null;
+            };})(rec.field,val,chip);
+          }
+          chips.appendChild(chip);
+        });
+        sec.appendChild(chips);
+        body.appendChild(sec);
+      });
+    } else {
+      var rd=document.createElement('div');
+      rd.style.cssText='font-size:12px;color:#334155;line-height:1.7;white-space:pre-wrap;';
+      rd.textContent=result;
+      body.appendChild(rd);
+    }
+    pop.appendChild(body);
     document.body.appendChild(pop);
   }).catch(function(e){
-    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI로 태그 분류하기';}
+    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI 필터 추천';}
     alert('AI 오류: '+e.message);
   });
 }
+
 
 async function rptOllamaAutoFill(){
   if(!isAIReady()){openAISettings();return;}
@@ -4039,11 +4164,10 @@ function applyReportFilters(chats){
   if(df.manager)result=result.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===df.manager);
   if(df.tagCat)result=result.filter(c=>(c.tags||'')===df.tagCat||(c.tags||'').split('/')[0]===df.tagCat);
   if(df.product)result=result.filter(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')===df.product);
-  if(df.brand)result=result.filter(c=>{
-    const brands=Object.keys(store.chatData);
-    const matchBrand=brands.find(b=>(store.chatData[b]||[]).includes(c));
-    return !df.brand||matchBrand===df.brand;
-  });
+  if(df.brand){
+    const brandSet=new Set(store.chatData[df.brand]||[]);
+    result=result.filter(c=>brandSet.has(c));
+  }
   if(reportState.searchQuery){const q=reportState.searchQuery.toLowerCase();result=result.filter(c=>(c.tags||'').toLowerCase().includes(q)||(store.managers[c.assigneeId]||'').toLowerCase().includes(q)||(c.name||'').toLowerCase().includes(q));}
   return result;
 }

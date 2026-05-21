@@ -2664,20 +2664,18 @@ function normalizeProductName(str) {
 // ── 태그 카테고리 확장: ALF+다른태그 복합값 → 개별 배열 ──
 function expandTagCategories(rawTag) {
   var raw = String(rawTag||'').trim();
-  // 쉼표로 구분된 복수 태그 처리: "반품/반품신청, ALF오류" → ["반품","ALF오류"]
-  // "ALF미해결, 불량/불량확정" → ["ALF미해결","불량"]
+  // 쉼표로 구분된 복수 태그: "반품/반품신청, ALF오류" → ["반품/반품신청","ALF오류"] (풀 태그 반환)
   if (raw.indexOf(',') >= 0) {
     var items = raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-    var mains = items.map(function(item){ return item.split('/')[0].trim() || '기타'; });
-    if (mains.length > 1) return mains;
+    if (items.length > 1) return items;
   }
-  var main = raw.split('/')[0].trim() || '기타';
   // 공백 구분 (ALF 접두사인 경우만): "ALF미해결 불량" → ["ALF미해결","불량"]
+  var main = raw.split('/')[0].trim() || '기타';
   if (/^ALF/i.test(main) && /\s/.test(main)) {
     var sp = main.split(/\s+/).filter(Boolean);
     if (sp.length > 1) return sp;
   }
-  return [main];
+  return [raw];
 }
 
 const VOC_METRICS = [
@@ -2700,7 +2698,7 @@ function aggregateVOCTrend(chats, start, end, interval, getCategory) {
     var _rawTag = String(c.tags||c.tag||'').trim();
     var _cats = (vocState.metric==='mainInquiryType')
       ? expandTagCategories(_rawTag).map(function(t){
-          if(t==='기타'){var ft=_rawTag;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;
+          var _m=t.split('/')[0].trim()||'기타';if(_m==='기타'){if(vocState.aiEtcMap[t])return vocState.aiEtcMap[t];var st=t.indexOf('/')>=0?t.split('/').slice(1).join('/').trim():t;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return _m;
         })
       : [getCategory(c)];
     _cats.forEach(function(k){ if(vocState.excludeEtc&&k==='기타')return; catCount[k]=(catCount[k]||0)+1; });
@@ -2738,7 +2736,7 @@ function aggregateVOCTrend(chats, start, end, interval, getCategory) {
     var _rawTag2 = String(c.tags||c.tag||'').trim();
     var _cats2 = (vocState.metric==='mainInquiryType')
       ? expandTagCategories(_rawTag2).map(function(t){
-          if(t==='기타'){var ft=_rawTag2;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;
+          var _m=t.split('/')[0].trim()||'기타';if(_m==='기타'){if(vocState.aiEtcMap[t])return vocState.aiEtcMap[t];var st=t.indexOf('/')>=0?t.split('/').slice(1).join('/').trim():t;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return _m;
         })
       : [getCategory(c)];
     var d = parseDate(c.createdAt || c.managedAt);
@@ -2904,12 +2902,12 @@ function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
   var catCount = {}; var prevCatCount = {};
   cur.forEach(function(c){
     var _rt=String(c.tags||c.tag||'').trim();
-    var _ks=(vocState.metric==='mainInquiryType')?expandTagCategories(_rt).map(function(t){if(t==='기타'){var ft=_rt;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;}):[getCategory(c)];
+    var _ks=(vocState.metric==='mainInquiryType')?expandTagCategories(_rt).map(function(t){var _m=t.split('/')[0].trim()||'기타';if(_m==='기타'){if(vocState.aiEtcMap[t])return vocState.aiEtcMap[t];var st=t.indexOf('/')>=0?t.split('/').slice(1).join('/').trim():t;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return _m;}):[getCategory(c)];
     _ks.forEach(function(k){if(vocState.excludeEtc&&k==='기타')return;catCount[k]=(catCount[k]||0)+1;});
   });
   prev.forEach(function(c){
     var _rt=String(c.tags||c.tag||'').trim();
-    var _ks=(vocState.metric==='mainInquiryType')?expandTagCategories(_rt).map(function(t){if(t==='기타'){var ft=_rt;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;}):[getCategory(c)];
+    var _ks=(vocState.metric==='mainInquiryType')?expandTagCategories(_rt).map(function(t){var _m=t.split('/')[0].trim()||'기타';if(_m==='기타'){if(vocState.aiEtcMap[t])return vocState.aiEtcMap[t];var st=t.indexOf('/')>=0?t.split('/').slice(1).join('/').trim():t;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return _m;}):[getCategory(c)];
     _ks.forEach(function(k){if(vocState.excludeEtc&&k==='기타')return;prevCatCount[k]=(prevCatCount[k]||0)+1;});
   });
   var total = cur.length || 1;

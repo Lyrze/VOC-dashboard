@@ -2553,170 +2553,372 @@ function renderPhoneMissedTable(cur, prev) {
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    브랜드별 VOC 분석 뷰
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
-  document.getElementById('view-voc').style.display = '';
+const vocState = {
+  metric: 'mainInquiryType',
+  interval: 'week',
+  _brand: '',
+  _channel: '채팅',
+  _start: null,
+  _end: null,
+  _prevStart: null,
+  _prevEnd: null,
+};
 
-  let chats = store.chatData[brand] || [];
-  if (channel === '전화') chats = store.phoneData[brand] || [];
-  else if (channel === '전체') {
-    chats = [...(store.chatData[brand] || []), ...(store.phoneData[brand] || [])];
+const VOC_METRICS = [
+  { id: 'mainInquiryType', label: '대표 문의유형', fn: function(c){ return (String(c.tags||c.tag||'기타').split('/')[0].trim())||'기타'; } },
+  { id: 'consultTag',      label: '상담태그',      fn: function(c){ return (String(c.tags||c.tag||'태그없음').split(/[,;\/]/)[0].trim())||'태그없음'; } },
+  { id: 'defectiveLabel',  label: '불량 라벨',     fn: function(c){ if(c['profile.defective']) return c['profile.defective']; var m=String(c.tags||'').match(/불량[^\/,;]*/); return m?m[0].trim():'(없음)'; } },
+  { id: 'productName',     label: '제품명',        fn: function(c){ return c['profile.defective']||c['profile.return_product']||c['profile.product']||'(제품명없음)'; } },
+];
+
+function getCurrentMetricFn() {
+  var m = VOC_METRICS.find(function(m){ return m.id === vocState.metric; });
+  return (m || VOC_METRICS[0]).fn;
+}
+
+function aggregateVOCTrend(chats, start, end, interval, getCategory) {
+  var PALETTE = ['#818cf8','#34d399','#f59e0b','#f87171','#60a5fa','#a78bfa','#fb923c','#4ade80','#38bdf8','#f472b6'];
+  var TOP_N = 8;
+  var catCount = {};
+  chats.forEach(function(c){ var k=getCategory(c); catCount[k]=(catCount[k]||0)+1; });
+  var topCats = Object.entries(catCount).sort(function(a,b){return b[1]-a[1];}).slice(0,TOP_N).map(function(e){return e[0];});
+  var topCatSet = new Set(topCats);
+
+  var buckets = [];
+  var bucketRanges = [];
+  if (interval === 'day') {
+    var d = new Date(start);
+    while (d <= end) {
+      var dd = new Date(d);
+      buckets.push((dd.getMonth()+1)+'/'+(dd.getDate()));
+      var e1 = new Date(dd); e1.setHours(23,59,59,999);
+      bucketRanges.push({s: new Date(dd), e: e1});
+      d.setDate(d.getDate()+1);
+    }
+  } else {
+    var ws = new Date(start);
+    while (ws <= end) {
+      var we = new Date(ws); we.setDate(ws.getDate()+6);
+      if (we > end) { we = new Date(end); }
+      buckets.push((ws.getMonth()+1)+'.'+ws.getDate()+'~'+(we.getMonth()+1)+'.'+we.getDate());
+      var we2 = new Date(we); we2.setHours(23,59,59,999);
+      bucketRanges.push({s: new Date(ws), e: we2});
+      ws.setDate(ws.getDate()+7);
+    }
   }
 
-  const cur = filterPeriod(chats, start, end);
-  const dateStr = formatDateRange(start, end);
+  var matrix = {};
+  topCats.concat(['기타']).forEach(function(cat){ matrix[cat] = new Array(buckets.length).fill(0); });
 
-  // 태그 집계 (슬래시 앞 카테고리)
-  const catMap = {};
-  cur.forEach(c => {
-    const raw = c.tags || c.tag || '기타';
-    const cat = String(raw).split('/')[0].trim() || '기타';
-    catMap[cat] = (catMap[cat] || 0) + 1;
+  chats.forEach(function(c) {
+    var raw = getCategory(c);
+    var cat = topCatSet.has(raw) ? raw : '기타';
+    var d = parseDate(c.createdAt || c.managedAt);
+    if (!d) return;
+    for (var i=0; i<bucketRanges.length; i++) {
+      if (d >= bucketRanges[i].s && d <= bucketRanges[i].e) { matrix[cat][i]++; break; }
+    }
   });
-  const sorted = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-  const maxVal = sorted[0]?.[1] || 1;
 
-  const barRows = sorted.map(([cat, cnt]) => `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      <span style="font-size:11px;color:#334155;min-width:150px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(cat)}</span>
-      <div style="flex:1;background:#f1f5f9;border-radius:4px;height:14px;overflow:hidden;">
-        <div style="height:100%;background:#818cf8;border-radius:4px;width:${(cnt/maxVal*100).toFixed(1)}%;"></div>
-      </div>
-      <span style="font-size:11px;color:#64748b;min-width:36px;text-align:right;">${cnt}건</span>
-    </div>
-  `).join('');
+  var hasOther = matrix['기타'] && matrix['기타'].some(function(v){return v>0;});
+  var finalCats = hasOther ? topCats.concat(['기타']) : topCats;
 
-  document.getElementById('view-voc').innerHTML = `
-    <div class="chart-section">
-      <div class="section-header">
-        <span class="section-title">
-          <span class="channel-badge">${escHtml(channel)}</span>
-          ${escHtml(brand)} · 문의 유형별 분포
-        </span>
-        <span style="font-size:11px;color:#94a3b8;">${escHtml(dateStr)}</span>
-      </div>
-      <div style="padding:4px 0;">${barRows || '<p style="color:#94a3b8;font-size:12px;padding:20px;">해당 기간 데이터가 없습니다</p>'}</div>
-    </div>
-    <div class="table-section">
-      <div class="section-header">
-        <span class="section-title">태그별 상세 현황</span>
-      </div>
-      <div class="table-overflow" id="voc-tag-table-wrap"></div>
-    </div>
-  `;
+  var series = finalCats.map(function(cat, i) {
+    return {
+      label: cat,
+      data: matrix[cat],
+      borderColor: PALETTE[i % PALETTE.length],
+      backgroundColor: PALETTE[i % PALETTE.length] + '18',
+      borderWidth: 2,
+      pointRadius: buckets.length > 30 ? 0 : 3,
+      pointHoverRadius: 5,
+      tension: 0.25,
+      fill: false,
+    };
+  });
+  return { buckets: buckets, series: series, palette: PALETTE };
+}
 
-  // 태그 테이블 (임시 컨테이너)
-  const prev2 = filterPeriod(chats, prevStart, prevEnd);
-  const tmpTable = document.getElementById('voc-tag-table-wrap');
-  const getTag = c => String(c.tags || c.tag || '태그 없음').split(/[,;]/)[0].trim();
-  const grouped = groupBy(cur, getTag);
-  const prevGrouped = groupBy(prev2, getTag);
-  const total = cur.length || 1;
-  const trows = Object.entries(grouped).map(([tag, items]) => {
-    const kc = calcKPIs(items);
-    const kp = calcKPIs(prevGrouped[tag] || []);
-    const d = fmtDelta(kc.totalChats, kp.totalChats, false, 'number');
-    return `<tr>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(tag)}</td>
-      <td><div class="td-main">${kc.totalChats}건</div><div class="td-delta ${d.cls}">${d.text}</div></td>
-      <td>${kc.closedRate.toFixed(1)}%</td>
-      <td>${kc.complaintRate.toFixed(1)}%</td>
-      <td>${fmtSec(kc.avgFirstReply)}</td>
-      <td>${fmtSec(kc.avgHandling)}</td>
-      <td>${kc.avgSatisfaction != null ? kc.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
-      <td>${(items.length/total*100).toFixed(1)}%</td>
-    </tr>`;
-  }).sort(() => 0).join('');
+function rerenderVOC() {
+  if (!vocState._start) return;
+  renderVOCView(vocState._brand, vocState._channel, vocState._start, vocState._end, vocState._prevStart, vocState._prevEnd);
+}
 
-  tmpTable.innerHTML = `<table><thead><tr>
-    <th>상담 태그</th><th>총 문의 수</th><th>처리 완료</th><th>불만 비율</th><th>첫 응대</th><th>처리 시간</th><th>만족도</th><th>비율</th>
-  </tr></thead><tbody>${trows}</tbody></table>`;
+function rerenderDefect() {
+  if (!vocState._start) return;
+  renderDefectView(vocState._brand, vocState._start, vocState._end, vocState._prevStart, vocState._prevEnd);
+}
+
+function exportVOCExcel() {
+  if (!vocState._brand || !vocState._start) return;
+  var getCategory = getCurrentMetricFn();
+  var c2 = store.chatData[vocState._brand] || [];
+  var p2 = store.phoneData[vocState._brand] || [];
+  var allC = vocState._channel==='전화' ? p2 : vocState._channel==='전체' ? c2.concat(p2) : c2;
+  var cur = filterPeriod(allC, vocState._start, vocState._end);
+  var catCount = {};
+  cur.forEach(function(c){ var k=getCategory(c); catCount[k]=(catCount[k]||0)+1; });
+  var total = cur.length || 1;
+  var rows = [['카테고리','건수','비율(%)']];
+  Object.entries(catCount).sort(function(a,b){return b[1]-a[1];}).forEach(function(e){
+    rows.push([e[0], e[1], (e[1]/total*100).toFixed(1)]);
+  });
+  var csv = rows.map(function(r){return r.join(',');}).join('\n');
+  var blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download = vocState._brand+'_VOC_'+vocState._channel+'_export.csv';
+  a.click();
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   브랜드별 불량 VOC 뷰
+   브랜드별 VOC 분석 뷰 (VOC Studio 스타일)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function renderDefectView(brand, start, end, prevStart, prevEnd) {
-  document.getElementById('view-defect').style.display = '';
+function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
+  vocState._brand=brand; vocState._channel=channel;
+  vocState._start=start; vocState._end=end;
+  vocState._prevStart=prevStart; vocState._prevEnd=prevEnd;
 
-  const chats = store.chatData[brand] || [];
-  const cur = filterPeriod(chats, start, end).filter(c => {
-    const t = String(c.tags || c.tag || '');
-    return t.includes('불량');
-  });
-  const prev = filterPeriod(chats, prevStart, prevEnd).filter(c => {
-    const t = String(c.tags || c.tag || '');
-    return t.includes('불량');
-  });
+  document.getElementById('view-voc').style.display = '';
 
-  const kc = calcKPIs(cur);
-  const kp = calcKPIs(prev);
-  const dateStr = formatDateRange(start, end);
+  var c2 = store.chatData[brand] || [];
+  var p2 = store.phoneData[brand] || [];
+  var allChats = channel==='전화' ? p2 : channel==='전체' ? c2.concat(p2) : c2;
+  var cur  = filterPeriod(allChats, start, end);
+  var prev = filterPeriod(allChats, prevStart, prevEnd);
+  var dateStr = formatDateRange(start, end);
 
-  const kpiHTML = `
-    <div class="phone-kpi-grid" style="margin-bottom:14px;">
-      <div class="kpi-card">
-        <div class="kpi-label">총 불량 문의</div>
-        <div class="kpi-date">${escHtml(dateStr)}</div>
-        <div class="kpi-value">${cur.length}건</div>
-        <div class="kpi-delta ${fmtDelta(cur.length, prev.length, false, 'number').cls}">${fmtDelta(cur.length, prev.length, false, 'number').text}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">전체 대비 불량 비율</div>
-        <div class="kpi-date">${escHtml(dateStr)}</div>
-        <div class="kpi-value">${chats.length ? (filterPeriod(chats,start,end).length ? (cur.length/filterPeriod(chats,start,end).length*100).toFixed(1)+'%' : '-') : '-'}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">평균 처리 시간</div>
-        <div class="kpi-date">${escHtml(dateStr)}</div>
-        <div class="kpi-value">${fmtSec(kc.avgHandling)}</div>
-        <div class="kpi-delta ${fmtDelta(kc.avgHandling, kp.avgHandling, false, 'time').cls}">${fmtDelta(kc.avgHandling, kp.avgHandling, false, 'time').text}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">평균 만족도</div>
-        <div class="kpi-date">${escHtml(dateStr)}</div>
-        <div class="kpi-value">${kc.avgSatisfaction != null ? kc.avgSatisfaction.toFixed(2)+'점' : '-'}</div>
-      </div>
-    </div>
-  `;
+  var getCategory = getCurrentMetricFn();
+  var PALETTE = ['#818cf8','#34d399','#f59e0b','#f87171','#60a5fa','#a78bfa','#fb923c','#4ade80','#38bdf8','#f472b6'];
 
-  const getTag = c => String(c.tags || c.tag || '태그 없음').split(/[,;]/)[0].trim();
-  const grouped = groupBy(cur, getTag);
-  const totalDef = cur.length || 1;
-  const trows = Object.entries(grouped).map(([tag, items]) => {
-    const k = calcKPIs(items);
-    return `<tr>
-      <td>${escHtml(tag)}</td>
-      <td>${items.length}건</td>
-      <td>${(items.length/totalDef*100).toFixed(1)}%</td>
-      <td>${k.closedRate.toFixed(1)}%</td>
-      <td>${fmtSec(k.avgHandling)}</td>
-      <td>${k.avgSatisfaction != null ? k.avgSatisfaction.toFixed(2)+'점' : '-'}</td>
-    </tr>`;
+  var catCount = {}; var prevCatCount = {};
+  cur.forEach(function(c){ var k=getCategory(c); catCount[k]=(catCount[k]||0)+1; });
+  prev.forEach(function(c){ var k=getCategory(c); prevCatCount[k]=(prevCatCount[k]||0)+1; });
+  var total = cur.length || 1;
+  var rows = Object.entries(catCount).sort(function(a,b){return b[1]-a[1];});
+
+  var metricOptions = VOC_METRICS.map(function(m){
+    return '<option value="'+m.id+'"'+(vocState.metric===m.id?' selected':'')+'>'+escHtml(m.label)+'</option>';
   }).join('');
 
-  document.getElementById('view-defect').innerHTML = kpiHTML + `
-    <div class="table-section">
-      <div class="section-header">
-        <span class="section-title">
-          <span class="channel-badge" style="background:#fee2e2;color:#dc2626;">불량</span>
-          ${escHtml(brand)} · 불량 유형별 현황
-        </span>
-      </div>
-      <div class="table-overflow">
-        <table>
-          <thead><tr>
-            <th>불량 유형</th><th>건수</th><th>비율</th><th>처리 완료</th><th>평균 처리 시간</th><th>평균 만족도</th>
-          </tr></thead>
-          <tbody>${trows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
+  var ivDay  = vocState.interval==='day'  ? 'background:#6366f1;color:#fff;' : 'background:#f1f5f9;color:#475569;';
+  var ivWeek = vocState.interval==='week' ? 'background:#6366f1;color:#fff;' : 'background:#f1f5f9;color:#475569;';
+
+  var trows = rows.map(function(entry, i){
+    var cat=entry[0]; var cnt=entry[1];
+    var prevCnt = prevCatCount[cat] || 0;
+    var sharePct = (cnt/total*100);
+    var d = fmtDelta(cnt, prevCnt, false, 'number');
+    var color = PALETTE[i % PALETTE.length];
+    return '<tr>'
+      +'<td><div style="display:flex;align-items:center;gap:6px;">'
+      +'<span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+color+';display:inline-block;"></span>'
+      +'<span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(cat)+'">'+escHtml(cat)+'</span>'
+      +'</div></td>'
+      +'<td><div class="td-main">'+cnt+'건</div><div class="td-delta '+d.cls+'">'+d.text+'</div></td>'
+      +'<td><div style="display:flex;align-items:center;gap:6px;">'
+      +'<span style="font-size:11px;min-width:36px;">'+sharePct.toFixed(1)+'%</span>'
+      +'<div style="flex:1;background:#f1f5f9;border-radius:3px;height:6px;overflow:hidden;min-width:50px;">'
+      +'<div style="height:100%;border-radius:3px;background:'+color+';width:'+sharePct.toFixed(1)+'%;"></div>'
+      +'</div></div></td>'
+      +'</tr>';
+  }).join('');
+
+  var metricLabel = (VOC_METRICS.find(function(m){return m.id===vocState.metric;})||VOC_METRICS[0]).label;
+
+  document.getElementById('view-voc').innerHTML =
+    '<div class="chart-section" style="margin-bottom:16px;">'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
+    +'<span class="channel-badge">'+escHtml(channel)+'</span>'
+    +'<select id="voc-metric-sel" onchange="vocState.metric=this.value;rerenderVOC();" '
+    +'style="padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;font-weight:600;color:#1e293b;cursor:pointer;background:#fff;">'
+    +metricOptions+'</select>'
+    +'<div style="display:flex;gap:4px;margin-left:auto;">'
+    +'<button onclick="vocState.interval=\'day\';rerenderVOC();" '
+    +'style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;'+ivDay+'">일</button>'
+    +'<button onclick="vocState.interval=\'week\';rerenderVOC();" '
+    +'style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;'+ivWeek+'">주</button>'
+    +'<button onclick="exportVOCExcel();" '
+    +'style="padding:3px 10px;border:1px solid #e2e8f0;border-radius:4px;font-size:11px;cursor:pointer;background:#fff;color:#475569;">엑셀</button>'
+    +'</div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+    +'<span style="font-size:12px;font-weight:600;color:#334155;">'+escHtml(brand)+' VOC 트렌드</span>'
+    +'<span style="font-size:11px;color:#94a3b8;">'+escHtml(dateStr)+'</span>'
+    +'</div>'
+    +'<div style="position:relative;height:260px;width:100%;">'
+    +'<canvas id="voc-trend-chart"></canvas>'
+    +'</div>'
+    +'</div>'
+    +'<div class="table-section">'
+    +'<div class="section-header">'
+    +'<span class="section-title">'+escHtml(metricLabel)+' 카테고리별 현황</span>'
+    +'</div>'
+    +'<div class="table-overflow">'
+    +'<table><thead><tr>'
+    +'<th>'+escHtml(metricLabel)+'</th><th>총 문의 수</th><th>전체 문의 중 비율</th>'
+    +'</tr></thead>'
+    +'<tbody>'+trows+'</tbody></table>'
+    +(cur.length===0 ? '<p style="color:#94a3b8;font-size:12px;padding:20px;">해당 기간 데이터가 없습니다</p>' : '')
+    +'</div></div>';
+
+  if (chartInstances['voc-trend-chart']) { try { chartInstances['voc-trend-chart'].destroy(); } catch(e){} }
+  var trend = aggregateVOCTrend(cur, start, end, vocState.interval, getCategory);
+  var ctx = document.getElementById('voc-trend-chart').getContext('2d');
+  chartInstances['voc-trend-chart'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: trend.buckets, datasets: trend.series },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { font:{size:10}, boxWidth:9, padding:10, usePointStyle:true } },
+        tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label+': '+ctx.raw+'건'; } } },
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{font:{size:9},color:'#94a3b8',maxTicksLimit:14} },
+        y: { beginAtZero:true, grid:{color:'#f8fafc'}, ticks:{font:{size:9},color:'#94a3b8'} },
+      },
+    },
+  });
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   빈 상태 표시
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderDefectView(brand, start, end, prevStart, prevEnd) {
+  vocState._brand=brand;
+  vocState._start=start; vocState._end=end;
+  vocState._prevStart=prevStart; vocState._prevEnd=prevEnd;
+
+  document.getElementById('view-defect').style.display = '';
+
+  var allChats = store.chatData[brand] || [];
+  var allCur  = filterPeriod(allChats, start, end);
+  var allPrev = filterPeriod(allChats, prevStart, prevEnd);
+
+  var isBad = function(c){ return String(c.tags||c.tag||'').includes('불량') || Boolean(c['profile.defective']); };
+  var cur  = allCur.filter(isBad);
+  var prev = allPrev.filter(isBad);
+
+  var kc = calcKPIs(cur);
+  var kp = calcKPIs(prev);
+  var dateStr = formatDateRange(start, end);
+
+  var PALETTE = ['#f87171','#fb923c','#fbbf24','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9','#f472b6','#60a5fa'];
+
+  var complaintTotal = cur.filter(function(c){ var s=c['profile.csat']; return s!=null&&Number(s)<=2; }).length;
+  var complaintRate  = cur.length ? (complaintTotal/cur.length*100) : 0;
+  var prevCT = prev.filter(function(c){ var s=c['profile.csat']; return s!=null&&Number(s)<=2; }).length;
+  var prevCR = prev.length ? (prevCT/prev.length*100) : 0;
+
+  var dTotal = fmtDelta(cur.length, prev.length, false, 'number');
+  var dHandl = fmtDelta(kc.avgHandling, kp.avgHandling, false, 'time');
+  var dCompl = fmtDelta(complaintRate, prevCR, false, 'pct');
+
+  var kpiHTML =
+    '<div class="phone-kpi-grid" style="margin-bottom:16px;">'
+    +'<div class="kpi-card"><div class="kpi-label">총 문의 수</div>'
+    +'<div class="kpi-date">'+escHtml(dateStr)+'</div>'
+    +'<div class="kpi-value">'+cur.length+'건</div>'
+    +'<div class="kpi-delta '+dTotal.cls+'">'+dTotal.text+'</div></div>'
+    +'<div class="kpi-card"><div class="kpi-label">평균 상담 처리 시간</div>'
+    +'<div class="kpi-date">'+escHtml(dateStr)+'</div>'
+    +'<div class="kpi-value">'+fmtSec(kc.avgHandling)+'</div>'
+    +'<div class="kpi-delta '+dHandl.cls+'">'+dHandl.text+'</div></div>'
+    +'<div class="kpi-card"><div class="kpi-label">불만 비율</div>'
+    +'<div class="kpi-date">'+escHtml(dateStr)+'</div>'
+    +'<div class="kpi-value">'+complaintRate.toFixed(1)+'%</div>'
+    +'<div class="kpi-delta '+dCompl.cls+'">'+dCompl.text+'</div></div>'
+    +'</div>';
+
+  var getLabel = function(c){
+    if (c['profile.defective']) return c['profile.defective'];
+    var m=String(c.tags||c.tag||'').match(/불량[^\/,;]*/);
+    return m ? m[0].trim() : '불량(기타)';
+  };
+  var grouped = groupBy(cur, getLabel);
+  var prevGrouped = groupBy(prev, getLabel);
+  var total = cur.length || 1;
+
+  var trows = Object.entries(grouped).sort(function(a,b){return b[1].length-a[1].length;}).map(function(entry, i){
+    var label=entry[0]; var items=entry[1];
+    var k = calcKPIs(items);
+    var prevItems = prevGrouped[label] || [];
+    var d = fmtDelta(items.length, prevItems.length, false, 'number');
+    var alfToAgent = items.filter(function(c){ return c.firstAnsweredAt; }).length;
+    var compCnt = items.filter(function(c){ var s=c['profile.csat']; return s!=null&&Number(s)<=2; }).length;
+    var compRate = items.length ? (compCnt/items.length*100).toFixed(1)+'%' : '-';
+    var sharePct = (items.length/total*100);
+    var color = PALETTE[i % PALETTE.length];
+    return '<tr>'
+      +'<td><div style="display:flex;align-items:center;gap:6px;">'
+      +'<span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+color+';display:inline-block;"></span>'
+      +'<span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(label)+'">'+escHtml(label)+'</span>'
+      +'</div></td>'
+      +'<td><div class="td-main">'+items.length+'건</div><div class="td-delta '+d.cls+'">'+d.text+'</div></td>'
+      +'<td>'+alfToAgent+'건</td>'
+      +'<td>'+fmtSec(k.avgHandling)+'</td>'
+      +'<td>'+compRate+'</td>'
+      +'<td><div style="display:flex;align-items:center;gap:5px;">'
+      +'<span style="font-size:11px;min-width:34px;">'+sharePct.toFixed(1)+'%</span>'
+      +'<div style="flex:1;background:#f1f5f9;border-radius:3px;height:6px;overflow:hidden;min-width:40px;">'
+      +'<div style="height:100%;border-radius:3px;background:'+color+';width:'+sharePct.toFixed(1)+'%;"></div>'
+      +'</div></div></td>'
+      +'</tr>';
+  }).join('');
+
+  var ivDay  = vocState.interval==='day'  ? 'background:#ef4444;color:#fff;' : 'background:#f1f5f9;color:#475569;';
+  var ivWeek = vocState.interval==='week' ? 'background:#ef4444;color:#fff;' : 'background:#f1f5f9;color:#475569;';
+
+  document.getElementById('view-defect').innerHTML = kpiHTML
+    +'<div class="chart-section" style="margin-bottom:16px;">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
+    +'<span class="channel-badge" style="background:#fee2e2;color:#dc2626;">불량</span>'
+    +'<span style="font-size:12px;font-weight:600;color:#334155;">'+escHtml(brand)+' 불량 트렌드</span>'
+    +'<div style="display:flex;gap:4px;margin-left:auto;">'
+    +'<button onclick="vocState.interval=\'day\';rerenderDefect();" '
+    +'style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;'+ivDay+'">일</button>'
+    +'<button onclick="vocState.interval=\'week\';rerenderDefect();" '
+    +'style="padding:3px 10px;border:none;border-radius:4px;font-size:11px;cursor:pointer;'+ivWeek+'">주</button>'
+    +'</div>'
+    +'<span style="font-size:11px;color:#94a3b8;">'+escHtml(dateStr)+'</span>'
+    +'</div>'
+    +'<div style="position:relative;height:240px;width:100%;">'
+    +'<canvas id="defect-trend-chart"></canvas>'
+    +'</div>'
+    +'</div>'
+    +'<div class="table-section">'
+    +'<div class="section-header">'
+    +'<span class="section-title">불량 유형별 현황</span>'
+    +'</div>'
+    +'<div class="table-overflow">'
+    +'<table><thead><tr>'
+    +'<th>불량 유형</th><th>총 문의 수</th><th>ALF→상담원 연결</th><th>평균 처리 시간</th><th>불만 비율</th><th>전체 문의 중 비율</th>'
+    +'</tr></thead>'
+    +'<tbody>'+trows+'</tbody></table>'
+    +(cur.length===0 ? '<p style="color:#94a3b8;font-size:12px;padding:20px;">해당 기간 불량 데이터가 없습니다</p>' : '')
+    +'</div></div>';
+
+  if (chartInstances['defect-trend-chart']) { try { chartInstances['defect-trend-chart'].destroy(); } catch(e){} }
+  var trend = aggregateVOCTrend(cur, start, end, vocState.interval, getLabel);
+  trend.series.forEach(function(s,i){ s.borderColor=PALETTE[i%PALETTE.length]; s.backgroundColor=PALETTE[i%PALETTE.length]+'18'; });
+  var ctx = document.getElementById('defect-trend-chart').getContext('2d');
+  chartInstances['defect-trend-chart'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: trend.buckets, datasets: trend.series },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { font:{size:10}, boxWidth:9, padding:10, usePointStyle:true } },
+        tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label+': '+ctx.raw+'건'; } } },
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{font:{size:9},color:'#94a3b8',maxTicksLimit:14} },
+        y: { beginAtZero:true, grid:{color:'#f8fafc'}, ticks:{font:{size:9},color:'#94a3b8'} },
+      },
+    },
+  });
+}
 function showNoDataState() {
   document.getElementById('empty-state').style.display = '';
   document.getElementById('dashboard-content').style.display = 'none';

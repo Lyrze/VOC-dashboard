@@ -2652,11 +2652,36 @@ const vocState = {
   _prevEnd: null,
 };
 
+// ── 제품명 정규화: 괄호·슬래시 앞 베이스명 추출 ──
+function normalizeProductName(str) {
+  if (!str) return '';
+  var s = String(str).trim();
+  s = s.replace(/\s*\([^)]*\)/g, '').trim();  // (전원불량) 제거
+  if (s.indexOf('/') >= 0) s = s.split('/')[0].trim();  // / 이후 제거
+  return s || String(str).trim();
+}
+
+// ── 태그 카테고리 확장: ALF+다른태그 복합값 → 개별 배열 ──
+function expandTagCategories(rawTag) {
+  var main = String(rawTag||'').split('/')[0].trim() || '기타';
+  // 쉼표 구분: "ALF미해결,불량" → ["ALF미해결","불량"]
+  if (main.indexOf(',') >= 0) {
+    var parts = main.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    if (parts.length > 1) return parts;
+  }
+  // 공백 구분 (ALF 접두사인 경우만): "ALF미해결 불량" → ["ALF미해결","불량"]
+  if (/^ALF/i.test(main) && /\s/.test(main)) {
+    var sp = main.split(/\s+/).filter(Boolean);
+    if (sp.length > 1) return sp;
+  }
+  return [main];
+}
+
 const VOC_METRICS = [
   { id: 'mainInquiryType', label: '대표 문의유형', fn: function(c){ return (String(c.tags||c.tag||'기타').split('/')[0].trim())||'기타'; } },
   { id: 'consultTag',      label: '상담태그',      fn: function(c){ return (String(c.tags||c.tag||'태그없음').split(/[,;\/]/)[0].trim())||'태그없음'; } },
   { id: 'defectiveLabel',  label: '불량 라벨',     fn: function(c){ if(c['profile.defective']) return c['profile.defective']; var m=String(c.tags||'').match(/불량[^\/,;]*/); return m?m[0].trim():'(없음)'; } },
-  { id: 'productName',     label: '제품명',        fn: function(c){ return c['profile.defective']||c['profile.return_product']||c['profile.product']||'(제품명없음)'; } },
+  { id: 'productName',     label: '제품명',        fn: function(c){ return normalizeProductName(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')||'(제품명없음)'; } },
 ];
 
 function getCurrentMetricFn() {
@@ -2668,7 +2693,15 @@ function aggregateVOCTrend(chats, start, end, interval, getCategory) {
   var PALETTE = ['#818cf8','#34d399','#f59e0b','#f87171','#60a5fa','#a78bfa','#fb923c','#4ade80','#38bdf8','#f472b6'];
   var TOP_N = 8;
   var catCount = {};
-  chats.forEach(function(c){ var k=getCategory(c); if(vocState.excludeEtc&&k==='기타')return; catCount[k]=(catCount[k]||0)+1; });
+  chats.forEach(function(c){
+    var _rawTag = String(c.tags||c.tag||'').trim();
+    var _cats = (vocState.metric==='mainInquiryType')
+      ? expandTagCategories(_rawTag).map(function(t){
+          if(t==='기타'){var ft=_rawTag;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;
+        })
+      : [getCategory(c)];
+    _cats.forEach(function(k){ if(vocState.excludeEtc&&k==='기타')return; catCount[k]=(catCount[k]||0)+1; });
+  });
   var topCats = Object.entries(catCount).sort(function(a,b){return b[1]-a[1];}).slice(0,TOP_N).map(function(e){return e[0];});
   var topCatSet = new Set(topCats);
 
@@ -2699,13 +2732,20 @@ function aggregateVOCTrend(chats, start, end, interval, getCategory) {
   topCats.concat(['기타']).forEach(function(cat){ matrix[cat] = new Array(buckets.length).fill(0); });
 
   chats.forEach(function(c) {
-    var raw = getCategory(c);
-    var cat = topCatSet.has(raw) ? raw : '기타';
+    var _rawTag2 = String(c.tags||c.tag||'').trim();
+    var _cats2 = (vocState.metric==='mainInquiryType')
+      ? expandTagCategories(_rawTag2).map(function(t){
+          if(t==='기타'){var ft=_rawTag2;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;
+        })
+      : [getCategory(c)];
     var d = parseDate(c.createdAt || c.managedAt);
     if (!d) return;
-    for (var i=0; i<bucketRanges.length; i++) {
-      if (d >= bucketRanges[i].s && d <= bucketRanges[i].e) { matrix[cat][i]++; break; }
-    }
+    _cats2.forEach(function(raw2){
+      var cat = topCatSet.has(raw2) ? raw2 : '기타';
+      for (var i=0; i<bucketRanges.length; i++) {
+        if (d >= bucketRanges[i].s && d <= bucketRanges[i].e) { matrix[cat][i]++; break; }
+      }
+    });
   });
 
   var hasOther = matrix['기타'] && matrix['기타'].some(function(v){return v>0;});
@@ -2860,14 +2900,14 @@ function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
 
   var catCount = {}; var prevCatCount = {};
   cur.forEach(function(c){
-    var k=getCategory(c);
-    if(vocState.excludeEtc && k==='기타') return;
-    catCount[k]=(catCount[k]||0)+1;
+    var _rt=String(c.tags||c.tag||'').trim();
+    var _ks=(vocState.metric==='mainInquiryType')?expandTagCategories(_rt).map(function(t){if(t==='기타'){var ft=_rt;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;}):[getCategory(c)];
+    _ks.forEach(function(k){if(vocState.excludeEtc&&k==='기타')return;catCount[k]=(catCount[k]||0)+1;});
   });
   prev.forEach(function(c){
-    var k=getCategory(c);
-    if(vocState.excludeEtc && k==='기타') return;
-    prevCatCount[k]=(prevCatCount[k]||0)+1;
+    var _rt=String(c.tags||c.tag||'').trim();
+    var _ks=(vocState.metric==='mainInquiryType')?expandTagCategories(_rt).map(function(t){if(t==='기타'){var ft=_rt;if(vocState.aiEtcMap[ft])return vocState.aiEtcMap[ft];var st=ft.indexOf('/')>=0?ft.split('/').slice(1).join('/').trim():ft;if(st&&vocState.aiEtcMap[st])return vocState.aiEtcMap[st];}return t;}):[getCategory(c)];
+    _ks.forEach(function(k){if(vocState.excludeEtc&&k==='기타')return;prevCatCount[k]=(prevCatCount[k]||0)+1;});
   });
   var total = cur.length || 1;
   var rows = Object.entries(catCount).sort(function(a,b){return b[1]-a[1];});
@@ -3012,9 +3052,9 @@ function renderDefectView(brand, start, end, prevStart, prevEnd) {
     +'</div>';
 
   var getLabel = function(c){
-    if (c['profile.defective']) return c['profile.defective'];
+    if (c['profile.defective']) return normalizeProductName(c['profile.defective']);
     var m=String(c.tags||c.tag||'').match(/불량[^\/,;]*/);
-    return m ? m[0].trim() : '불량(기타)';
+    return m ? normalizeProductName(m[0].trim()) : '불량(기타)';
   };
   var grouped = groupBy(cur, getLabel);
   var prevGrouped = groupBy(prev, getLabel);
@@ -3770,7 +3810,7 @@ function buildReportFilterUI() {
   const df=reportState.dynamicFilters||{};
   const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
   const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
-  const products=[...new Set(allChats.map(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product'])).filter(Boolean))].sort().slice(0,30);
+  const products=[...new Set(allChats.map(c=>normalizeProductName(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')).filter(Boolean))].sort().slice(0,30);
   const brands=Object.keys(store.chatData).sort();
   const sel=(id,label,opts,val)=>'<select id="'+id+'" onchange="setDynamicFilter(\''+id+'\',this.value)" style="padding:4px 8px;border:1px solid '+(val?'#6366f1':'#e2e8f0')+';border-radius:6px;font-size:11px;color:'+(val?'#4f46e5':'#64748b')+';background:'+(val?'#eff0fe':'#fff')+';cursor:pointer;outline:none;"><option value="">'+label+'</option>'+opts.map(o=>'<option value="'+escHtml(o)+'" '+(val===o?'selected':'')+'>'+escHtml(o)+'</option>').join('')+'</select>';
   bar.innerHTML=
@@ -3839,7 +3879,7 @@ function rptAITag(){
       reqTypeMap[rt]=(reqTypeMap[rt]||0)+1;
 
     // 제품명
-    var p=String(c['profile.defective']||c['profile.return_product']||c['profile.product']||'').trim();
+    var p=normalizeProductName(c['profile.defective']||c['profile.return_product']||c['profile.product']||'');
     if(p&&!usedProds.has(p))prodMap[p]=(prodMap[p]||0)+1;
   });
 
@@ -4025,7 +4065,7 @@ function rptAddFilter(btn){
   _panel.style.cssText = 'position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:9999;min-width:270px;top:'+_top+'px;left:'+_left+'px;';
   var _allChats = Object.values(store.chatData).flat();
   var _tags = Array.from(new Set(_allChats.map(function(c){return c.tags;}).filter(Boolean))).sort();
-  var _products = Array.from(new Set(_allChats.map(function(c){return c['profile.defective']||c['profile.return_product']||c['profile.product'];}).filter(Boolean))).sort();
+  var _products = Array.from(new Set(_allChats.map(function(c){return normalizeProductName(c['profile.defective']||c['profile.return_product']||c['profile.product']||'');}).filter(Boolean))).sort();
   var _managers = Array.from(new Set(_allChats.filter(function(c){return c.assigneeId;}).map(function(c){return store.managers[c.assigneeId]||c.assigneeId;}))).sort();
   var _df = reportState.dynamicFilters || {};
   var _h = '<div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:12px;">필터 설정</div>'
@@ -4361,7 +4401,7 @@ function applyReportFilters(chats){
   if(df.complaint==='no')result=result.filter(c=>c['profile.csat']!=null&&c['profile.csat']>2);
   if(df.manager)result=result.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===df.manager);
   if(df.tagCat)result=result.filter(c=>(c.tags||'')===df.tagCat||(c.tags||'').split('/')[0]===df.tagCat);
-  if(df.product)result=result.filter(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')===df.product);
+  if(df.product)result=result.filter(c=>normalizeProductName(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')===df.product);
   if(df.requestType)result=result.filter(c=>(c['profile.Request_type']||'')===df.requestType);
   if(df.brand){
     const brandSet=new Set(store.chatData[df.brand]||[]);
@@ -4611,7 +4651,7 @@ function openReportCreationModal(){
   const brands=Object.keys(store.chatData);
   const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
   const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
-  const products=[...new Set(allChats.map(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product'])).filter(Boolean))].sort().slice(0,30);
+  const products=[...new Set(allChats.map(c=>normalizeProductName(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')).filter(Boolean))].sort().slice(0,30);
   const fill=(id,opts)=>{
     const el=document.getElementById(id);if(!el)return;
     const cur=el.children[0].outerHTML;

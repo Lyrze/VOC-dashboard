@@ -1249,7 +1249,7 @@ tbody td:first-child {
                 &#8595; 다운로드
               </button>
             </div>
-            <div id="rpt-table-wrap" style="overflow:auto;">
+            <div id="rpt-table-wrap" style="overflow-x:auto;overflow-y:visible;">
               <table id="rpt-table" class="rpt-data-table">
                 <thead>
                   <tr>
@@ -3434,9 +3434,10 @@ async function rptOllamaAutoFill(){
   if(!isAIReady()){openAISettings();return;}
   const allChats=Object.values(store.chatData).flat();
   const{start,end}=getPeriodDates();
-  const reportChats=reportState.activeId?getReportChats():filterPeriod(allChats,start,end);
+  // 전체 store 데이터를 대상으로 처리 (리포트 유무 무관)
+  const allStoreChats=Object.values(store.chatData).flat();
   // 태그나 제품명이 비어있는 상담 대상 (summarizedMessage OR description 활용)
-  const targets=reportChats.filter(c=>{
+  const targets=allStoreChats.filter(c=>{
     const hasSummary=!!(c.summarizedMessage&&c.summarizedMessage.trim().length>10);
     const hasDesc=!!(c.description&&c.description.trim().length>5);
     const hasText=hasSummary||hasDesc;
@@ -3481,6 +3482,8 @@ async function rptOllamaAutoFill(){
     if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M5 7l1.5 1.5L9 5"/></svg> AI 필드 자동완성';}
   }
   if(reportState.activeId)renderReportTable(getReportChats());
+  // store 업데이트 내역 콘솔 확인
+  console.log('[AI자동완성] 완료:', filled, '건 업데이트');
   alert('AI 자동완성 완료!\n\n✅ 완성: '+filled+'건\n❌ 실패: '+failed+'건\n\n표가 새로고침되었습니다.');
 }
 function rptResearch(){reportState.viewMode='stats';renderReportContent();setTimeout(()=>rptRunAIAnalysis('pattern'),300);}
@@ -3929,7 +3932,7 @@ function renderReportTable(chats){
     else{csatBadge='😊 만족';csatBg='#f0fdf4';}
     const tag=c.tags||'—';const cat=tag.split('/')[0];
     const prod=c['profile.defective']||c['profile.return_product']||c['profile.product']||'—';
-    const mgr=store.managers[c.assigneeId]||(c.assigneeId?c.assigneeId:'—');
+    const mgr=c.assigneeId?(store.managers[c.assigneeId]||c.assigneeId):'ALF 단독';
     const dt=parseDate(c.createdAt||c.managedAt);
     const dtStr=dt?(dt.getMonth()+1)+'/'+(dt.getDate()):'—';
     return '<tr style="cursor:pointer;" onclick="showRowDetail(\''+escHtml(c.id||'')+'\')"><td><span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:12px;background:'+csatBg+';">'+csatBadge+'</span></td><td style="font-size:12px;">'+escHtml(cat)+'</td><td style="font-size:12px;">'+escHtml(prod)+'</td><td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(tag)+'">'+escHtml(tag)+'</td><td style="font-size:11px;color:#64748b;">'+((c.description&&c.description.trim())?(c.description.trim().slice(0,30)+(c.description.trim().length>30?'…':'')):'-')+'</td><td style="font-size:12px;">'+escHtml(c.name||'—')+'</td><td style="font-size:12px;">'+escHtml(mgr)+'</td><td style="font-size:11px;color:#64748b;">채널톡</td><td style="font-size:11px;color:#94a3b8;">'+dtStr+'</td></tr>';
@@ -3939,7 +3942,7 @@ function renderReportTable(chats){
 function showRowDetail(id){
   const allC=Object.values(store.chatData).flat();const row=allC.find(c=>c.id===id);if(!row)return;
   const panel=document.getElementById('rpt-detail-panel');if(!panel)return;
-  const csat=row['profile.csat'];const mgr=store.managers[row.assigneeId]||row.assigneeId||'미배정';
+  const csat=row['profile.csat'];const mgr=row.assigneeId?(store.managers[row.assigneeId]||row.assigneeId):'ALF 단독';
   const panelContent=document.getElementById('rpt-detail-content');if(!panelContent)return;
   panelContent.innerHTML='<div style="font-size:11px;color:#64748b;line-height:2;"><div><b>고객명</b>: '+escHtml(row.name||'—')+'</div><div><b>담당자</b>: '+escHtml(mgr)+'</div><div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div><div><b>제품명</b>: '+escHtml(row['profile.defective']||row['profile.return_product']||row['profile.product']||'—')+'</div><div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div><div><b>상담 상태</b>: '+(row.state==='closed'?'종료됨':'진행중')+'</div><div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div><div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div><div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div></div>';
   panel.style.display='block';

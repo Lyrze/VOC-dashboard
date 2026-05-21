@@ -3786,6 +3786,12 @@ function rptAITag(){
       tbl.appendChild(thead);tbl.appendChild(tbody);
 
       var fieldLabel={'tagCat':'상담태그','requestType':'요청유형','product':'제품명'};
+      // Ollama가 "tagCat|기타|제품명" 형식으로 반환할 수 있으므로 첫 번째 값만 사용
+      items=items.map(function(it){
+        var f=(it.field||'').split(/[|,\/]/)[0].trim();
+        if(!fieldLabel[f])f='tagCat';
+        return Object.assign({},it,{field:f});
+      });
 
       items.forEach(function(item,i){
         var tr=document.createElement('tr');

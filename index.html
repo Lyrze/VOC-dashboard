@@ -3145,7 +3145,7 @@ function switchMainTab(tab) {
       var el = document.getElementById(id); if(el) el.style.display = 'none';
     });
     var _dc2=document.getElementById('dashboard-content');
-    if(_dc2){_dc2.style.display='none';_dc2.style.height='';}
+    if(_dc2){_dc2.style.display='';_dc2.style.height='';}
     if(_fieldsPanel) _fieldsPanel.style.display = 'block';
     if (sidebarList) sidebarList.style.display = 'none';
     if (reportList)  reportList.style.display  = 'none';
@@ -3720,85 +3720,114 @@ function rptAITag(){
   var chats=reportState.activeId?getReportChats():filterPeriod(allChats,pd.start,pd.end);
   if(!chats.length){alert('분석할 데이터가 없습니다.');return;}
   var df=reportState.dynamicFilters||{};
-  var usedTags=new Set(df.tagCat?[df.tagCat]:[]);
+
+  // 현재 등록된 필터값 세트 (중복 추천 제외)
+  var usedTagCats=new Set(df.tagCat?[df.tagCat]:[]);
   var usedProds=new Set(df.product?[df.product]:[]);
-  var tagMap={};var prodMap={};
+  var usedReqTypes=new Set(df.requestType?[df.requestType]:[]);
+
+  // 1) 태그 전체값 수집 (기타/무응답 등 제외 대상 축소)
+  var tagMap={};
+  var reqTypeMap={};
+  var prodMap={};
+  var ignoreTags=new Set(['기타','태그없음','없음','—','-','']);
   chats.forEach(function(c){
-    var t=String(c.tags||c.tag||'').split('/')[0].trim();
-    if(t&&t!=='기타'&&t!=='—'&&t!=='태그없음'&&!usedTags.has(t))tagMap[t]=(tagMap[t]||0)+1;
-    var p=c['profile.defective']||c['profile.return_product']||c['profile.product']||'';
+    // 전체 태그값 (예: "태스크/구매후제품")
+    var fullTag=String(c.tags||'').trim();
+    if(fullTag&&!ignoreTags.has(fullTag)&&!usedTagCats.has(fullTag))
+      tagMap[fullTag]=(tagMap[fullTag]||0)+1;
+
+    // Request_type 필드 (반품/교환/AS 등)
+    var rt=String(c['profile.Request_type']||'').trim();
+    if(rt&&rt!=='기타'&&!usedReqTypes.has(rt))
+      reqTypeMap[rt]=(reqTypeMap[rt]||0)+1;
+
+    // 제품명
+    var p=String(c['profile.defective']||c['profile.return_product']||c['profile.product']||'').trim();
     if(p&&!usedProds.has(p))prodMap[p]=(prodMap[p]||0)+1;
   });
-  var topTags=Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];}).slice(0,12);
-  var topProds=Object.entries(prodMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
-  if(!topTags.length&&!topProds.length){alert('추천할 새 필터 데이터가 없습니다.');return;}
-  var prompt='당신은 CS 필터 분류 전문가입니다. 상담 데이터 값을 분석해 필터명을 추천해주세요.\\n\\n태그값(건수): '+topTags.map(function(e){return e[0]+'('+e[1]+')';}).join(', ')+'\\n제품값(건수): '+topProds.map(function(e){return e[0]+'('+e[1]+')';}).join(', ')+'\\n\\nJSON 형식으로만 응답:\\n{"items":[{"value":"원래값","label":"추천필터명","field":"tagCat","reason":"이유"},{"value":"제품명","label":"추천필터명","field":"product","reason":"이유"}]}\\n\\n규칙: field는 tagCat 또는 product, label은 10자이내 한국어 필터명, 최대20개';
+
+  var topTags=Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  var topReqTypes=Object.entries(reqTypeMap).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+  var topProds=Object.entries(prodMap).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+
+  if(!topTags.length&&!topReqTypes.length&&!topProds.length){alert('추천할 새 필터 데이터가 없습니다.');return;}
+
+  var prompt='당신은 CS 필터 분류 전문가입니다. 아래 상담 데이터 원본값을 분석해 각각에 어울리는 필터명을 추천하세요.\\n\\n[상담 태그 값(건수)]\\n'+topTags.map(function(e){return '"'+e[0]+'" '+e[1]+'건';}).join('\\n')+'\\n\\n[요청유형 값(건수)]\\n'+topReqTypes.map(function(e){return '"'+e[0]+'" '+e[1]+'건';}).join('\\n')+'\\n\\n[제품명 값(건수)]\\n'+topProds.map(function(e){return '"'+e[0]+'" '+e[1]+'건';}).join('\\n')+'\\n\\n규칙:\\n- 태그값 → field:"tagCat"\\n- 요청유형값 → field:"requestType"\\n- 제품명값 → field:"product"\\n- label은 10자 이내 한국어, 실무 필터명으로\\n- 건수 많은 순 최대 20개\\n\\nJSON 형식으로만 응답 (설명 없이):\\n{"items":[{"value":"원래값","count":건수,"label":"추천필터명","field":"tagCat|requestType|product","reason":"한줄이유"}]}';
+
   var btn=document.querySelector('[onclick="rptAITag()"]');
   if(btn){btn.disabled=true;btn.textContent='분석 중...';}
   callGemini(prompt).then(function(result){
     if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg> AI 필터 추천';}
     var items=null;
     try{var cleaned=result.trim();var si2=cleaned.indexOf('{');var ei2=cleaned.lastIndexOf('}');if(si2>=0&&ei2>si2)cleaned=cleaned.slice(si2,ei2+1);items=JSON.parse(cleaned).items;}catch(ex){items=null;}
-    var old=document.getElementById('ai-tag-result-popup');if(old)old.remove();
+
+    // 팝업 생성
     var pop=document.createElement('div');
-    pop.id='ai-tag-result-popup';
-    pop.style.cssText='position:fixed;top:60px;right:20px;width:540px;max-height:80vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;font-family:inherit;';
+    pop.style.cssText='position:fixed;top:60px;right:20px;width:580px;max-height:82vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:9999;font-family:inherit;';
     var hdr=document.createElement('div');
     hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:#fff;z-index:1;';
     var ttl=document.createElement('div');
-    ttl.innerHTML='<div style="font-size:13px;font-weight:700;color:#1e293b;">AI 필터 추천</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">필터명 수정 후 [필터 등록] 버튼으로 적용</div>';
+    ttl.innerHTML='<div style="font-size:13px;font-weight:700;color:#1e293b;">AI 필터 추천</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">필터명 수정 후 [필터 등록] 버튼으로 적용 · 등록 후 리포트에 즉시 반영</div>';
     var cBtn=document.createElement('button');
+    cBtn.textContent='✕';
     cBtn.style.cssText='background:none;border:none;cursor:pointer;font-size:20px;color:#94a3b8;line-height:1;padding:0 4px;';
-    cBtn.textContent='×';cBtn.onclick=function(){pop.remove();};
+    cBtn.onclick=function(){pop.remove();};
     hdr.appendChild(ttl);hdr.appendChild(cBtn);pop.appendChild(hdr);
     var body=document.createElement('div');
-    body.style.cssText='padding:12px 20px 20px;';
+    body.style.cssText='padding:16px 20px;';
+
     if(items&&items.length){
       var tbl=document.createElement('table');
       tbl.style.cssText='width:100%;border-collapse:collapse;font-size:12px;';
       var thead=document.createElement('thead');
-      thead.innerHTML='<tr style="background:#f8fafc;"><th style="padding:8px 10px;text-align:left;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #e8eaf0;">데이터 값</th><th style="padding:8px 10px;text-align:center;font-size:11px;color:#64748b;font-weight:600;border-bottom:1px solid #e8eaf0;">건수</th><th style="padding:8px 10px;text-align:left;font-size:11px;color:#6366f1;font-weight:600;border-bottom:1px solid #e8eaf0;">추천 필터명 <span style="color:#94a3b8;font-weight:400;">(수정가능)</span></th><th style="padding:8px 10px;border-bottom:1px solid #e8eaf0;"></th></tr>';
-      tbl.appendChild(thead);
+      thead.innerHTML='<tr style="background:#f8fafc;"><th style="padding:8px 10px;text-align:left;font-size:11px;color:#64748b;font-weight:600;border-bottom:2px solid #e8eaf0;width:160px;">데이터 원본값</th><th style="padding:8px 10px;text-align:center;font-size:11px;color:#64748b;font-weight:600;border-bottom:2px solid #e8eaf0;width:48px;">건수</th><th style="padding:8px 10px;text-align:center;font-size:11px;color:#64748b;font-weight:600;border-bottom:2px solid #e8eaf0;width:72px;">분류</th><th style="padding:8px 10px;text-align:left;font-size:11px;color:#6366f1;font-weight:600;border-bottom:2px solid #e8eaf0;">추천 필터명 <span style="color:#94a3b8;font-weight:400;">(수정가능)</span></th><th style="padding:8px 10px;border-bottom:2px solid #e8eaf0;width:72px;"></th></tr>';
       var tbody=document.createElement('tbody');
+      tbl.appendChild(thead);tbl.appendChild(tbody);
+
+      var fieldLabel={'tagCat':'상담태그','requestType':'요청유형','product':'제품명'};
+
       items.forEach(function(item,i){
-        var cntMap=(item.field==='tagCat'?tagMap:prodMap);
-        var cnt=cntMap[item.value]||0;
         var tr=document.createElement('tr');
-        tr.style.cssText='border-bottom:1px solid #f1f5f9;'+(i%2===1?'background:#fafbff;':'');
+        tr.style.cssText='border-bottom:1px solid #f1f5f9;'+(i%2===0?'background:#fff;':'background:#fafafa;');
         var tdVal=document.createElement('td');
-        tdVal.style.cssText='padding:8px 10px;color:#334155;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        tdVal.style.cssText='padding:8px 10px;color:#334155;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;';
+        tdVal.title=item.value;
         tdVal.textContent=item.value;
-        tdVal.title=item.value+' ('+(item.field==='tagCat'?'태그':'제품')+')';
         var tdCnt=document.createElement('td');
         tdCnt.style.cssText='padding:8px 10px;text-align:center;color:#94a3b8;font-size:11px;white-space:nowrap;';
-        tdCnt.textContent=cnt+'건';
-        var tdLabel=document.createElement('td');
-        tdLabel.style.cssText='padding:5px 10px;';
+        tdCnt.textContent=item.count?item.count+'건':'-';
+        var tdField=document.createElement('td');
+        tdField.style.cssText='padding:8px 10px;text-align:center;';
+        var badge=document.createElement('span');
+        badge.style.cssText='display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;'+(item.field==='tagCat'?'background:#eff0fe;color:#6366f1;':item.field==='requestType'?'background:#ecfdf5;color:#059669;':'background:#fff7ed;color:#ea580c;');
+        badge.textContent=fieldLabel[item.field]||item.field;
+        tdField.appendChild(badge);
+        var tdInp=document.createElement('td');
+        tdInp.style.cssText='padding:6px 10px;';
         var inp=document.createElement('input');
-        inp.type='text';inp.value=item.label||item.value;inp.title=item.reason||'';
+        inp.type='text';inp.value=item.label||'';
         inp.style.cssText='padding:4px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;width:100%;min-width:100px;outline:none;font-family:inherit;';
         inp.onfocus=function(){this.style.borderColor='#6366f1';};
         inp.onblur=function(){this.style.borderColor='#e2e8f0';};
-        tdLabel.appendChild(inp);
+        tdInp.appendChild(inp);
         var tdBtn=document.createElement('td');
-        tdBtn.style.cssText='padding:5px 10px;white-space:nowrap;';
+        tdBtn.style.cssText='padding:6px 10px;text-align:center;';
         var regBtn=document.createElement('button');
-        regBtn.textContent='필터 등록';
+        regBtn.textContent='등록';
         regBtn.style.cssText='padding:4px 10px;background:#fff;border:1.5px solid #6366f1;border-radius:5px;color:#6366f1;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap;font-family:inherit;';
-        regBtn.onmouseenter=function(){if(!this.dataset.done)this.style.background='#eff0fe';};
-        regBtn.onmouseleave=function(){if(!this.dataset.done)this.style.background='#fff';};
-        (function(fld,ip,rb,tr2){
-          rb.onclick=function(){
-            var v=ip.value.trim();if(!v)return;
-            setDynamicFilter(fld,v);
-            rb.textContent='✓ 등록됨';
-            rb.style.cssText='padding:4px 10px;background:#eff0fe;border:1.5px solid #6366f1;border-radius:5px;color:#4f46e5;font-size:11px;cursor:default;font-weight:600;white-space:nowrap;font-family:inherit;';
-            rb.dataset.done='1';rb.onclick=null;rb.onmouseenter=null;rb.onmouseleave=null;
-            tr2.style.background='#f0fdf4';
+        regBtn.onclick=(function(itm,inputEl,rbtn){
+          return function(){
+            var label=inputEl.value.trim();
+            if(!label){alert('필터명을 입력해주세요');return;}
+            setDynamicFilter(itm.field,itm.value);
+            rbtn.textContent='✓ 등록됨';rbtn.dataset.done='1';
+            rbtn.style.cssText='padding:4px 10px;background:#eff0fe;border:1.5px solid #6366f1;border-radius:5px;color:#4f46e5;font-size:11px;cursor:default;font-weight:600;white-space:nowrap;font-family:inherit;';
+            rbtn.disabled=true;inputEl.disabled=true;
           };
-        })(item.field,inp,regBtn,tr);
+        })(item,inp,regBtn);
         tdBtn.appendChild(regBtn);
-        tr.appendChild(tdVal);tr.appendChild(tdCnt);tr.appendChild(tdLabel);tr.appendChild(tdBtn);
+        tr.appendChild(tdVal);tr.appendChild(tdCnt);tr.appendChild(tdField);tr.appendChild(tdInp);tr.appendChild(tdBtn);
         tbody.appendChild(tr);
       });
       tbl.appendChild(tbody);body.appendChild(tbl);
@@ -4231,6 +4260,7 @@ function applyReportFilters(chats){
   if(df.manager)result=result.filter(c=>(store.managers[c.assigneeId]||c.assigneeId)===df.manager);
   if(df.tagCat)result=result.filter(c=>(c.tags||'')===df.tagCat||(c.tags||'').split('/')[0]===df.tagCat);
   if(df.product)result=result.filter(c=>(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')===df.product);
+  if(df.requestType)result=result.filter(c=>(c['profile.Request_type']||'')===df.requestType);
   if(df.brand){
     const brandSet=new Set(store.chatData[df.brand]||[]);
     result=result.filter(c=>brandSet.has(c));

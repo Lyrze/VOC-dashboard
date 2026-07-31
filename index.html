@@ -2207,6 +2207,7 @@ tbody td:first-child {
             <option value="closed">종료됨</option>
             <option value="initial">진행중</option>
             <option value="missed">미응대</option>
+            <option value="alfOnly">ALF 단독 처리</option>
           </select>
         </div>
         <div>
@@ -2338,6 +2339,11 @@ const ENUM_LABELS = {
   mediumType: { native: '채널톡', phone: '채널톡 미트' },
   // 상담 상태 — missed(미응대)가 실제로 존재한다. closed/initial만 다루면 누락됨.
   state: { initial: '진행중', closed: '종료됨', missed: '미응대' },
+  // 파생 상담 상태(__state). RAW 의 state 는 '상담원 인박스' 상태라 그대로 쓰면 오해를 부른다.
+  // 슬룸 4월 initial 4,416건은 전부 everOpened=false · alfTriggered=true · 담당자 없음 · 답변 0회,
+  // 즉 ALF(챗봇)가 단독 응대해 인박스에 들어오지도 않은 건이다. 실제 '진행중'은 0건.
+  // 운영자 눈에는 전부 완료로 보이는데 대시보드만 '진행중 4,416'이라고 표시하던 원인.
+  __state: { initial: '진행중', closed: '종료됨', missed: '미응대', alfOnly: 'ALF 단독 처리' },
   // 미응대/부재중 사유 — 실제 데이터(슬룸+얼라인랩)에 등장하는 6종 전부
   missedReason: {
     workflow: '운영시간 외 · 워크플로우',
@@ -2358,6 +2364,19 @@ const ENUM_LABELS = {
   alfTriggered: { true: 'ALF 응대', false: 'ALF 미응대', TRUE: 'ALF 응대', FALSE: 'ALF 미응대' },
 };
 
+/* 파생 상담 상태.
+   채널톡 state 는 상담원 인박스 기준이라 ALF(챗봇) 단독 응대 건이 영원히 initial 로 남는다.
+   (실측: initial 전건이 everOpened=false + alfTriggered=true + assigneeId 없음 + replyCount 없음)
+   그런 건은 'alfOnly' 로 분리해 '진행중' 과 섞이지 않게 한다. */
+function deriveState(r) {
+  const s = r.state;
+  if (s === 'closed' || s === 'missed') return s;
+  const neverOpened = String(r.everOpened) === 'false';
+  const alf = String(r.alfTriggered) === 'true';
+  if (s === 'initial' && neverOpened && alf) return 'alfOnly';
+  return s == null || s === '' ? s : String(s);
+}
+
 /* enum 값을 한글 라벨로. 매핑에 없으면 원래 값을 그대로 반환. */
 function enumLabel(field, value) {
   if (value == null || value === '') return '(없음)';
@@ -2375,7 +2394,8 @@ const FIELD_CATALOG = [
   // 원본의 '연동 채널명' — 우리는 브랜드(업로드한 xlsx 파일명)가 곧 연동 채널이다
   { key: '__brand',      label: '연동 채널명',  type: 'enum', group: '상담 정보' },
   { key: 'mediumType',   label: '인입 경로',    type: 'enum', group: '상담 정보' },
-  { key: 'state',        label: '상담 상태',    type: 'enum', group: '상담 정보' },
+  // 상담 상태는 파생 필드(__state)로 필터한다. RAW state 를 쓰면 ALF 단독 처리 건이 '진행중'으로 잡힌다.
+  { key: '__state',      label: '상담 상태',    type: 'enum', group: '상담 정보' },
   { key: 'missedReason', label: '미응대 사유',  type: 'enum', group: '상담 정보' },
   { key: 'direction',    label: '인/아웃바운드', type: 'enum', group: '상담 정보' },
   { key: 'goalState',    label: '상담 목표',    type: 'enum', group: '상담 정보' },
@@ -2567,7 +2587,7 @@ function mergeIntoStore(brand, wb) {
   // UserChat 시트 -> 채팅 데이터
   const chatRows = sheetToJson(wb, 'UserChat');
   // 원본의 '연동 채널명' 에 대응 — 브랜드는 xlsx 파일명이라 행에 없으므로 주입한다
-  chatRows.forEach(r => { r.__brand = brand; });
+  chatRows.forEach(r => { r.__brand = brand; r.__state = deriveState(r); });
   // 담당자는 브랜드마다 id 가 달라 같은 사람이 여러 값으로 쪼개진다 -> 이름을 별도 필드로 주입
   // (원본이 이 위젯을 '담당자(통합)' 이라 부르는 이유)
   if (chatRows.length) {
@@ -2585,7 +2605,7 @@ function mergeIntoStore(brand, wb) {
   const phoneRows = sheetToJson(wb, 'UserChat meet data');
   if (phoneRows.length) {
     // duration은 '0h 2m 17s' 형식 문자열 -> 초로 미리 파싱해 durationSec에 보관
-    phoneRows.forEach(r => { r.durationSec = parseHms(r.duration); r.__brand = brand; });
+    phoneRows.forEach(r => { r.durationSec = parseHms(r.duration); r.__brand = brand; r.__state = deriveState(r); });
     if (!store.phoneData[brand]) {
       store.phoneData[brand] = phoneRows;
     } else {
@@ -3159,6 +3179,10 @@ function escHtml(s) {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function calcKPIs(chats) {
   const n = chats.length;
+  // ALF(챗봇) 단독 처리 = 상담원 인박스에 유입되지 않은 건.
+  // 상담원 응대/처리 완료 비율의 분모에 넣으면 비율이 실제보다 크게 낮아진다 (슬룸 4월 6,888건 중 4,416건).
+  const alfOnly = chats.filter(c => c.__state === 'alfOnly').length;
+  const inbox = n - alfOnly;
   const responded = chats.filter(c => c.firstAnsweredAt).length;
   const closed = chats.filter(c => c.state === 'closed').length;
   const csatChats = chats.filter(c => c['profile.csat'] != null);
@@ -3188,8 +3212,11 @@ function calcKPIs(chats) {
     totalChats: n,
     responded,
     closedCount: closed,
-    responseRate: n ? responded / n * 100 : 0,
-    closedRate: n ? closed / n * 100 : 0,
+    // 분모는 상담원 인박스 유입 건수(전체 - ALF 단독 처리)
+    responseRate: inbox ? responded / inbox * 100 : 0,
+    closedRate: inbox ? closed / inbox * 100 : 0,
+    alfOnlyCount: alfOnly,
+    inboxChats: inbox,
     avgReplyCount: replyCounts.length ? aggTime(replyCounts) : null,
     alfToAgent,
     // 시간 지표는 중앙값 집계 (원본 동작) — 만족도는 아래에서 산술평균 유지
@@ -3257,6 +3284,8 @@ const METRICS = {
   satisfactionRate: { label: '만족도 응답률', labelCh: ch => ch + ' 만족도 응답률', get: k => k.satisfactionRate, fmt: fmtPct,                 kind: 'pct',    good: true  },
   replyCount:    { label: '평균 매니저 답변 횟수', get: k => k.avgReplyCount, fmt: v => v != null ? v.toFixed(1) + '회' : '-', kind: 'score', unit: '회', good: null },
   alfToAgent:    { label: 'ALF → 상담원 연결 수', get: k => k.alfToAgent,   fmt: v => v + '건',           kind: 'number', good: null  },
+  alfOnly:       { label: 'ALF 단독 처리 수',   get: k => k.alfOnlyCount, fmt: v => v + '건',           kind: 'number', good: null  },
+  inboxChats:    { label: '상담원 인입 수',     get: k => k.inboxChats,   fmt: v => v + '건',           kind: 'number', good: null  },
   shareOfTotal:  { label: '전체 문의 중 비율', get: (k, ctx) => ctx && ctx.total ? ctx.count / ctx.total * 100 : 0,
                    fmt: v => v.toFixed(1) + '%', kind: 'pct', good: null, noDelta: true },
   // ── 전화 (calcPhoneKPIs 결과를 받는다) ──
@@ -3364,7 +3393,7 @@ const GROUPERS = {
   },
   __brand:    { label: '연동 채널명', key: r => r.__brand ?? '(없음)', text: k => String(k) },
   mediumType: { label: '인입 경로', key: r => r.mediumType ?? '(없음)', text: k => enumLabel('mediumType', k) },
-  state:      { label: '상담 상태', key: r => r.state ?? '(없음)',      text: k => enumLabel('state', k) },
+  state:      { label: '상담 상태', key: r => r.__state ?? r.state ?? '(없음)', text: k => enumLabel('__state', k) },
   product: {
     label: '제품명',
     key: r => normalizeProductName(r['profile.defective'] || r['profile.return_product'] || r['profile.product'] || '') || '(미확인)',
@@ -3429,7 +3458,8 @@ const BASE_TABLE_METRICS = {
 
 /* 위젯별로 고를 수 있는 지표 범위 (전화 지표를 채팅 테이블에 노출하지 않는다) */
 const CHAT_METRIC_IDS = ['count','responded','closedCount','responseRate','closedRate','complaintRate',
-  'firstReply','replyTime','handling','satisfaction','satisfactionRate','replyCount','alfToAgent','shareOfTotal'];
+  'firstReply','replyTime','handling','satisfaction','satisfactionRate','replyCount',
+  'alfToAgent','alfOnly','inboxChats','shareOfTotal'];
 const METRIC_GROUPS = {
   'manager-table': CHAT_METRIC_IDS,
   'tag-table': CHAT_METRIC_IDS,
@@ -3616,7 +3646,7 @@ function addFilterFromGroup(mountId, grouperId, key) {
     assigneeId: { field: '__manager', op: 'anyOf' },
     tags:       { field: 'tags',       op: 'containsAny' },
     mediumType: { field: 'mediumType', op: 'anyOf' },
-    state:      { field: 'state',      op: 'anyOf' },
+    state:      { field: '__state',    op: 'anyOf' },
     teamId:     { field: 'teamId',     op: 'anyOf' },
     product:    { field: 'profile.product', op: 'containsAny' },
   };
@@ -4488,7 +4518,7 @@ const DISTRIBUTIONS = {
       return Object.keys(c).sort().map(k => ({ label: k, value: c[k] }));
     },
   },
-  state:  { label: '상담 상태 분포',  chart: 'doughnut', field: 'state' },
+  state:  { label: '상담 상태 분포',  chart: 'doughnut', field: '__state' },
   medium: { label: '인입 경로 분포',  chart: 'doughnut', field: 'mediumType' },
   missedReason: {
     label: '미트 부재중 사유 분포', chart: 'doughnut', field: 'missedReason', source: 'phone',
@@ -6211,7 +6241,7 @@ const LEGACY_FIELD_MAP = {
   requestType: { field: 'profile.Request_type', op: 'anyOf' },
   product:     { field: 'profile.product',      op: 'containsAny' },
   manager:     { field: '__manager',            op: 'anyOf' },
-  status:      { field: 'state',                op: 'anyOf' },
+  status:      { field: '__state',              op: 'anyOf' },
 };
 
 /* 저장된 리포트의 필터를 신규 배열 형식으로 정규화.
@@ -6898,106 +6928,162 @@ const savedReports = [];
 
 /* ---------------------------------------------------------------
    원본 VOC STUDIO 리포트 이전
-   원본 리포트 목록(이름·설명·스페이스)과, 라이브에서 읽어온 필터를 우리 필드로 매핑했다.
+   원본 화면 캡처로 필터 조건을 하나씩 읽어 우리 필드로 매핑했다 (추측 아님).
+   (공유용) 리포트 2개 · Call 통계 · 개인 스페이스 복제본은 사용자 요청으로 제외했다.
 
    ⚠️ 완전히 동일한 값으로는 이전할 수 없다:
       원본 필터는 '불만 여부', '대표 문의유형', '개선 요청 사항' 같은
       AI 자동 분류 필드에 의존하는데 이 값들은 원본이 AI 로 만들어 저장한 것이고
       채널톡 RAW(xlsx)에는 존재하지 않는다. 그래서 아래처럼 대체 매핑을 쓴다:
-        · 불만 여부 = 불만      -> profile.csat <= 2 (CSAT 1~2점)
-        · 대표 문의유형 contains -> 상담 태그(tags) contains
+        · 불만 여부 = 불만       -> profile.csat <= 2 (CSAT 1~2점)
+        · AI CSAT 매우만족/만족   -> profile.csat >= 4
+        · AI CSAT 불만족/매우불만족 -> profile.csat <= 2
+        · 매니저 조치 값이 있는    -> 담당자(통합) != 미배정
+        · 대표 문의유형 contains  -> 상담 태그(tags) contains
    나머지(연동 채널명 / 상담 상태 / 상담 태그)는 1:1 로 대응된다.
 --------------------------------------------------------------- */
 const ORIGIN_REPORTS = [
-  // ── 팀 스페이스 ──
-  { id: 'o-voc-complaint', space: 'team', group: '(공유용)[슬룸] VOC Report',
-    name: '[슬룸] 불만 고객/개선 요청 Report',
-    desc: "슬룸의 VOC 중 불만으로 분류된 건만 모은 리포트. (원본은 AI '불만 여부' 필드 기준 — 여기서는 CSAT 1~2점으로 대체)",
+  /* ── [CX팀 단독] CSAT 리포트 (그룹 5개) ──
+     원본 공통 필터: 상담 태그 OB 제외 · 상담 상태 종료됨 · 매니저 조치 값이 있는
+     '매니저 조치' 는 원본이 AI 로 채우는 필드라 RAW 에 없다 -> 담당자(통합) != 미배정 으로 대체 */
+  { id: 'o-csat-ai-all', space: 'team', group: '[CX팀 단독] CSAT 리포트',
+    name: 'AI CSAT 전체',
+    desc: 'AI 분류 CSAT + 채널톡 자체 CSAT 합산 리포트. (원본 451건)',
     filters: [
-      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
-      { field: 'state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+      { field: '__state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['기타/테스트'], join: 'and' },
+    ] },
+  { id: 'o-csat-good', space: 'team', group: '[CX팀 단독] CSAT 리포트',
+    name: '만족 CSAT(AI 기반)',
+    desc: 'AI CSAT 이 매우 만족·만족인 상담. (원본은 AI CSAT 필드 기준 — 여기서는 CSAT 4점 이상. 원본 177건)',
+    filters: [
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+      { field: '__state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' },
+      { field: 'profile.csat', op: 'gte', values: ['4'], join: 'and' },
+    ] },
+  { id: 'o-csat-bad', space: 'team', group: '[CX팀 단독] CSAT 리포트',
+    name: '불만족 CSAT(AI 기반)',
+    desc: 'AI CSAT 이 불만족·매우 불만족인 상담. (원본은 AI CSAT 필드 기준 — 여기서는 CSAT 2점 이하. 원본 51건)',
+    filters: [
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+      { field: '__state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['기타/테스트'], join: 'and' },
       { field: 'profile.csat', op: 'lte', values: ['2'], join: 'and' },
     ] },
-  { id: 'o-voc-all', space: 'team', group: '(공유용)[슬룸] VOC Report',
-    name: '[슬룸] 전체 고객/개선 요청 Report',
-    desc: '슬룸의 모든 VOC를 통합한 리포트. 개선 요청 사항·문의 제품명·문의 유형 확인용.',
-    filters: [
-      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
-    ] },
-  { id: 'o-defect-all', space: 'team', group: '(공유용)[슬룸] VOC Report',
-    name: '[슬룸] 불량 VOC 리포트(통합)',
-    desc: "슬룸 모든 SKU 불량 VOC 통합. '불량문의' 포함 모든 '불량' VOC.",
-    filters: [
-      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
-      { field: 'tags', op: 'containsAny', values: ['불량'], join: 'and' },
-      { field: 'state', op: 'anyOf', values: ['closed'], join: 'and' },
-      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
-    ] },
-  { id: 'o-defect-waist', space: 'team', group: '(공유용)[슬룸] VOC Report',
-    name: '[슬룸] 허리편한케어 불량 VOC 리포트',
-    desc: '허리편한케어 V1/V2 불량 VOC만 통합.',
-    filters: [
-      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
-      { field: 'tags', op: 'containsAny', values: ['불량'], join: 'and' },
-      { field: 'profile.defective', op: 'textHas', values: ['허리편한케어'], join: 'and' },
-    ] },
-  { id: 'o-defect-foot', space: 'team', group: '(공유용)[슬룸] VOC Report',
-    name: '[슬룸] 발편한케어 불량 VOC 리포트',
-    desc: '발편한케어 불량 VOC만 통합.',
-    filters: [
-      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
-      { field: 'tags', op: 'containsAny', values: ['불량'], join: 'and' },
-      { field: 'profile.defective', op: 'textHas', values: ['발편한케어'], join: 'and' },
-    ] },
-  { id: 'o-exchange', space: 'team', group: '(공유용)[슬룸] VOC Report',
-    name: '[슬룸] 단순 교환/반품 상세 사유 Report',
-    desc: '단순 교환/반품 상담의 상세 사유와 문의 제품명 확인용.',
-    filters: [
-      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
-      { field: 'tags', op: 'containsAny', values: ['교환', '반품'], join: 'and' },
-    ] },
-  { id: 'o-tagbase', space: 'team', group: '(공유용)[슬룸] 상담태그 기준 VOC Report',
-    name: '[슬룸] 상담태그 기준 VOC',
-    desc: '상담 태그를 기준으로 VOC를 분류해 보는 리포트.',
-    filters: [{ field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
-              { field: 'tags', op: 'notEmpty', values: [], join: 'and' }] },
-  { id: 'o-productivity', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
-    name: '[CX팀] 담당자별 생산성',
-    desc: '담당자별 응대 건수·응답 시간·처리 시간을 보는 리포트. 상담 통계 탭의 담당자별 리더보드를 함께 확인.',
-    filters: [{ field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' }] },
-  { id: 'o-cxteam', space: 'team', group: '[CX팀 단독] CX팀 Report',
-    name: '[CX팀] CX팀 Report',
-    desc: 'CX팀 전체 상담 현황 리포트.',
-    filters: [] },
   { id: 'o-csat-all', space: 'team', group: '[CX팀 단독] CSAT 리포트',
     name: 'CSAT 응답 (All)',
-    desc: '만족도(CSAT)에 응답이 있는 상담 전체.',
-    filters: [{ field: 'profile.csat', op: 'notEmpty', values: [], join: 'and' }] },
-  { id: 'o-csat-good', space: 'team', group: '[CX팀 단독] CSAT 리포트',
-    name: '만족 CSAT',
-    desc: "만족으로 분류된 CSAT. (원본은 AI 기반 — 여기서는 CSAT 4~5점)",
-    filters: [{ field: 'profile.csat', op: 'gte', values: ['4'], join: 'and' }] },
-  { id: 'o-csat-bad', space: 'team', group: '[CX팀 단독] CSAT 리포트',
-    name: '불만족 CSAT',
-    desc: "불만족으로 분류된 CSAT. (원본은 AI 기반 — 여기서는 CSAT 1~2점)",
-    filters: [{ field: 'profile.csat', op: 'lte', values: ['2'], join: 'and' }] },
+    desc: 'CSAT(Customer Satisfaction Score) 통계. 채널톡 만족도에 응답이 있는 상담. (원본 86건)',
+    filters: [
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+      { field: '__state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' },
+      { field: 'profile.csat', op: 'notEmpty', values: [], join: 'and' },
+    ] },
   { id: 'o-csat-comment', space: 'team', group: '[CX팀 단독] CSAT 리포트',
     name: 'CSAT 주관식 의견 (All)',
-    desc: '만족도 코멘트가 남겨진 상담.',
-    filters: [{ field: 'profile.csatComment', op: 'notEmpty', values: [], join: 'and' }] },
-  { id: 'o-call', space: 'team', group: '[CX팀 단독] Call 통계 (현재 임시 미사용)',
-    name: '[CX팀] Call 통계',
-    desc: '전화(채널톡 미트) 상담 통계. 원본에서도 임시 미사용 상태.',
-    filters: [{ field: 'mediumType', op: 'anyOf', values: ['phone'], join: 'and' }] },
-  { id: 'o-defect-type', space: 'team', group: '[CX팀 단독] 불량 확정 불량 유형 분류',
-    name: '[CX팀] 불량 확정 유형 분류',
-    desc: '불량으로 확정된 상담을 유형별로 분류.',
-    filters: [{ field: 'tags', op: 'containsAny', values: ['불량확정'], join: 'and' }] },
-  // ── 개인 스페이스 ──
-  { id: 'o-personal', space: 'personal', group: '[슬룸] CX팀 통합 Report의 복제본',
+    desc: '주관식 의견만 확인 가능. (원본 3건)',
+    filters: [
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+      { field: '__state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' },
+      { field: 'profile.csatComment', op: 'notEmpty', values: [], join: 'and' },
+    ] },
+
+  /* ── [CX팀 단독] 담당자별 생산성 (그룹 8개) ──
+     원본 필터: 담당자 <이름> 매니저의 브랜드별 계정 9개 전체 + 상담 태그 OB 제외
+     담당자 이름만 바뀌고 나머지는 동일하다 */
+  { id: 'o-prod-pk', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '박근영 파트장(CX매니저)',
+    desc: '박근영 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['박근영'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-prod-kej', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '김은주 매니저(CX매니저)',
+    desc: '김은주 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['김은주'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-prod-lms', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '임미선 매니저(CS매니저)',
+    desc: '임미선 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['임미선'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-prod-cg', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '조건 매니저(CS매니저)',
+    desc: '조건 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['조건'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-prod-jsr', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '전승리 매니저(CS매니저)',
+    desc: '전승리 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['전승리'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-prod-pgy', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '박가영 매니저(CS매니저)',
+    desc: '박가영 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['박가영'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-prod-jjh', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '정지훈 매니저(CS매니저)',
+    desc: '정지훈 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['정지훈'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-prod-hys', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '허윤선 매니저(CS매니저)',
+    desc: '허윤선 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.',
+    filters: [
+      { field: '__manager', op: 'anyOf', values: ['허윤선'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+
+  /* ── [CX팀 단독] CX팀 Report (그룹 2개) ── */
+  { id: 'o-cxteam-sloom', space: 'team', group: '[CX팀 단독] CX팀 Report',
     name: '[슬룸] CX팀 통합 Report',
-    desc: '슬룸 전체 상담을 통합해 보는 개인용 리포트.',
-    filters: [{ field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' }] },
+    desc: '슬룸의 모든 VOC 통합한 리포트로, 제품별, 유형별 VOC 볼륨 확인 가능. (원본 1,297건)',
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+      { field: 'mediumType', op: 'noneOf', values: ['phone'], join: 'and' },
+    ] },
+  { id: 'o-cxteam-others', space: 'team', group: '[CX팀 단독] CX팀 Report',
+    name: '[슬룸 외 모든 브랜드] CX팀 Report',
+    desc: '슬룸 외 브랜드 통합 리포트 // 미트 제외. (원본 288건)',
+    filters: [
+      { field: '__brand', op: 'noneOf', values: ['슬룸'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+      { field: '__state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' },
+    ] },
+
+  /* ── [CX팀 단독] 불량 확정 불량 유형 분류 ──
+     원본 필터: 연동 채널명 슬룸 · 상담 태그 불량 계열 5개 · 인입 경로 9개(채널톡 미트만 제외) · 제품명 3개 */
+  { id: 'o-defect-type', space: 'team', group: '[CX팀 단독] 불량 확정 불량 유형 분류',
+    name: '[CX팀] 불량 확정 불량 유형 분류',
+    desc: '불량으로 확정된 슬룸 상담을 제품·유형별로 분류. (원본 20건)',
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+      { field: 'tags', op: 'containsAny',
+        values: ['불량', '불량/불량반출', '불량/불량확정', '교환,반품/교환/불량', '교환,반품/반품/불량'], join: 'and' },
+      { field: 'mediumType', op: 'noneOf', values: ['phone'], join: 'and' },
+      { field: 'profile.defective', op: 'containsAny',
+        values: ['허리베개프로', '등허리힐링케어', '눈편한케어'], join: 'and' },
+    ] },
 ];
 
 /* 저장된 리포트가 없을 때만 원본 구조를 시드한다 (사용자가 지우면 다시 만들지 않는다) */
@@ -7195,7 +7281,7 @@ function renderReportTable(chats){
       } },
     { head: '고객명',        kind: '',     cell: c => cellBadge(c.name, { plain: true }) },
     { head: '인입 경로',     kind: '',     cell: c => cellBadge(enumLabel('mediumType', c.mediumType)) },
-    { head: '상담 상태',     kind: '',     cell: c => cellBadge(enumLabel('state', c.state)) },
+    { head: '상담 상태',     kind: '',     cell: c => cellBadge(enumLabel('__state', c.__state)) },
   ];
 
   if (thead) {
@@ -7220,7 +7306,7 @@ function showRowDetail(id){
   const panel=document.getElementById('rpt-detail-panel');if(!panel)return;
   const csat=row['profile.csat'];const mgr=row.assigneeId?(store.managers[row.assigneeId]||row.assigneeId):'ALF 단독';
   const panelContent=document.getElementById('rpt-detail-content');if(!panelContent)return;
-  panelContent.innerHTML='<div style="font-size:11px;color:var(--text-sub);line-height:2;"><div><b>고객명</b>: '+escHtml(row.name||'—')+'</div><div><b>담당자</b>: '+escHtml(mgr)+'</div><div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div><div><b>제품명</b>: '+escHtml(row['profile.defective']||row['profile.return_product']||row['profile.product']||'—')+'</div><div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div><div><b>상담 상태</b>: '+(row.state==='closed'?'종료됨':'진행중')+'</div><div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div><div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div><div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div></div>';
+  panelContent.innerHTML='<div style="font-size:11px;color:var(--text-sub);line-height:2;"><div><b>고객명</b>: '+escHtml(row.name||'—')+'</div><div><b>담당자</b>: '+escHtml(mgr)+'</div><div><b>상담 태그</b>: '+escHtml(row.tags||'—')+'</div><div><b>제품명</b>: '+escHtml(row['profile.defective']||row['profile.return_product']||row['profile.product']||'—')+'</div><div><b>만족도</b>: '+(csat!=null?csat+'점':'미측정')+'</div><div><b>상담 상태</b>: '+escHtml(enumLabel('__state', row.__state))+'</div><div><b>생성일시</b>: '+escHtml(row.createdAt||'—')+'</div><div><b>첫 응대 시간</b>: '+fmtSec(row.timeToFirstAnswerInOperation||row.timeToFirstAnswer)+'</div><div><b>처리 시간</b>: '+fmtSec(row.memberHandlingTime)+'</div></div>';
   panel.style.display='block';
 }
 

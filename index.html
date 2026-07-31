@@ -616,6 +616,30 @@ body {
 /* 아이콘만 있는 작은 버튼이 배경과 묻히지 않게 최소 대비 확보 */
 button { color: var(--text-sub); }
 
+/* 리포트 상담 테이블 — 열 경계가 안 보여 어느 값이 어느 열인지 헷갈렸다.
+   세로 구분선 + 행 구분선 + 헤더 배경으로 열을 명확히 한다. */
+#rpt-table { border-collapse: separate; border-spacing: 0; }
+#rpt-table thead th {
+  background: var(--canvas);
+  border-bottom: 1.5px solid #d7dee9;
+  border-right: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 2;
+  font-weight: 700; color: var(--text-sub); white-space: nowrap;
+}
+#rpt-table thead th:last-child { border-right: none; }
+#rpt-table tbody td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid #f1f4f9;
+  vertical-align: middle;
+}
+#rpt-table tbody td:last-child { border-right: none; }
+#rpt-table tbody tr:hover td { background: var(--accent-soft); }
+/* 리더보드도 같은 규칙 */
+.lb-table td { border-right: 1px solid #f1f4f9; }
+.lb-table td:last-child { border-right: none; }
+.lb-table th { background: var(--canvas); border-right: 1px solid var(--border); }
+.lb-table th:last-child { border-right: none; }
+
 /* 정렬 caret — 흐리면 정렬 가능 여부가 안 보인다 (대비 3:1 이상 확보) */
 .th-caret    { margin-left: 3px; font-size: 11px; color: #6b7891; }
 .th-caret.on { font-size: 12px; color: var(--primary); font-weight: 700; }
@@ -2319,7 +2343,8 @@ const FIELD_CATALOG = [
   { key: 'goalState',    label: '상담 목표',    type: 'enum', group: '상담 정보' },
   { key: 'alfTriggered', label: 'ALF 상태',     type: 'enum', group: '상담 정보' },
   { key: 'tags',         label: '상담 태그',    type: 'text', group: '상담 정보' },
-  { key: 'assigneeId',   label: '담당자',       type: 'enum', group: '상담 정보', labelFn: v => store.managers[v] || String(v) },
+  // 담당자는 이름 기준(__manager)으로 필터한다. 원시 id(assigneeId)로 두면 브랜드마다 값이 쪼개진다.
+  { key: '__manager',    label: '담당자(통합)', type: 'enum', group: '상담 정보' },
   { key: 'teamId',       label: '팀',           type: 'enum', group: '상담 정보', labelFn: v => (store.teams[v] || {}).name || String(v) },
   { key: 'name',         label: '고객명',       type: 'text', group: '상담 정보' },
   { key: 'createdAt',    label: '인입 일시',    type: 'date', group: '상담 정보' },
@@ -2416,6 +2441,7 @@ async function loadAllData(manifest) {
   }
 
   buildSidebar();
+  seedOriginReports();
   const saved = loadPrefs();
   // 저장된 기간이 '직접 설정' 이면 그대로 존중한다.
   // 그 외에는 조회 기간에 데이터가 실제로 있는지 확인하고, 없으면 최신 데이터 달로 옮긴다.
@@ -2504,6 +2530,8 @@ function mergeIntoStore(brand, wb) {
   const chatRows = sheetToJson(wb, 'UserChat');
   // 원본의 '연동 채널명' 에 대응 — 브랜드는 xlsx 파일명이라 행에 없으므로 주입한다
   chatRows.forEach(r => { r.__brand = brand; });
+  // 담당자는 브랜드마다 id 가 달라 같은 사람이 여러 값으로 쪼개진다 -> 이름을 별도 필드로 주입
+  // (원본이 이 위젯을 '담당자(통합)' 이라 부르는 이유)
   if (chatRows.length) {
     if (!store.chatData[brand]) {
       store.chatData[brand] = chatRows;
@@ -2546,6 +2574,17 @@ function mergeIntoStore(brand, wb) {
   sheetToJson(wb, 'Team data').forEach(t => {
     if (t.id) store.teams[t.id] = { name: t.name || String(t.id), managerIds: t.managerIds || '' };
   });
+
+  // 담당자 이름을 행에 주입 (Manager data 를 읽은 뒤여야 한다)
+  applyManagerNames(brand);
+}
+
+/* 브랜드 행들에 담당자 이름(__manager)을 채운다 — 필터/그룹화를 이름 기준으로 통합하기 위함 */
+function applyManagerNames(brand) {
+  const fill = rows => (rows || []).forEach(r => {
+    r.__manager = r.assigneeId == null ? '미배정' : (store.managers[r.assigneeId] || String(r.assigneeId));
+  });
+  fill(store.chatData[brand]);
 }
 
 /* '0h 2m 17s' / '2m 17s' / '17s' 형식을 초로 파싱. 숫자가 오면 숫자를 그대로 초로 취급. */
@@ -3267,7 +3306,7 @@ const GROUPERS = {
     // 원본이 '담당자(통합)' 이라 부르는 이유: 브랜드(채널)마다 매니저 id가 달라서
     // 같은 사람이 여러 id를 갖는다. 그래서 id가 아니라 이름으로 통합해야 한다.
     label: '담당자(통합)',
-    key: r => r.assigneeId == null ? '미배정' : (store.managers[r.assigneeId] || String(r.assigneeId)),
+    key: r => r.__manager || (r.assigneeId == null ? '미배정' : (store.managers[r.assigneeId] || String(r.assigneeId))),
     text: k => String(k),
   },
   teamId: {
@@ -3450,6 +3489,8 @@ function renderMetricTable(opts) {
   // 이름 pill 색 — 그래프/범례와 동일한 배정을 쓴다
   const colorMap = assignSeriesColors(rows, 8);
   st.colorMap = colorMap;
+  const colorIndex = {};
+  Object.keys(colorMap).forEach(k => { colorIndex[k] = TREND_COLORS.indexOf(colorMap[k]); });
 
   const cols = [{
     id: '__group__',
@@ -3458,8 +3499,9 @@ function renderMetricTable(opts) {
     // 원본: 셀 값을 클릭하면 '선택한 값으로 필터 추가하기'
     cell: r => {
       const c = colorMap[r.key];
+      const ci = colorIndex[r.key];
       const inner = c
-        ? `<span class="name-pill" style="background:${c}">${escHtml(r.name)}</span>`
+        ? `<span class="name-pill" style="background:${TREND_COLORS_SOFT[ci % TREND_COLORS_SOFT.length]};box-shadow:inset 3px 0 0 ${c};">${escHtml(r.name)}</span>`
         : escHtml(r.name);
       return `<span class="cell-filterable" title="이 값으로 필터 추가"
         onclick="addFilterFromGroup(${mid},${JSON.stringify(opts.groupBy)},${JSON.stringify(r.key)})">${inner}</span>`;
@@ -3533,7 +3575,7 @@ function sortMetricTable(mountId, colId) {
 function addFilterFromGroup(mountId, grouperId, key) {
   // 담당자는 이름으로 그룹화되어 있어 원래 필드값(id)과 다르다 -> 텍스트 포함 조건으로 넣는다
   const map = {
-    assigneeId: { field: 'assigneeId', op: 'anyOf', useName: true },
+    assigneeId: { field: '__manager', op: 'anyOf' },
     tags:       { field: 'tags',       op: 'containsAny' },
     mediumType: { field: 'mediumType', op: 'anyOf' },
     state:      { field: 'state',      op: 'anyOf' },
@@ -3542,13 +3584,7 @@ function addFilterFromGroup(mountId, grouperId, key) {
   };
   const m = map[grouperId];
   if (!m) return;
-  let values = [String(key)];
-  if (m.useName) {
-    // 이름 -> 해당 이름을 가진 매니저 id 전체
-    values = Object.keys(store.managers).filter(id => store.managers[id] === key);
-    if (!values.length) values = [String(key)];
-  }
-  store.filters.push({ field: m.field, op: m.op, values, join: 'and' });
+  store.filters.push({ field: m.field, op: m.op, values: [String(key)], join: 'and' });
   updateFilterLabel();
   renderFilterBuilder('dash');
   renderDashboard(currentDashboardId);
@@ -4333,7 +4369,11 @@ function renderStatusLegend(mountId, respondedLabel, missedLabel) {
 }
 
 /* 원본 VOC STUDIO 추이 그래프의 시리즈 팔레트 (recharts stroke 실측값) */
-const TREND_COLORS = ['#ddd6fe','#fed7aa','#ffc2dc','#d0e88d','#AEECCA','#C4E2F9','#c5cfdf','#ffb9b9','#b9e6ff','#e6d9c0'];
+/* 원본 recharts 팔레트는 파스텔이라 흰 배경에서 선이 잘 구분되지 않는다.
+   같은 색상 계열을 유지하면서 채도·명도를 올려 8색이 서로 구분되게 조정했다. */
+const TREND_COLORS = ['#7c6df2','#f59e42','#ec6f9e','#8fc23f','#35b57f','#3f9ee6','#8a97ab','#e05252','#4bbfd8','#b98a3f'];
+/* pill 배경처럼 연한 톤이 필요한 곳 (테이블 이름 pill) */
+const TREND_COLORS_SOFT = ['#e5e1fd','#fde6cf','#fbdbe7','#e6f2cf','#d3f0e4','#d7ebfa','#e4e8ee','#f9d9d9','#d8f1f7','#f0e4cf'];
 
 /* 주차 라벨 2줄 + 'N건' Y축 + 점선 격자 — 원본 recharts 설정 실측 재현
    (grid stroke #d9d9d9 / dasharray 12 12 / width 0.5, X tick 10px+9px, Y tick 10px #6d6d6d) */
@@ -4365,10 +4405,12 @@ function trendChartOptions(unitSuffix) {
 function renderTrendLegend(mountId, items) {
   const el = document.getElementById(mountId);
   if (!el) return;
-  el.innerHTML = items.map(it =>
-    `<span class="lg"><span class="chip" style="background:${it.color}"></span>` +
-    `<span class="pill" style="background:${it.color}">${escHtml(it.label)}</span></span>`
-  ).join('');
+  el.innerHTML = items.map(it => {
+    const i = TREND_COLORS.indexOf(it.color);
+    const soft = i >= 0 ? TREND_COLORS_SOFT[i % TREND_COLORS_SOFT.length] : '#eef1f6';
+    return `<span class="lg"><span class="chip" style="background:${it.color}"></span>` +
+           `<span class="pill" style="background:${soft}">${escHtml(it.label)}</span></span>`;
+  }).join('');
 }
 
 /* 기준별 상위 N개 시리즈의 주간 추이 (담당자/태그 공통) */
@@ -6130,7 +6172,7 @@ const LEGACY_FIELD_MAP = {
   tagCat:      { field: 'tags',                 op: 'containsAny' },
   requestType: { field: 'profile.Request_type', op: 'anyOf' },
   product:     { field: 'profile.product',      op: 'containsAny' },
-  manager:     { field: 'assigneeId',           op: 'anyOf' },
+  manager:     { field: '__manager',            op: 'anyOf' },
   status:      { field: 'state',                op: 'anyOf' },
 };
 
@@ -6767,6 +6809,116 @@ async function generateImprovement(){
 // 각 항목: { id, name, filters: {status, complaint, manager, tagCat, product, brand}, createdAt }
 const savedReports = [];
 
+/* ---------------------------------------------------------------
+   원본 VOC STUDIO 리포트 이전
+   원본 리포트 목록(이름·설명·스페이스)과, 라이브에서 읽어온 필터를 우리 필드로 매핑했다.
+
+   ⚠️ 완전히 동일한 값으로는 이전할 수 없다:
+      원본 필터는 '불만 여부', '대표 문의유형', '개선 요청 사항' 같은
+      AI 자동 분류 필드에 의존하는데 이 값들은 원본이 AI 로 만들어 저장한 것이고
+      채널톡 RAW(xlsx)에는 존재하지 않는다. 그래서 아래처럼 대체 매핑을 쓴다:
+        · 불만 여부 = 불만      -> profile.csat <= 2 (CSAT 1~2점)
+        · 대표 문의유형 contains -> 상담 태그(tags) contains
+   나머지(연동 채널명 / 상담 상태 / 상담 태그)는 1:1 로 대응된다.
+--------------------------------------------------------------- */
+const ORIGIN_REPORTS = [
+  // ── 팀 스페이스 ──
+  { id: 'o-voc-complaint', space: 'team', group: '(공유용)[슬룸] VOC Report',
+    name: '[슬룸] 불만 고객/개선 요청 Report',
+    desc: "슬룸의 VOC 중 불만으로 분류된 건만 모은 리포트. (원본은 AI '불만 여부' 필드 기준 — 여기서는 CSAT 1~2점으로 대체)",
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+      { field: 'state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: 'profile.csat', op: 'lte', values: ['2'], join: 'and' },
+    ] },
+  { id: 'o-voc-all', space: 'team', group: '(공유용)[슬룸] VOC Report',
+    name: '[슬룸] 전체 고객/개선 요청 Report',
+    desc: '슬룸의 모든 VOC를 통합한 리포트. 개선 요청 사항·문의 제품명·문의 유형 확인용.',
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+    ] },
+  { id: 'o-defect-all', space: 'team', group: '(공유용)[슬룸] VOC Report',
+    name: '[슬룸] 불량 VOC 리포트(통합)',
+    desc: "슬룸 모든 SKU 불량 VOC 통합. '불량문의' 포함 모든 '불량' VOC.",
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+      { field: 'tags', op: 'containsAny', values: ['불량'], join: 'and' },
+      { field: 'state', op: 'anyOf', values: ['closed'], join: 'and' },
+      { field: 'tags', op: 'containsNone', values: ['OB'], join: 'and' },
+    ] },
+  { id: 'o-defect-waist', space: 'team', group: '(공유용)[슬룸] VOC Report',
+    name: '[슬룸] 허리편한케어 불량 VOC 리포트',
+    desc: '허리편한케어 V1/V2 불량 VOC만 통합.',
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+      { field: 'tags', op: 'containsAny', values: ['불량'], join: 'and' },
+      { field: 'profile.defective', op: 'textHas', values: ['허리편한케어'], join: 'and' },
+    ] },
+  { id: 'o-defect-foot', space: 'team', group: '(공유용)[슬룸] VOC Report',
+    name: '[슬룸] 발편한케어 불량 VOC 리포트',
+    desc: '발편한케어 불량 VOC만 통합.',
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+      { field: 'tags', op: 'containsAny', values: ['불량'], join: 'and' },
+      { field: 'profile.defective', op: 'textHas', values: ['발편한케어'], join: 'and' },
+    ] },
+  { id: 'o-exchange', space: 'team', group: '(공유용)[슬룸] VOC Report',
+    name: '[슬룸] 단순 교환/반품 상세 사유 Report',
+    desc: '단순 교환/반품 상담의 상세 사유와 문의 제품명 확인용.',
+    filters: [
+      { field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+      { field: 'tags', op: 'containsAny', values: ['교환', '반품'], join: 'and' },
+    ] },
+  { id: 'o-tagbase', space: 'team', group: '(공유용)[슬룸] 상담태그 기준 VOC Report',
+    name: '[슬룸] 상담태그 기준 VOC',
+    desc: '상담 태그를 기준으로 VOC를 분류해 보는 리포트.',
+    filters: [{ field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' },
+              { field: 'tags', op: 'notEmpty', values: [], join: 'and' }] },
+  { id: 'o-productivity', space: 'team', group: '[CX팀 단독] 담당자별 생산성',
+    name: '[CX팀] 담당자별 생산성',
+    desc: '담당자별 응대 건수·응답 시간·처리 시간을 보는 리포트. 상담 통계 탭의 담당자별 리더보드를 함께 확인.',
+    filters: [{ field: '__manager', op: 'noneOf', values: ['미배정'], join: 'and' }] },
+  { id: 'o-cxteam', space: 'team', group: '[CX팀 단독] CX팀 Report',
+    name: '[CX팀] CX팀 Report',
+    desc: 'CX팀 전체 상담 현황 리포트.',
+    filters: [] },
+  { id: 'o-csat-all', space: 'team', group: '[CX팀 단독] CSAT 리포트',
+    name: 'CSAT 응답 (All)',
+    desc: '만족도(CSAT)에 응답이 있는 상담 전체.',
+    filters: [{ field: 'profile.csat', op: 'notEmpty', values: [], join: 'and' }] },
+  { id: 'o-csat-good', space: 'team', group: '[CX팀 단독] CSAT 리포트',
+    name: '만족 CSAT',
+    desc: "만족으로 분류된 CSAT. (원본은 AI 기반 — 여기서는 CSAT 4~5점)",
+    filters: [{ field: 'profile.csat', op: 'gte', values: ['4'], join: 'and' }] },
+  { id: 'o-csat-bad', space: 'team', group: '[CX팀 단독] CSAT 리포트',
+    name: '불만족 CSAT',
+    desc: "불만족으로 분류된 CSAT. (원본은 AI 기반 — 여기서는 CSAT 1~2점)",
+    filters: [{ field: 'profile.csat', op: 'lte', values: ['2'], join: 'and' }] },
+  { id: 'o-csat-comment', space: 'team', group: '[CX팀 단독] CSAT 리포트',
+    name: 'CSAT 주관식 의견 (All)',
+    desc: '만족도 코멘트가 남겨진 상담.',
+    filters: [{ field: 'profile.csatComment', op: 'notEmpty', values: [], join: 'and' }] },
+  { id: 'o-call', space: 'team', group: '[CX팀 단독] Call 통계 (현재 임시 미사용)',
+    name: '[CX팀] Call 통계',
+    desc: '전화(채널톡 미트) 상담 통계. 원본에서도 임시 미사용 상태.',
+    filters: [{ field: 'mediumType', op: 'anyOf', values: ['phone'], join: 'and' }] },
+  { id: 'o-defect-type', space: 'team', group: '[CX팀 단독] 불량 확정 불량 유형 분류',
+    name: '[CX팀] 불량 확정 유형 분류',
+    desc: '불량으로 확정된 상담을 유형별로 분류.',
+    filters: [{ field: 'tags', op: 'containsAny', values: ['불량확정'], join: 'and' }] },
+  // ── 개인 스페이스 ──
+  { id: 'o-personal', space: 'personal', group: '[슬룸] CX팀 통합 Report의 복제본',
+    name: '[슬룸] CX팀 통합 Report',
+    desc: '슬룸 전체 상담을 통합해 보는 개인용 리포트.',
+    filters: [{ field: '__brand', op: 'anyOf', values: ['슬룸'], join: 'and' }] },
+];
+
+/* 저장된 리포트가 없을 때만 원본 구조를 시드한다 (사용자가 지우면 다시 만들지 않는다) */
+function seedOriginReports() {
+  if (savedReports.length) return;
+  ORIGIN_REPORTS.forEach(r => savedReports.push(Object.assign({}, r)));
+}
+
 const reportState = {
   activeId:null, viewMode:'table', period:'30d',
   customStart:null, customEnd:null, searchQuery:'',
@@ -7122,8 +7274,7 @@ function lbFilterTag(key) {
 }
 
 function lbFilterManager(key) {
-  reportState.filters.push({ field: 'assigneeId', op: 'anyOf',
-    values: Object.keys(store.managers).filter(id => store.managers[id] === key), join: 'and' });
+  reportState.filters.push({ field: '__manager', op: 'anyOf', values: [String(key)], join: 'and' });
   renderFilterBuilder('rpt');
   renderReportContent();
 }

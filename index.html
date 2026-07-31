@@ -409,6 +409,10 @@ table.rpt-trend-tbl tbody tr:last-child td { border-bottom: none; }
 .dash-opt-menu .dom-sep { height: 1px; background: var(--border); margin: 5px 4px; }
 
 /* 리포트 그룹 목록 화면 */
+.rl-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+.rl-bar-info { flex: 1; min-width: 200px; font-size: 11px; color: var(--text-mute); }
+
+
 .rl-group { margin-bottom: 26px; }
 .rl-ghead { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
 .rl-gname { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
@@ -2934,6 +2938,7 @@ async function loadAllData(manifest) {
   }
 
   buildSidebar();
+  await loadSharedReports();     // 팀 공유본 (data/reports.json) 먼저 확인
   seedOriginReports();
   const saved = loadPrefs();
   // 저장된 기간이 '직접 설정' 이면 그대로 존중한다.
@@ -4670,6 +4675,7 @@ function savePrefs() {
       vaPeriod: vaState.period,
       vaCompare: vaState.compare,
       vaBriefs: vaState.briefs,
+      reports: savedReports,
       rptBasis: reportState.basis,
       rptTrendAll: reportState.trendAll,
       rptTrendType: reportState.trendType,
@@ -4711,6 +4717,7 @@ function loadPrefs() {
   if (d.vaPeriod && VA_PERIODS[d.vaPeriod]) vaState.period = d.vaPeriod;
   if (typeof d.vaCompare === 'boolean') vaState.compare = d.vaCompare;
   if (d.vaBriefs && typeof d.vaBriefs === 'object') vaState.briefs = d.vaBriefs;
+  if (Array.isArray(d.reports) && d.reports.length) setReports(d.reports);
   if (d.rptBasis && typeof d.rptBasis === 'object') reportState.basis = d.rptBasis;
   if (typeof d.rptTrendAll === 'boolean') reportState.trendAll = d.rptTrendAll;
   if (d.rptTrendType) reportState.trendType = d.rptTrendType;
@@ -7902,7 +7909,11 @@ function buildReportList() {
     byGroup[g].push(r);
   });
   if (!order.length) {
-    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-mute);font-size:13px;">아직 리포트가 없습니다.</div>';
+    el.innerHTML = '<div class="rl-bar">' +
+      '<span class="rl-bar-info">리포트가 없습니다</span>' +
+      '<button class="va-btn sm" onclick="importReports()">가져오기</button>' +
+      '<button class="va-btn sm" onclick="resetReports()">기본값으로 되돌리기</button></div>' +
+      '<div style="padding:40px;text-align:center;color:var(--text-mute);font-size:13px;">아직 리포트가 없습니다.</div>';
     return;
   }
   const rows = r => {
@@ -7915,7 +7926,15 @@ function buildReportList() {
       '<td class="rl-mut">' + escHtml(r.space === 'personal' ? '개인 스페이스' : '팀 스페이스') + '</td>' +
       '</tr>';
   };
-  el.innerHTML = order.map(g =>
+  const bar =
+    '<div class="rl-bar">' +
+      '<span class="rl-bar-info">리포트 ' + savedReports.length + '개 · ' +
+        (sharedReports ? '팀 공유본 있음' : '팀 공유본 없음') + ' · 변경사항은 이 브라우저에 저장됩니다</span>' +
+      '<button class="va-btn sm" onclick="exportReports()" title="reports.json 으로 내려받습니다. data/reports.json 으로 두고 업로드하면 팀 공유본이 됩니다">내보내기</button>' +
+      '<button class="va-btn sm" onclick="importReports()">가져오기</button>' +
+      '<button class="va-btn sm" onclick="resetReports()">' + (sharedReports ? '공유본으로 되돌리기' : '기본값으로 되돌리기') + '</button>' +
+    '</div>';
+  el.innerHTML = bar + order.map(g =>
     '<div class="rl-group">' +
       '<div class="rl-ghead"><span class="rl-gname">' + escHtml(g) + '</span>' +
       '<span class="rl-gcnt">' + byGroup[g].length + '개</span></div>' +
@@ -8818,10 +8837,84 @@ const ORIGIN_REPORTS = [
     ] },
 ];
 
-/* 저장된 리포트가 없을 때만 원본 구조를 시드한다 (사용자가 지우면 다시 만들지 않는다) */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   리포트 저장 — 서버 없이 3단계로 해결한다.
+
+     1) 팀 공유본 : data/reports.json (저장소에 커밋 → upload.ps1 이 올린다)
+                    모두가 같은 목록으로 시작한다. 토큰은 PC 의 upload.ps1 에만 있고
+                    브라우저로 내려오지 않으므로 공개 페이지에 노출되지 않는다.
+     2) 개인 저장 : localStorage. 내가 만들고 고친 리포트가 새로고침 후에도 남는다.
+     3) 파일 교환 : 내보내기/가져오기(JSON). 공유본을 갱신하거나 남에게 넘길 때.
+
+   우선순위: 로컬에 저장된 게 있으면 그것을, 없으면 공유본을, 그것도 없으면 ORIGIN_REPORTS 를 쓴다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let sharedReports = null;   // data/reports.json 원본 (되돌리기용)
+
+/* 저장소의 팀 공유본을 읽어 둔다 (없으면 조용히 넘어간다) */
+async function loadSharedReports() {
+  try {
+    const res = await fetch(GITHUB_RAW + 'data/reports.json?t=' + Date.now());
+    if (!res.ok) return null;
+    const d = await res.json();
+    const list = Array.isArray(d) ? d : d.reports;
+    if (Array.isArray(list) && list.length) { sharedReports = list; return list; }
+  } catch (e) { /* 공유본이 아직 없을 수 있다 */ }
+  return null;
+}
+
+function setReports(list) {
+  savedReports.length = 0;
+  list.forEach(r => savedReports.push(Object.assign({}, r)));
+}
+
+/* 로컬 저장분 > 팀 공유본 > 코드에 박힌 원본 순으로 채운다 */
 function seedOriginReports() {
-  if (savedReports.length) return;
-  ORIGIN_REPORTS.forEach(r => savedReports.push(Object.assign({}, r)));
+  if (savedReports.length) return;                 // loadPrefs 가 이미 채웠다
+  if (sharedReports) { setReports(sharedReports); return; }
+  setReports(ORIGIN_REPORTS);
+}
+
+/* 리포트 목록을 JSON 파일로 내려받는다 (이 파일을 data/reports.json 으로 두고 업로드하면 팀 공유본이 된다) */
+function exportReports() {
+  const blob = new Blob([JSON.stringify(savedReports, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'reports.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* JSON 파일에서 리포트 목록을 불러온다 */
+function importReports() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const d = JSON.parse(fr.result);
+        const list = Array.isArray(d) ? d : d.reports;
+        if (!Array.isArray(list) || !list.length) throw new Error('리포트 목록을 찾을 수 없습니다');
+        setReports(list);
+        savePrefs();
+        rptBack();
+      } catch (e) { alert('불러오기 실패: ' + e.message); }
+    };
+    fr.readAsText(f);
+  };
+  inp.click();
+}
+
+/* 팀 공유본(또는 코드 원본)으로 되돌린다 */
+function resetReports() {
+  const src = sharedReports || ORIGIN_REPORTS;
+  const what = sharedReports ? '팀 공유본' : '기본 리포트';
+  if (!confirm(what + '으로 되돌립니다. 내가 만들거나 고친 리포트는 사라집니다. 계속할까요?')) return;
+  setReports(src);
+  savePrefs();
+  rptBack();
 }
 
 const reportState = {
@@ -9674,6 +9767,7 @@ function deleteReport(id){
   const idx=savedReports.findIndex(r=>r.id===id);
   if(idx===-1)return;
   savedReports.splice(idx,1);
+  savePrefs();
   if(reportState.activeId===id){
     reportState.activeId=null;
     reportState.filters=[];
@@ -9730,6 +9824,7 @@ function saveNewReport(){
   Object.keys(filters).forEach(k=>{if(!filters[k])delete filters[k];});
   const id='report_'+Date.now();
   savedReports.push({id,name,filters,createdAt:new Date().toISOString()});
+  savePrefs();
   closeReportCreationModal();
   renderReportList();
   selectReport(id);

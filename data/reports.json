@@ -1,0 +1,524 @@
+[
+  {
+    "id": "o-csat-ai-all",
+    "space": "team",
+    "group": "[CX팀 단독] CSAT 리포트",
+    "name": "AI CSAT 전체",
+    "desc": "AI 분류 CSAT + 채널톡 자체 CSAT 합산 리포트. (원본 451건)",
+    "filters": [
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__state",
+        "op": "anyOf",
+        "values": [
+          "closed"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__manager",
+        "op": "noneOf",
+        "values": [
+          "미배정"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "기타/테스트"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-csat-good",
+    "space": "team",
+    "group": "[CX팀 단독] CSAT 리포트",
+    "name": "만족 CSAT(AI 기반)",
+    "desc": "AI CSAT 이 매우 만족·만족인 상담. (원본은 AI CSAT 필드 기준 — 여기서는 CSAT 4점 이상. 원본 177건)",
+    "filters": [
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__state",
+        "op": "anyOf",
+        "values": [
+          "closed"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__manager",
+        "op": "noneOf",
+        "values": [
+          "미배정"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "profile.csat",
+        "op": "gte",
+        "values": [
+          "4"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-csat-bad",
+    "space": "team",
+    "group": "[CX팀 단독] CSAT 리포트",
+    "name": "불만족 CSAT(AI 기반)",
+    "desc": "AI CSAT 이 불만족·매우 불만족인 상담. (원본은 AI CSAT 필드 기준 — 여기서는 CSAT 2점 이하. 원본 51건)",
+    "filters": [
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__state",
+        "op": "anyOf",
+        "values": [
+          "closed"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__manager",
+        "op": "noneOf",
+        "values": [
+          "미배정"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "기타/테스트"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "profile.csat",
+        "op": "lte",
+        "values": [
+          "2"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-csat-all",
+    "space": "team",
+    "group": "[CX팀 단독] CSAT 리포트",
+    "name": "CSAT 응답 (All)",
+    "desc": "CSAT(Customer Satisfaction Score) 통계. 채널톡 만족도에 응답이 있는 상담. (원본 86건)",
+    "filters": [
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__state",
+        "op": "anyOf",
+        "values": [
+          "closed"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__manager",
+        "op": "noneOf",
+        "values": [
+          "미배정"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "profile.csat",
+        "op": "notEmpty",
+        "values": [],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-csat-comment",
+    "space": "team",
+    "group": "[CX팀 단독] CSAT 리포트",
+    "name": "CSAT 주관식 의견 (All)",
+    "desc": "주관식 의견만 확인 가능. (원본 3건)",
+    "filters": [
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__state",
+        "op": "anyOf",
+        "values": [
+          "closed"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__manager",
+        "op": "noneOf",
+        "values": [
+          "미배정"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "profile.csatComment",
+        "op": "notEmpty",
+        "values": [],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-pk",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "박근영 파트장(CX매니저)",
+    "desc": "박근영 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "박근영"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-kej",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "김은주 매니저(CX매니저)",
+    "desc": "김은주 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "김은주"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-lms",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "임미선 매니저(CS매니저)",
+    "desc": "임미선 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "임미선"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-cg",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "조건 매니저(CS매니저)",
+    "desc": "조건 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "조건"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-jsr",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "전승리 매니저(CS매니저)",
+    "desc": "전승리 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "전승리"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-pgy",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "박가영 매니저(CS매니저)",
+    "desc": "박가영 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "박가영"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-jjh",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "정지훈 매니저(CS매니저)",
+    "desc": "정지훈 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "정지훈"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-prod-hys",
+    "space": "team",
+    "group": "[CX팀 단독] 담당자별 생산성",
+    "name": "허윤선 매니저(CS매니저)",
+    "desc": "허윤선 담당 상담. 원본은 브랜드별로 쪼개진 담당자 계정 9개를 모두 선택하지만, 우리는 담당자(통합) 필드가 이름으로 합쳐 두어 한 조건으로 끝난다.",
+    "filters": [
+      {
+        "field": "__manager",
+        "op": "anyOf",
+        "values": [
+          "허윤선"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-cxteam-sloom",
+    "space": "team",
+    "group": "[CX팀 단독] CX팀 Report",
+    "name": "[슬룸] CX팀 통합 Report",
+    "desc": "슬룸의 모든 VOC 통합한 리포트로, 제품별, 유형별 VOC 볼륨 확인 가능. (원본 1,297건)",
+    "filters": [
+      {
+        "field": "__brand",
+        "op": "anyOf",
+        "values": [
+          "슬룸"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "mediumType",
+        "op": "noneOf",
+        "values": [
+          "phone"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-cxteam-others",
+    "space": "team",
+    "group": "[CX팀 단독] CX팀 Report",
+    "name": "[슬룸 외 모든 브랜드] CX팀 Report",
+    "desc": "슬룸 외 브랜드 통합 리포트 // 미트 제외. (원본 288건)",
+    "filters": [
+      {
+        "field": "__brand",
+        "op": "noneOf",
+        "values": [
+          "슬룸"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsNone",
+        "values": [
+          "OB"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__state",
+        "op": "anyOf",
+        "values": [
+          "closed"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "__manager",
+        "op": "noneOf",
+        "values": [
+          "미배정"
+        ],
+        "join": "and"
+      }
+    ]
+  },
+  {
+    "id": "o-defect-type",
+    "space": "team",
+    "group": "[CX팀 단독] 불량 확정 불량 유형 분류",
+    "name": "[CX팀] 불량 확정 불량 유형 분류",
+    "desc": "불량으로 확정된 슬룸 상담을 제품·유형별로 분류. (원본 20건)",
+    "filters": [
+      {
+        "field": "__brand",
+        "op": "anyOf",
+        "values": [
+          "슬룸"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "tags",
+        "op": "containsAny",
+        "values": [
+          "불량",
+          "불량/불량반출",
+          "불량/불량확정",
+          "교환,반품/교환/불량",
+          "교환,반품/반품/불량"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "mediumType",
+        "op": "noneOf",
+        "values": [
+          "phone"
+        ],
+        "join": "and"
+      },
+      {
+        "field": "profile.defective",
+        "op": "containsAny",
+        "values": [
+          "허리베개프로",
+          "등허리힐링케어",
+          "눈편한케어"
+        ],
+        "join": "and"
+      }
+    ]
+  }
+]

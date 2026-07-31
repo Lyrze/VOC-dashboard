@@ -225,6 +225,95 @@ body {
   text-transform: uppercase;
 }
 
+/* ━━━ VOC 분석 탭 ━━━ */
+#view-voc-analysis .va-btn, .va-btn {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface);
+  cursor: pointer; font-family: inherit; font-size: 11px; color: var(--text-sub);
+}
+.va-btn:hover { background: var(--canvas); }
+.va-btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--navy); font-weight: 600; }
+.va-btn.sm { padding: 3px 8px; font-size: 10.5px; }
+.va-btn.primary { background: var(--navy); border-color: var(--navy); color: #f5f8ff; }
+.va-btn:disabled { opacity: .6; cursor: default; }
+
+.va-sec { margin-bottom: 26px; }
+.va-sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.va-sec-name { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
+.va-sec-desc { font-size: 11.5px; color: var(--text-mute); }
+.va-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+.va-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px 16px 16px; min-width: 0; box-shadow: 0 1px 2px rgba(16,33,64,.04);
+}
+.va-card.span-6  { grid-column: span 6; }
+.va-card.span-12 { grid-column: span 12; }
+@media (max-width: 900px) { .va-card.span-6 { grid-column: span 12; } }
+.va-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.va-card-name { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.va-card-period { font-size: 10.5px; color: var(--text-mute); }
+.va-card-cmp {
+  margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  background: var(--canvas); color: var(--text-mute);
+}
+.va-card-cmp.on { background: var(--accent-soft); color: var(--navy); }
+
+.va-big { font-size: 28px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.va-delta { font-size: 11.5px; font-weight: 600; color: var(--text-mute); margin-top: 2px; }
+.va-delta.good { color: var(--positive); }
+.va-delta.bad  { color: var(--negative); }
+
+.va-mrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.va-mchip {
+  font-size: 11px; color: var(--text-sub); background: var(--canvas);
+  border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px;
+}
+.va-mchip b { color: var(--ink); font-weight: 700; margin-right: 3px; }
+.va-mchip i { font-style: normal; margin-left: 5px; font-weight: 700; color: var(--text-mute); }
+.va-mchip i.good { color: var(--positive); }
+.va-mchip i.bad  { color: var(--negative); }
+
+.va-legend { display: flex; gap: 12px; margin-top: 8px; }
+.va-lg { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-sub); }
+.va-lg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.va-empty { padding: 26px 6px; text-align: center; font-size: 12px; color: var(--text-mute); }
+
+.va-tbl-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+table.va-pivot { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+table.va-pivot th, table.va-pivot td { padding: 7px 10px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); white-space: nowrap; }
+table.va-pivot th { background: var(--canvas); font-weight: 700; color: var(--text-sub); font-size: 10.5px; text-align: left; position: sticky; top: 0; z-index: 2; }
+table.va-pivot th .sw { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 5px; }
+table.va-pivot td.num, table.va-pivot th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.va-pivot td.num { color: var(--text-mute); }
+table.va-pivot td.num.hot { color: var(--ink); font-weight: 700; }
+table.va-pivot td.tot, table.va-pivot th.tot { background: var(--canvas); font-weight: 800; color: var(--ink); }
+table.va-pivot td.lv2 { color: var(--text-main); }
+table.va-pivot td.mut { color: var(--text-mute); }
+table.va-pivot tr.va-grow { cursor: pointer; }
+table.va-pivot tr.va-grow td { background: var(--accent-soft); font-weight: 700; color: var(--navy); }
+table.va-pivot tr.va-grow:hover td { filter: brightness(.97); }
+table.va-pivot tr.va-grow .cr { display: inline-block; width: 11px; font-size: 8px; color: var(--text-mute); }
+table.va-pivot tr.va-prow:hover td { background: var(--canvas); }
+table.va-pivot tfoot td { background: var(--canvas); font-weight: 800; color: var(--ink); border-bottom: none; position: sticky; bottom: 0; }
+
+.va-brief-q { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.va-brief-q .lbl { font-size: 10px; font-weight: 700; color: var(--text-mute); background: var(--canvas); border-radius: 5px; padding: 2px 7px; }
+.va-brief-q .q { flex: 1; min-width: 200px; font-size: 12px; color: var(--text-main); }
+.va-prompt-input {
+  flex: 1; min-width: 220px; padding: 5px 9px; border: 1px solid var(--accent); border-radius: 7px;
+  font-size: 12px; font-family: inherit; background: var(--surface); color: var(--text-main); outline: none;
+}
+.va-brief-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.va-brief-item { background: var(--canvas); border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; }
+.va-brief-item .hd { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--ink); }
+.va-brief-item .hd .sw { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.va-brief-item .hd .n { margin-left: auto; font-variant-numeric: tabular-nums; }
+.va-brief-item .sub { font-size: 10.5px; color: var(--text-mute); margin-top: 4px; line-height: 1.5; }
+.va-brief-foot { font-size: 10.5px; color: var(--text-mute); margin-top: 9px; }
+.va-brief-ai {
+  margin-top: 10px; padding: 12px 14px; background: var(--navy); border-radius: 10px;
+  font-size: 12px; line-height: 1.65; color: #c6d4ea;
+}
+
 /* 태그 제외 필터 팝업 */
 .tx-pop {
   position: fixed; z-index: 450; width: 340px; max-width: calc(100vw - 24px);
@@ -1496,6 +1585,12 @@ tbody td:first-child {
       </svg>
       필드
     </button>
+    <button class="sidebar-tab-btn" id="tab-vocanalysis" onclick="switchMainTab('vocanalysis')">
+      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M1.5 12.5V8M5 12.5V4M8.5 12.5V6.5M12 12.5V1.5"/>
+      </svg>
+      VOC 분석
+    </button>
   </div>
   <!-- 설정 버튼 -->
   <div style="padding:8px 8px 0;">
@@ -2270,6 +2365,27 @@ tbody td:first-child {
         </div>
       </div>
 
+      <!-- ─── VOC 분석 탭 (Syncly VOC 대시보드 벤치마킹) ─── -->
+      <div id="view-voc-analysis" style="display:none;flex-direction:column;">
+        <div id="va-toolbar" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;">
+          <span style="font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.02em;">VOC 분석</span>
+          <span style="font-size:11px;color:var(--text-mute);">상담 내용을 제품군·불량 유형으로 분류해 봅니다</span>
+          <span style="flex:1;"></span>
+          <select id="va-period" class="flt-sel" style="font-size:11px;padding:4px 8px;" onchange="vaSetPeriod(this.value)">
+            <option value="1m">이번 달 포함 최근 1개월</option>
+            <option value="3m">이번 달 포함 최근 3개월</option>
+            <option value="6m">이번 달 포함 최근 6개월</option>
+            <option value="all">전체 기간</option>
+          </select>
+          <button class="va-btn" onclick="vaToggleCompare(this)" id="va-compare-btn" title="직전 동일 기간과 비교합니다">비교 기간 표시</button>
+          <button class="va-btn" onclick="vaJumpToLatest()" title="데이터가 있는 최신 달로 이동">최신 데이터로</button>
+        </div>
+        <div id="va-notice" style="display:none;flex-shrink:0;margin:10px 20px 0;padding:8px 12px;background:var(--accent-soft);border:1px solid #c7d9f7;border-radius:8px;font-size:11px;color:var(--navy-700);"></div>
+        <div id="va-body" style="flex:1;min-height:0;overflow:auto;padding:16px 20px 40px;">
+          <!-- renderVOCAnalysis() 로 생성 -->
+        </div>
+      </div>
+
       <div id="panel-fields" style="display:none;overflow:auto;">
         <div style="padding:24px;max-width:1100px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
@@ -2331,6 +2447,10 @@ tbody td:first-child {
         style="flex:1;padding:8px;border:2px solid var(--primary);background:var(--primary-light);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--primary);">
         ☁️ Gemini (무료 API)
       </button>
+      <button id="ai-tab-claude" onclick="switchAITab('claude')"
+        style="flex:1;padding:8px;border:2px solid var(--border);background:var(--surface);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-mute);">
+        &#129504; Claude CLI (로컬)
+      </button>
       <button id="ai-tab-ollama" onclick="switchAITab('ollama')"
         style="flex:1;padding:8px;border:2px solid var(--border);background:var(--surface);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-mute);">
         &#x1F4BB; Ollama (로컬 AI)
@@ -2354,6 +2474,28 @@ tbody td:first-child {
     </div>
 
     <!-- Ollama 패널 -->
+    <div id="ai-panel-claude" style="display:none;">
+      <div style="background:var(--accent-soft);border:1px solid #c7d9f7;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.75;color:var(--navy-700);">
+        <strong>&#129504; Claude Code CLI 연결 방법</strong><br>
+        1. Python 3.10+ / Node.js LTS 설치<br>
+        2. <code style="background:var(--surface);padding:1px 4px;border-radius:3px;">npm install -g @anthropic-ai/claude-code</code><br>
+        3. <code style="background:var(--surface);padding:1px 4px;border-radius:3px;">ai-bridge</code> 폴더에서 <b>start-ai-local.bat</b> 실행<br>
+        4. 아래 주소를 확인하고 <b>연결 확인</b>을 누르세요<br>
+        <span style="color:var(--navy);">&#8251; 본인 Claude 구독 계정의 사용량(토큰)이 소모됩니다. 창을 닫으면 AI 기능이 멈춥니다.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:4px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">AI 서버 URL</label>
+          <input id="claude-url-input" type="text" placeholder="http://localhost:8799"
+            style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;background:var(--surface);color:var(--text-main);">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">연결 확인</label>
+          <button onclick="testClaudeBridge()" style="width:100%;padding:9px 8px;border:1px solid var(--navy);background:var(--accent-soft);color:var(--navy);border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;">테스트</button>
+        </div>
+      </div>
+      <div id="claude-test-result" style="font-size:11px;color:var(--text-sub);min-height:16px;margin-bottom:4px;"></div>
+    </div>
     <div id="ai-panel-ollama" style="display:none;">
       <div style="background:var(--positive-soft);border:1px solid var(--positive-soft);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:var(--positive);line-height:1.7;">
         <strong>&#x1F4BB; Ollama 로컬 AI 사용 방법</strong><br>
@@ -2379,6 +2521,10 @@ tbody td:first-child {
       <div style="font-size:11px;color:var(--text-mute);margin-top:4px;">서버 주소: http://localhost:11434 (고정)</div>
     </div>
 
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 0 2px;margin-top:10px;border-top:1px solid var(--border);">
+      <input type="checkbox" id="ai-mask-chk" checked onchange="toggleMaskPII(this.checked)" style="cursor:pointer;accent-color:var(--navy);width:14px;height:14px;">
+      <span style="font-size:12px;color:var(--text-sub);">AI 로 보내기 전 개인정보 가리기 <span style="color:var(--text-mute);">(고객명·연락처·주소·주문번호 · 결과에서 원문 보기로 해제 가능)</span></span>
+    </label>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
       <button onclick="closeAISettings()" style="padding:8px 16px;border:1px solid var(--border);background:var(--surface);border-radius:7px;cursor:pointer;font-size:13px;color:var(--text-sub);">취소</button>
       <button onclick="saveAIKey()" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">저장</button>
@@ -2515,6 +2661,11 @@ const store = {
   ollamaModel: 'exaone3.5:7.8b',
   // Ollama 서버 주소
   ollamaUrl: 'http://localhost:11434',
+  // Claude Code CLI 로컬 브릿지 (start-ai-local.bat 가 띄우는 서버)
+  claudeUrl: 'http://localhost:8799',
+  // AI 로 보내기 전 개인정보를 가림 (해제는 결과 화면의 '원문 보기' 토글)
+  maskPII: true,
+  lastMask: null,
   // 시간 지표 집계 방식: 'median'(원본 기본) | 'mean'
   aggMode: 'median',
   // 필드 기반 필터 조건 목록 [{field, op, values, join}] — evalFilters() 가 해석
@@ -4436,9 +4587,14 @@ function savePrefs() {
       tableState: Object.fromEntries(Object.entries(tableState).map(
         ([k, v]) => [k, { sortId: v.sortId, sortDir: v.sortDir, pageSize: v.pageSize, metrics: v.metrics, chartType: v.chartType }])),
       researchSampleSize: researchState.sampleSize,
+      vaPeriod: vaState.period,
+      vaCompare: vaState.compare,
+      vaBriefs: vaState.briefs,
       managerGraph: managerGraphVisible,
       tagGraph: tagGraphVisible,
       aiProvider: store.aiProvider,
+      claudeUrl: store.claudeUrl,
+      maskPII: store.maskPII,
       ollamaModel: store.ollamaModel,
       ollamaUrl: store.ollamaUrl,
     };
@@ -4469,9 +4625,14 @@ function loadPrefs() {
   if (d.widgetOrder) Object.assign(widgetOrder, d.widgetOrder);
   if (d.tableState) Object.keys(d.tableState).forEach(k => Object.assign(tstate(k), d.tableState[k]));
   if (typeof d.researchSampleSize === 'number') researchState.sampleSize = d.researchSampleSize;
+  if (d.vaPeriod && VA_PERIODS[d.vaPeriod]) vaState.period = d.vaPeriod;
+  if (typeof d.vaCompare === 'boolean') vaState.compare = d.vaCompare;
+  if (d.vaBriefs && typeof d.vaBriefs === 'object') vaState.briefs = d.vaBriefs;
   if (typeof d.managerGraph === 'boolean') managerGraphVisible = d.managerGraph;
   if (typeof d.tagGraph === 'boolean') tagGraphVisible = d.tagGraph;
   if (d.aiProvider) store.aiProvider = d.aiProvider;
+  if (d.claudeUrl) store.claudeUrl = d.claudeUrl;
+  if (typeof d.maskPII === 'boolean') store.maskPII = d.maskPII;
   if (d.ollamaModel) store.ollamaModel = d.ollamaModel;
   if (d.ollamaUrl) store.ollamaUrl = d.ollamaUrl;
   return d;
@@ -4527,6 +4688,507 @@ function renderExcludedTagPicker() {
       <input type="checkbox"${store.excludedTags.has(t) ? ' checked' : ''}
         onchange="toggleExcludedTag(${jsAttr(t)})">${escHtml(t)}</label>`
   ).join('');
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VOC 분석 — 구좌(Section) 선언 + 위젯 렌더
+   Syncly 구조: 구좌(이름+설명) 안에 위젯이 들어가고, 위젯마다 기간/비교 헤더가 붙는다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const vaState = { period: '1m', compare: true, charts: {}, briefs: {}, openGroups: {} };
+
+const VA_PERIODS = {
+  '1m':  { label: '이번 달 포함 최근 1개월', months: 1 },
+  '3m':  { label: '이번 달 포함 최근 3개월', months: 3 },
+  '6m':  { label: '이번 달 포함 최근 6개월', months: 6 },
+  'all': { label: '전체 기간', months: null },
+};
+
+/* 조회 기간 + 직전 동일 길이의 비교 기간 */
+function vaPeriodDates() {
+  const p = VA_PERIODS[vaState.period] || VA_PERIODS['1m'];
+  const anchor = store.latestDataAt || new Date();
+  const end = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0, 23, 59, 59, 999);
+  if (!p.months) {
+    return { start: new Date(2000, 0, 1), end: end, prevStart: null, prevEnd: null, label: p.label };
+  }
+  const start = new Date(anchor.getFullYear(), anchor.getMonth() - (p.months - 1), 1);
+  const prevEnd = new Date(start.getTime() - 1);
+  const prevStart = new Date(start.getFullYear(), start.getMonth() - p.months, 1);
+  return { start, end, prevStart, prevEnd, label: p.label };
+}
+
+function vaRows(start, end) {
+  return vaAnnotate(filterPeriod(getAllChatData(), start, end));
+}
+
+function vaSetPeriod(v) { vaState.period = v; savePrefs(); renderVOCAnalysis(); }
+function vaToggleCompare(btn) {
+  vaState.compare = !vaState.compare;
+  if (btn) btn.classList.toggle('on', vaState.compare);
+  savePrefs(); renderVOCAnalysis();
+}
+function vaJumpToLatest() {
+  if (!store.latestDataAt) return;
+  vaState.period = '1m'; renderVOCAnalysis();
+}
+
+/* 구좌 선언 — 원본 Syncly 의 2개 구좌를 그대로 옮겼다 */
+const VA_SECTIONS = [
+  { id: 'exec', name: 'Executive Summary', desc: '전체 상담 볼륨과 불만 비율의 큰 흐름을 봅니다.',
+    widgets: [
+      { type: 'metric', id: 'totalChats',    name: '전체 상담 수_CX매니저 연결', span: 6 },
+      { type: 'metric', id: 'complaintRate', name: '전체 상담 중 불만 상담 비율_CX매니저 연결', span: 6 },
+      { type: 'monthly', id: 'monthlyComplaint', name: '월별 불만 건수 및 증감', span: 12 },
+      { type: 'brief',  id: 'briefComplaint', name: '전체 상담 중 불만 상담 비율_CX매니저 연결', span: 12,
+        q: '전체 상담 중 불만 비율에 해당되는 상담에는 어떤 불만이 있나요?' },
+    ] },
+  { id: 'product', name: '제품 관련 VOC', desc: '어느 제품에서 어떤 불량이 나오는지 봅니다.',
+    widgets: [
+      { type: 'defectBar', id: 'defectAll', name: '불량 VOC_전체 SKU', span: 12 },
+      { type: 'pivot',     id: 'taxonomy',  name: '제품군 × 불량 유형 (Taxonomy)', span: 12 },
+      { type: 'brief',     id: 'briefDefect', name: '불량 VOC_전체 SKU', span: 12,
+        q: '불량 관련 의견 중 고객 불만은 어떤 의견이 가장 많은가요?' },
+    ] },
+];
+
+function renderVOCAnalysis() {
+  const body = document.getElementById('va-body');
+  if (!body) return;
+  const sel = document.getElementById('va-period');
+  if (sel) sel.value = vaState.period;
+  const cb = document.getElementById('va-compare-btn');
+  if (cb) cb.classList.toggle('on', vaState.compare);
+
+  // 이전 차트 전부 정리 (CLAUDE.md 13·17)
+  Object.values(vaState.charts).forEach(c => { try { c.destroy(); } catch (e) {} });
+  vaState.charts = {};
+
+  const pd = vaPeriodDates();
+  const cur = vaRows(pd.start, pd.end);
+  const prev = (vaState.compare && pd.prevStart) ? vaRows(pd.prevStart, pd.prevEnd) : [];
+
+  const notice = document.getElementById('va-notice');
+  if (notice) {
+    const withProduct = cur.filter(r => r.__vaProduct).length;
+    const withDefect = cur.filter(r => r.__vaDefects.length).length;
+    notice.style.display = '';
+    notice.innerHTML =
+      '조회 ' + formatDateRange(pd.start, pd.end) + ' · 상담 <b>' + cur.length.toLocaleString() + '건</b>' +
+      (prev.length ? ' (비교 ' + formatDateRange(pd.prevStart, pd.prevEnd) + ' · ' + prev.length.toLocaleString() + '건)' : '') +
+      ' · 제품명 확인 <b>' + withProduct.toLocaleString() + '건</b> · 불량 유형 분류 <b>' + withDefect.toLocaleString() + '건</b>' +
+      ' <span style="color:var(--text-mute);">— 상담 내용에서 키워드로 분류한 결과입니다</span>';
+  }
+
+  body.innerHTML = VA_SECTIONS.map(sec =>
+    '<div class="va-sec">' +
+      '<div class="va-sec-head"><span class="va-sec-name">' + escHtml(sec.name) + '</span>' +
+      '<span class="va-sec-desc">' + escHtml(sec.desc) + '</span></div>' +
+      '<div class="va-grid">' + sec.widgets.map(w =>
+        '<div class="va-card span-' + w.span + '" id="va-' + escHtml(w.id) + '">' +
+          '<div class="va-card-head">' +
+            '<span class="va-card-name">' + escHtml(w.name) + '</span>' +
+            '<span class="va-card-period">' + escHtml(pd.label) + '</span>' +
+            (w.type === 'brief' ? '' : '<span class="va-card-cmp' + (vaState.compare ? ' on' : '') + '">비교</span>') +
+          '</div>' +
+          '<div class="va-card-body" id="va-body-' + escHtml(w.id) + '"></div>' +
+        '</div>').join('') +
+      '</div>' +
+    '</div>').join('');
+
+  VA_SECTIONS.forEach(sec => sec.widgets.forEach(w => vaRenderWidget(w, cur, prev, pd)));
+}
+
+function vaRenderWidget(w, cur, prev, pd) {
+  const el = document.getElementById('va-body-' + w.id);
+  if (!el) return;
+  if (w.type === 'metric')    return vaRenderMetric(w, el, cur, prev, pd);
+  if (w.type === 'monthly')   return vaRenderMonthly(w, el);
+  if (w.type === 'defectBar') return vaRenderDefectBar(w, el, cur, prev);
+  if (w.type === 'pivot')     return vaRenderPivot(w, el, cur);
+  if (w.type === 'brief')     return vaRenderBrief(w, el, cur);
+}
+
+/* 캔버스를 매번 새로 만든다 — destroy 만으로는 canvas 내부 크기가 누적된다 (CLAUDE.md 17) */
+function vaCanvas(el, id, height) {
+  el.innerHTML = '<div style="position:relative;height:' + height + 'px;"><canvas id="' + id + '"></canvas></div>';
+  return document.getElementById(id);
+}
+
+/* ── 위젯 1·2: 지표 (큰 숫자 + 증감 + 일자별 추이) ── */
+function vaRenderMetric(w, el, cur, prev, pd) {
+  const isRate = w.id === 'complaintRate';
+  // CX매니저 연결 = ALF 단독 처리 제외 (상담원 인박스로 들어온 건)
+  const inbox = rs => rs.filter(r => r.__state !== 'alfOnly');
+  const val = rs => {
+    const b = inbox(rs);
+    if (!isRate) return b.length;
+    return b.length ? b.filter(r => r.__vaComplaint).length / b.length * 100 : 0;
+  };
+  const c = val(cur), p = prev.length ? val(prev) : null;
+  const delta = p == null ? null : c - p;
+  const fmt = v => isRate ? v.toFixed(2) + '%' : v.toLocaleString() + '건';
+  const dTxt = delta == null ? '' :
+    (delta >= 0 ? '▲ +' : '▼ ') + (isRate ? Math.abs(delta).toFixed(2) + '%p'
+      : Math.abs(delta).toLocaleString() + '건' +
+        (p ? ' (' + (delta >= 0 ? '+' : '-') + Math.abs(delta / p * 100).toFixed(1) + '%)' : ''));
+  // 불만 비율은 오르면 나쁘고, 상담 수는 중립
+  const dCls = delta == null ? '' : (isRate ? (delta > 0 ? 'bad' : 'good') : 'neutral');
+
+  el.innerHTML =
+    '<div class="va-big">' + fmt(c) + '</div>' +
+    (delta == null ? '<div class="va-delta">비교 기간 없음</div>'
+                   : '<div class="va-delta ' + dCls + '">' + dTxt + ' · 비교 ' + fmt(p) + '</div>') +
+    '<div style="position:relative;height:120px;margin-top:8px;"><canvas id="va-c-' + w.id + '"></canvas></div>';
+
+  // 일자별 추이
+  const days = {}, dayKeys = [];
+  const d0 = new Date(pd.start), d1 = new Date(pd.end);
+  for (let d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate()); d <= d1; d.setDate(d.getDate() + 1)) {
+    const k = ymd(d); days[k] = { n: 0, c: 0 }; dayKeys.push(k);
+  }
+  inbox(cur).forEach(r => {
+    const dt = parseDate(r.createdAt); if (!dt) return;
+    const k = ymd(dt); if (!days[k]) return;
+    days[k].n++; if (r.__vaComplaint) days[k].c++;
+  });
+  const data = dayKeys.map(k => isRate ? (days[k].n ? days[k].c / days[k].n * 100 : 0) : days[k].n);
+  const cv = document.getElementById('va-c-' + w.id);
+  if (!cv) return;
+  vaState.charts[w.id] = new Chart(cv.getContext('2d'), {
+    type: 'line',
+    data: { labels: dayKeys.map(k => k.slice(5).replace('-', '/')),
+      datasets: [{ data, borderColor: isRate ? '#e05252' : '#2e6be6',
+        backgroundColor: isRate ? 'rgba(224,82,82,.10)' : 'rgba(46,107,230,.10)',
+        fill: true, tension: .3, pointRadius: 0, borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => isRate ? ctx.parsed.y.toFixed(2) + '%' : ctx.parsed.y + '건' } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: cssVar('--text-mute'), maxTicksLimit: 8 } },
+        y: { beginAtZero: true, grid: { color: cssVar('--canvas') }, ticks: { font: { size: 9 }, color: cssVar('--text-mute'), maxTicksLimit: 4 } } } },
+  });
+}
+
+/* ── 위젯 3: 월별 불만 건수 및 증감 ── */
+function vaRenderMonthly(w, el) {
+  const anchor = store.latestDataAt || new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const s = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
+    const e = new Date(anchor.getFullYear(), anchor.getMonth() - i + 1, 0, 23, 59, 59, 999);
+    months.push({ label: (s.getMonth() + 1) + '월', s, e });
+  }
+  const all = vaAnnotate(getAllChatData());
+  const vals = months.map(m => all.filter(r => {
+    const d = parseDate(r.createdAt);
+    return d && d >= m.s && d <= m.e && r.__state !== 'alfOnly' && r.__vaComplaint;
+  }).length);
+  const deltas = vals.map((v, i) => i === 0 ? null : v - vals[i - 1]);
+
+  const cv = vaCanvas(el, 'va-c-' + w.id, 190);
+  if (!cv) return;
+  vaState.charts[w.id] = new Chart(cv.getContext('2d'), {
+    type: 'bar',
+    data: { labels: months.map(m => m.label),
+      datasets: [{ data: vals, backgroundColor: vals.map((v, i) =>
+        deltas[i] == null ? '#8a97ab' : (deltas[i] > 0 ? '#e05252' : '#2fa88a')), borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => {
+          const d = deltas[ctx.dataIndex];
+          return ctx.parsed.y + '건' + (d == null ? '' : ' (' + (d >= 0 ? '+' : '') + d + '건)');
+        } } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: cssVar('--text-sub') } },
+        y: { beginAtZero: true, grid: { color: cssVar('--canvas') }, ticks: { font: { size: 10 }, color: cssVar('--text-mute') } } } },
+  });
+  el.insertAdjacentHTML('beforeend', '<div class="va-mrow">' + months.map((m, i) =>
+    '<span class="va-mchip"><b>' + m.label + '</b> ' + vals[i] + '건' +
+    (deltas[i] == null ? '' : '<i class="' + (deltas[i] > 0 ? 'bad' : deltas[i] < 0 ? 'good' : '') + '">' +
+      (deltas[i] >= 0 ? '+' : '') + deltas[i] + '</i>') + '</span>').join('') + '</div>');
+}
+
+/* ── 위젯 4: 불량 VOC 가로 막대 (원본 스크린샷 재현: 카테고리별 고유색, 연한=비교/진한=현재) ── */
+function vaRenderDefectBar(w, el, cur, prev) {
+  const count = (rs, id) => rs.filter(r => r.__vaDefects.indexOf(id) >= 0).length;
+  const rows = DEFECT_TAXONOMY.map(d => ({ d, cur: count(cur, d.id), prev: prev.length ? count(prev, d.id) : 0 }))
+    .sort((a, b) => b.cur - a.cur);
+
+  const cv = vaCanvas(el, 'va-c-' + w.id, Math.max(220, rows.length * 46));
+  if (!cv) return;
+  const ds = [{ label: '현재', data: rows.map(r => r.cur), backgroundColor: rows.map(r => r.d.color), borderRadius: 3, barPercentage: .82, categoryPercentage: .74 }];
+  if (vaState.compare) ds.unshift({ label: '비교', data: rows.map(r => r.prev), backgroundColor: rows.map(r => r.d.soft), borderRadius: 3, barPercentage: .82, categoryPercentage: .74 });
+
+  vaState.charts[w.id] = new Chart(cv.getContext('2d'), {
+    type: 'bar',
+    data: { labels: rows.map(r => r.d.label), datasets: ds },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ' ' + ctx.parsed.x + '건' } } },
+      scales: { x: { beginAtZero: true, grid: { color: cssVar('--canvas') }, ticks: { font: { size: 10 }, color: cssVar('--text-mute') } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 }, color: cssVar('--text-sub') } } } },
+  });
+  el.insertAdjacentHTML('beforeend',
+    '<div class="va-legend"><span class="va-lg"><i style="background:#8b7ff0"></i>현재 기간</span>' +
+    (vaState.compare ? '<span class="va-lg"><i style="background:#dcd8fb"></i>비교 기간</span>' : '') + '</div>');
+}
+
+/* ── 위젯 5: Taxonomy 피벗 (Level 1 제품군 × Level 2 SKU × 불량 유형) ── */
+function vaRenderPivot(w, el, cur) {
+  const withP = cur.filter(r => r.__vaProduct && r.__vaDefects.length);
+  if (!withP.length) {
+    el.innerHTML = '<div class="va-empty">이 기간에는 제품명과 불량 유형이 함께 확인된 상담이 없습니다.</div>';
+    return;
+  }
+  const tree = {};     // group -> product -> {defectId: n}
+  withP.forEach(r => {
+    const g = r.__vaGroup || '기타', p = r.__vaProduct;
+    (tree[g] = tree[g] || {});
+    const cell = (tree[g][p] = tree[g][p] || {});
+    r.__vaDefects.forEach(d => { cell[d] = (cell[d] || 0) + 1; });
+  });
+  const rowTotal = cell => DEFECT_TAXONOMY.reduce((s, d) => s + (cell[d.id] || 0), 0);
+  const groups = Object.keys(tree).sort((a, b) => {
+    const t = g => Object.values(tree[g]).reduce((s, c) => s + rowTotal(c), 0);
+    return t(b) - t(a);
+  });
+  const colTotal = {}, gTotals = {};
+  groups.forEach(g => {
+    gTotals[g] = 0;
+    Object.values(tree[g]).forEach(c => {
+      DEFECT_TAXONOMY.forEach(d => { colTotal[d.id] = (colTotal[d.id] || 0) + (c[d.id] || 0); });
+      gTotals[g] += rowTotal(c);
+    });
+  });
+  const grand = DEFECT_TAXONOMY.reduce((s, d) => s + (colTotal[d.id] || 0), 0);
+
+  let bodyRows = '';
+  groups.forEach(g => {
+    const open = vaState.openGroups[g] !== false;
+    bodyRows += '<tr class="va-grow" data-g="' + escHtml(g) + '">' +
+      '<td class="lv1"><span class="cr">' + (open ? '&#9660;' : '&#9654;') + '</span>' + escHtml(g) + '</td>' +
+      '<td class="lv2 mut">' + Object.keys(tree[g]).length + '개 SKU</td>' +
+      DEFECT_TAXONOMY.map(d => {
+        const n = Object.values(tree[g]).reduce((s, c) => s + (c[d.id] || 0), 0);
+        return '<td class="num' + (n ? ' hot' : '') + '">' + (n || '') + '</td>';
+      }).join('') +
+      '<td class="num tot">' + gTotals[g] + '</td></tr>';
+    if (!open) return;
+    Object.entries(tree[g]).sort((a, b) => rowTotal(b[1]) - rowTotal(a[1])).forEach(([p, cell]) => {
+      bodyRows += '<tr class="va-prow"><td class="lv1"></td><td class="lv2">' + escHtml(p) + '</td>' +
+        DEFECT_TAXONOMY.map(d => '<td class="num' + (cell[d.id] ? ' hot' : '') + '">' + (cell[d.id] || '') + '</td>').join('') +
+        '<td class="num tot">' + rowTotal(cell) + '</td></tr>';
+    });
+  });
+
+  el.innerHTML =
+    '<div class="va-tbl-wrap"><table class="va-pivot"><thead><tr>' +
+      '<th class="lv1">Level 1 (제품군)</th><th class="lv2">Level 2 (제품)</th>' +
+      DEFECT_TAXONOMY.map(d => '<th class="num"><span class="sw" style="background:' + d.color + '"></span>' + escHtml(d.label) + '</th>').join('') +
+      '<th class="num tot">합계</th></tr></thead>' +
+      '<tbody>' + bodyRows + '</tbody>' +
+      '<tfoot><tr><td class="lv1">Total</td><td class="lv2"></td>' +
+        DEFECT_TAXONOMY.map(d => '<td class="num">' + (colTotal[d.id] || 0) + '</td>').join('') +
+        '<td class="num tot">' + grand + '</td></tr></tfoot>' +
+    '</table></div>';
+  el.querySelectorAll('.va-grow').forEach(tr => tr.addEventListener('click', () => {
+    const g = tr.dataset.g;
+    vaState.openGroups[g] = vaState.openGroups[g] === false;
+    renderVOCAnalysis();
+  }));
+}
+
+/* ── 위젯 6: Smart brief (규칙 기반 요약 + AI 자리) ── */
+function vaRenderBrief(w, el, cur) {
+  const saved = vaState.briefs[w.id];
+  const q = (saved && saved.q) || w.q;
+  const target = w.id === 'briefDefect'
+    ? cur.filter(r => r.__vaDefects.length)
+    : cur.filter(r => r.__vaComplaint);
+
+  // 불량 유형별 → 제품군별로 접어서 보여준다 (Syncly 의 계층형 요약 + 근거 건수와 같은 형태)
+  const byDefect = DEFECT_TAXONOMY.map(d => {
+    const rs = target.filter(r => r.__vaDefects.indexOf(d.id) >= 0);
+    if (!rs.length) return null;
+    const byG = {};
+    rs.forEach(r => { const g = r.__vaGroup || '미확인'; byG[g] = (byG[g] || 0) + 1; });
+    return { d, n: rs.length, groups: Object.entries(byG).sort((a, b) => b[1] - a[1]).slice(0, 4) };
+  }).filter(Boolean).sort((a, b) => b.n - a.n);
+
+  const body = byDefect.length
+    ? byDefect.map(x =>
+        '<div class="va-brief-item">' +
+          '<div class="hd"><span class="sw" style="background:' + x.d.color + '"></span>' +
+          escHtml(x.d.label) + '<span class="n">' + x.n.toLocaleString() + '</span></div>' +
+          '<div class="sub">' + x.groups.map(g => escHtml(g[0]) + ' ' + g[1] + '건').join(' · ') + '</div>' +
+        '</div>').join('')
+    : '<div class="va-empty">이 기간에는 분류된 내용이 없습니다.</div>';
+
+  el.innerHTML =
+    '<div class="va-brief-q"><span class="lbl">질문</span><span class="q">' + escHtml(q) + '</span>' +
+      '<button class="va-btn sm" data-act="prompt">질문 바꾸기</button>' +
+      '<button class="va-btn sm primary" data-act="ai">AI로 분석</button></div>' +
+    '<div class="va-brief-body">' + body + '</div>' +
+    '<div class="va-brief-foot">' + target.length.toLocaleString() + '건을 키워드로 분류한 결과입니다' +
+      (saved && saved.at ? ' · AI 분석 ' + escHtml(saved.at) : '') + '</div>' +
+    (saved && saved.text ? '<div class="va-brief-ai">' + aiTextBlock(saved.text, saved.mask, 'va-ai-' + w.id) + '</div>' : '');
+
+  bindUnmask(el, saved && saved.mask);
+  el.querySelector('[data-act=prompt]').addEventListener('click', () => vaEditPrompt(w.id, q));
+  el.querySelector('[data-act=ai]').addEventListener('click', ev => vaRunBriefAI(w.id, q, target, ev.currentTarget));
+}
+
+function vaEditPrompt(id, cur) {
+  const el = document.getElementById('va-body-' + id);
+  const box = el.querySelector('.va-brief-q');
+  box.innerHTML = '<input class="va-prompt-input" type="text" value="' + escHtml(cur) + '">' +
+    '<button class="va-btn sm primary" data-act="save">저장</button>' +
+    '<button class="va-btn sm" data-act="cancel">취소</button>';
+  const inp = box.querySelector('input'); inp.focus(); inp.select();
+  box.querySelector('[data-act=save]').addEventListener('click', () => {
+    vaState.briefs[id] = Object.assign({}, vaState.briefs[id], { q: inp.value.trim() || cur });
+    savePrefs(); renderVOCAnalysis();
+  });
+  box.querySelector('[data-act=cancel]').addEventListener('click', renderVOCAnalysis);
+}
+
+/* AI 요약 — Ollama/Gemini 설정이 되어 있으면 호출한다. 없으면 설정 안내만 띄운다. */
+async function vaRunBriefAI(id, q, rows, btn) {
+  const el = document.getElementById('va-body-' + id);
+  const old = btn.textContent;
+  btn.textContent = '분석 중...'; btn.disabled = true;
+  try {
+    const top = {};
+    rows.forEach(r => r.__vaDefects.forEach(d => { top[d] = (top[d] || 0) + 1; }));
+    const stat = DEFECT_TAXONOMY.filter(d => top[d.id]).sort((a, b) => top[b.id] - top[a.id])
+      .map(d => d.label + ' ' + top[d.id] + '건').join(', ');
+    const samples = rows.slice(0, 60).map(r => '- ' + String(r.summarizedMessage || r.tags || '').replace(/\s+/g, ' ').slice(0, 80)).join('\n');
+    const prompt = 'CX 분석가입니다. 아래 VOC 데이터를 근거로 질문에 한국어로 답하세요.\n\n' +
+      '질문: ' + q + '\n\n불량 유형 분포: ' + stat + '\n\n상담 요약 표본:\n' + samples +
+      '\n\n대분류 3~5개로 묶고 각 항목 끝에 관련 건수를 붙여 간결하게 정리하세요.';
+    const text = await callGemini(prompt);
+    // 마스킹 매핑을 함께 보관해야 나중에 '원문 보기' 로 되돌릴 수 있다
+    vaState.briefs[id] = Object.assign({}, vaState.briefs[id],
+      { text, mask: store.lastMask, at: new Date().toLocaleString('ko-KR') });
+    renderVOCAnalysis();
+  } catch (e) {
+    btn.textContent = old; btn.disabled = false;
+    const foot = el.querySelector('.va-brief-foot');
+    if (foot) foot.innerHTML += ' · <span style="color:var(--negative);">AI 분석 실패: ' + escHtml(e.message) + '</span>';
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VOC 분석 — 분류 엔진 (Syncly VOC 대시보드 벤치마킹)
+
+   Syncly 는 상담 전문(全文)을 AI 로 읽어 제품군/SKU/불량 유형 taxonomy 를 붙인다.
+   우리 RAW 에는 그 결과가 없으므로 다음 재료로 규칙 기반 분류를 한다:
+     · 제품명  : profile.defective > return_product > product > 본문에서 제품명 키워드 추출
+     · 불량유형: summarizedMessage > tags > description 에서 키워드 매칭
+   AI(Ollama)가 붙으면 classifyDefect() 자리를 그대로 교체할 수 있게 인터페이스를 분리해 둔다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* 제품군(Level 1) — 제품명에 아래 키워드가 있으면 그 군으로 본다. 위에서부터 먼저 맞는 것. */
+const PRODUCT_GROUPS = [
+  { name: '목/어깨',  keys: ['목베개', '목마사지', '목편한', '목 마사지', '넥숄더', '넥 숄더', '어깨'] },
+  { name: '등/허리',  keys: ['허리편한', '허리베개', '등허리', '요추', '복부', '골반', '허리'] },
+  { name: '발/다리',  keys: ['발편한', '종아리', '다리', '발 마사지'] },
+  { name: '손/팔',    keys: ['손목', '손편한', '팔'] },
+  { name: '얼굴/눈',  keys: ['리프핏', '눈편한', '눈가', '얼굴'] },
+];
+
+/* 불량 유형(Taxonomy) — Syncly 실측 7종. 순서·명칭·색을 원본 막대그래프와 맞춘다. */
+const DEFECT_TAXONOMY = [
+  { id: 'power',    label: '충전/전원 불량', color: '#f2889b', soft: '#fbd7de',
+    keys: ['충전', '전원', '방전', '배터리', '완충', '어댑터', '케이블', '꺼짐', '켜지지', '켜지지않', '전기'] },
+  { id: 'part',     label: '부품 작동 불량', color: '#8b7ff0', soft: '#dcd8fb',
+    keys: ['작동', '에어백', '공기압', '모터', '진동', '온열', 'EMS', '기능', '멈춤', '오작동'] },
+  { id: 'finish',   label: '외관/마감 불량', color: '#2fa89a', soft: '#c9ebe6',
+    keys: ['외관', '마감', '기스', '스크래치', '코팅', '봉제', '박음질', '벨크로', '찍찍이', '파손', '터짐', '오염', '곰팡이'] },
+  { id: 'strength', label: '강도 조절 불량', color: '#7fc95f', soft: '#d8eecd',
+    keys: ['강도', '세기', '약함', '약해', '불균형', '한쪽', '조절'] },
+  { id: 'missing',  label: '구성품 누락',    color: '#f0a35c', soft: '#fbe3cb',
+    keys: ['누락', '미동봉', '동봉', '구성품', '사은품', '설명서', '미포함', '안왔', '안 왔'] },
+  { id: 'control',  label: '조작/제어 불량', color: '#b45fbf', soft: '#eed3f1',
+    keys: ['버튼', '조작', '리모컨', '제어', '인식', '터치', '디스플레이', '표시'] },
+  { id: 'noise',    label: '소음 불량',      color: '#4fb3e8', soft: '#cfe8f8',
+    keys: ['소음', '소리', '삑삑', '달달', '뚝뚝', '기계음', '딸깍', '시끄'] },
+];
+
+/* 분류에 쓸 본문 — 요약 > 태그 > 메모 순 */
+function vaText(r) {
+  return ((r.summarizedMessage || '') + ' ' + (r.tags || '') + ' ' + (r.description || '')).trim();
+}
+
+/* 제품명(Level 2). 프로필 필드가 비면 본문에서 알려진 제품명을 찾는다. */
+let _vaProductNames = null;
+function knownProductNames() {
+  if (_vaProductNames) return _vaProductNames;
+  const c = {};
+  Object.values(store.chatData).flat().forEach(r => {
+    const raw = r['profile.defective'] || r['profile.return_product'] || r['profile.product'];
+    if (!raw) return;
+    const n = normalizeProductName(raw);
+    if (n && n.length >= 3 && !/^그외/.test(n)) c[n] = (c[n] || 0) + 1;
+  });
+  // 긴 이름부터 매칭해야 '목베개 플러스' 가 '목베개' 보다 먼저 잡힌다
+  _vaProductNames = Object.keys(c).sort((a, b) => b.length - a.length);
+  return _vaProductNames;
+}
+
+function vaProduct(r) {
+  const raw = r['profile.defective'] || r['profile.return_product'] || r['profile.product'];
+  if (raw) {
+    const n = normalizeProductName(raw);
+    if (n && !/^그외/.test(n)) return n;
+  }
+  const txt = vaText(r);
+  if (!txt) return null;
+  const names = knownProductNames();
+  for (let i = 0; i < names.length; i++) if (txt.indexOf(names[i]) >= 0) return names[i];
+  return null;
+}
+
+function vaProductGroup(name) {
+  if (!name) return null;
+  for (let i = 0; i < PRODUCT_GROUPS.length; i++) {
+    const g = PRODUCT_GROUPS[i];
+    for (let k = 0; k < g.keys.length; k++) if (name.indexOf(g.keys[k]) >= 0) return g.name;
+  }
+  return '기타';
+}
+
+/* 불량 유형 분류. 여러 유형에 걸리면 전부 반환한다 (Syncly 도 한 건이 여러 열에 잡힌다). */
+function classifyDefect(r) {
+  const txt = vaText(r);
+  if (!txt) return [];
+  const hit = [];
+  DEFECT_TAXONOMY.forEach(d => {
+    for (let i = 0; i < d.keys.length; i++) {
+      if (txt.indexOf(d.keys[i]) >= 0) { hit.push(d.id); return; }
+    }
+  });
+  return hit;
+}
+
+/* 불만 상담 판정 — CSAT 1~2점 또는 불량/불만 계열 태그 */
+function vaIsComplaint(r) {
+  const csat = r['profile.csat'];
+  if (csat != null && csat !== '' && Number(csat) <= 2) return true;
+  const t = String(r.tags || '');
+  return /불량|불만|반품|환불|교환/.test(t);
+}
+
+/* 행에 분류 결과를 한 번만 붙인다 (매 렌더마다 다시 계산하면 수천 건에서 느려진다) */
+function vaAnnotate(rows) {
+  rows.forEach(r => {
+    if (r.__vaDone) return;
+    r.__vaProduct = vaProduct(r);
+    r.__vaGroup = vaProductGroup(r.__vaProduct);
+    r.__vaDefects = classifyDefect(r);
+    r.__vaComplaint = vaIsComplaint(r);
+    r.__vaDone = true;
+  });
+  return rows;
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -6025,7 +6687,7 @@ function setLoading(active, msg) {
    메인 탭 전환 (대시보드 / 차트 / 리포트 / 리서치)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function switchMainTab(tab) {
-  ['dashboard','chart','report','research','fields'].forEach(t => {
+  ['dashboard','chart','report','research','fields','vocanalysis'].forEach(t => {
     const btn = document.getElementById('tab-' + t);
     if (btn) btn.classList.toggle('active', t === tab);
   });
@@ -6048,15 +6710,20 @@ function switchMainTab(tab) {
     renderFieldList();
     return;
   }
+  if (tab === 'vocanalysis') {
+    showOnlyView('view-voc-analysis');
+    renderVOCAnalysis();
+    return;
+  }
 }
 
 /* 콘텐츠 영역의 모든 뷰/패널 id — 새 화면을 추가하면 반드시 여기에 등록한다.
    (등록을 빠뜨리면 다른 탭에서 화면 하단에 남는다 — CLAUDE.md #14) */
 const CONTENT_VIEWS = ['view-chat','view-phone','view-all','view-voc','view-defect',
-  'view-chart-extra','view-report','view-research','panel-fields','panel-settings'];
+  'view-chart-extra','view-report','view-research','view-voc-analysis','panel-fields','panel-settings'];
 
 /* 화면 전체를 채워야 하는 뷰 (내부에서 스크롤) */
-const FILL_VIEWS = new Set(['view-report', 'view-research', 'panel-fields', 'panel-settings']);
+const FILL_VIEWS = new Set(['view-report', 'view-research', 'view-voc-analysis', 'panel-fields', 'panel-settings']);
 
 function showOnlyView(id) {
   CONTENT_VIEWS.forEach(v => {
@@ -7503,12 +8170,146 @@ async function rptRunAIAnalysis(type){
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function isAIReady() {
   if (store.aiProvider === 'ollama') return true;
+  if (store.aiProvider === 'claude') return true;
   return !!store.geminiKey;
 }
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   개인정보 마스킹 — AI 로 보내기 전에 가리고, 결과는 되돌릴 수 있게 짝을 보관한다.
+
+   VOC RAW 에는 고객명·연락처·주소·주문번호가 그대로 들어 있다.
+   외부(또는 로컬이라도 별도 프로세스)로 원문을 그대로 보내지 않는 것이 기본값이며,
+   마스킹은 되돌릴 수 있어야 하므로 토큰 -> 원문 매핑을 함께 돌려준다.
+   토큰을 사람이 읽을 수 있는 형태([[이름1]])로 두어 AI 가 문맥을 유지할 수 있게 한다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const PII_RULES = [
+  { type: '이메일',   re: /[\w.+-]+@[\w-]+\.[\w.]{2,}/g },
+  { type: '주민번호', re: /\b\d{6}\s?[-–]\s?[1-4]\d{6}\b/g },
+  { type: '카드번호', re: /\b\d{4}[-\s]\d{4}[-\s]\d{4}[-\s]\d{4}\b/g },
+  { type: '연락처',   re: /\b01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}\b/g },
+  { type: '연락처',   re: /\b0\d{1,2}[-\s.]\d{3,4}[-\s.]\d{4}\b/g },
+  { type: '주문번호', re: /\b\d{11,18}\b/g },
+  { type: '주소',     re: /[가-힣]{2,}(?:시|군|구)\s?[가-힣0-9]{2,}(?:읍|면|동|로|길)\s?[0-9-]{0,12}(?:\s?[0-9]{1,4}호)?/g },
+];
+
+/* 데이터에 실제로 등장하는 고객명 목록 (정규식으로는 이름을 못 잡으므로 사전 매칭) */
+let _piiNames = null;
+function piiNameList() {
+  if (_piiNames) return _piiNames;
+  const set = new Set();
+  Object.values(store.chatData).flat().forEach(r => {
+    const n = String(r.name || '').trim();
+    // 2~4자 한글 이름만. 너무 짧거나 일반 단어는 오탐이 크다.
+    if (/^[가-힣]{2,4}$/.test(n)) set.add(n);
+  });
+  _piiNames = [...set].sort((a, b) => b.length - a.length);
+  return _piiNames;
+}
+
+/* 마스킹 컨텍스트를 새로 만든다 (여러 문자열에 걸쳐 같은 값이면 같은 토큰을 쓰도록) */
+function newMaskCtx() { return { map: {}, rev: {}, seq: {} }; }
+
+function maskPII(text, ctx) {
+  if (!text) return '';
+  if (!store.maskPII) return String(text);
+  ctx = ctx || newMaskCtx();
+  let s = String(text);
+  const tokenFor = (type, val) => {
+    if (ctx.rev[val]) return ctx.rev[val];
+    ctx.seq[type] = (ctx.seq[type] || 0) + 1;
+    const t = '[[' + type + ctx.seq[type] + ']]';
+    ctx.map[t] = val; ctx.rev[val] = t;
+    return t;
+  };
+  PII_RULES.forEach(rule => {
+    s = s.replace(rule.re, m => tokenFor(rule.type, m));
+  });
+  piiNameList().forEach(n => {
+    if (s.indexOf(n) < 0) return;
+    s = s.split(n).join(tokenFor('이름', n));
+  });
+  return s;
+}
+
+/* 마스킹된 텍스트를 원문으로 되돌린다 */
+function unmaskPII(text, map) {
+  if (!text || !map) return text || '';
+  let s = String(text);
+  Object.keys(map).forEach(t => { s = s.split(t).join(map[t]); });
+  return s;
+}
+
+/* AI 결과 블록 — 마스킹된 상태로 보여주고 '원문 보기' 로 되돌릴 수 있게 한다 */
+function aiTextBlock(text, map, id) {
+  const n = map ? Object.keys(map).length : 0;
+  const btn = n
+    ? '<button class="va-btn sm" data-unmask="' + escHtml(id) + '">&#128274; 원문 보기 (' + n + '건 가림)</button>'
+    : '';
+  return '<div class="ai-text" id="' + escHtml(id) + '" data-masked="1">' +
+    escHtml(text).replace(/\n/g, '<br>') + '</div>' +
+    (btn ? '<div style="margin-top:6px;">' + btn + '</div>' : '');
+}
+
+/* aiTextBlock 의 '원문 보기' 버튼을 컨테이너 단위로 연결한다 */
+function bindUnmask(rootEl, map) {
+  if (!rootEl) return;
+  rootEl.querySelectorAll('[data-unmask]').forEach(b => b.addEventListener('click', () => {
+    const box = document.getElementById(b.dataset.unmask);
+    if (!box) return;
+    const on = box.dataset.masked === '1';
+    const raw = box.dataset.orig || box.innerHTML;
+    if (on) {
+      box.dataset.orig = raw;
+      box.innerHTML = escHtml(unmaskPII(box.textContent, map)).replace(/\n/g, '<br>');
+      box.dataset.masked = '0';
+      b.innerHTML = '&#128275; 다시 가리기';
+    } else {
+      box.innerHTML = box.dataset.orig;
+      box.dataset.masked = '1';
+      b.innerHTML = '&#128274; 원문 보기 (' + Object.keys(map || {}).length + '건 가림)';
+    }
+  }));
+}
+
+/* ━━━ Claude Code CLI 로컬 브릿지 ━━━
+   start-ai-local.bat 이 띄우는 로컬 서버에 프롬프트를 넘긴다.
+   우리 키트는 POST /ask {prompt} -> {text} 규약을 쓰지만,
+   OpenAI 호환(/v1/chat/completions) 브릿지도 그대로 받도록 순서대로 시도한다. */
+async function callClaudeBridge(prompt) {
+  const base = (store.claudeUrl || 'http://localhost:8799').replace(/\/+$/, '');
+  const attempts = [
+    { url: base + '/ask', body: { prompt: prompt }, pick: d => d.text || d.result || d.output },
+    { url: base + '/v1/chat/completions',
+      body: { model: 'claude-code', messages: [{ role: 'user', content: prompt }], stream: false },
+      pick: d => (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) },
+  ];
+  let lastErr = '';
+  for (const a of attempts) {
+    let res;
+    try {
+      res = await fetch(a.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(a.body) });
+    } catch (e) {
+      throw new Error('AI 연결 프로그램에 연결할 수 없습니다 (' + base + '). start-ai-local.bat 를 실행했는지 확인하세요.');
+    }
+    if (res.status === 404) { lastErr = 'HTTP 404'; continue; }
+    if (!res.ok) { lastErr = 'HTTP ' + res.status + ' ' + (await res.text().catch(() => '')).slice(0, 160); continue; }
+    const d = await res.json().catch(() => null);
+    const t = d && a.pick(d);
+    if (t) return t;
+    lastErr = '응답 형식을 알 수 없습니다';
+  }
+  throw new Error('Claude 브릿지 오류: ' + lastErr);
+}
+
 async function callGemini(prompt) {
-  if (store.aiProvider === 'ollama') return callLocalAI(prompt);
+  // 보내기 전에 개인정보를 가리고, 되돌릴 매핑은 store.lastMask 에 남긴다
+  const ctx = newMaskCtx();
+  const safe = maskPII(prompt, ctx);
+  store.lastMask = ctx.map;
+  if (store.aiProvider === 'claude') return callClaudeBridge(safe);
+  if (store.aiProvider === 'ollama') return callLocalAI(safe);
   if (!store.geminiKey) { openAISettings(); throw new Error('API 키가 설정되지 않았습니다'); }
+  prompt = safe;
   const models = ['gemini-2.0-flash','gemini-1.5-flash-latest','gemini-1.5-flash-002'];
   let res, lastErr;
   for (const model of models) {
@@ -7590,8 +8391,25 @@ function switchAITab(tab) {
   store.aiProvider = tab;
   const gBtn = document.getElementById('ai-tab-gemini');
   const oBtn = document.getElementById('ai-tab-ollama');
+  const cBtn = document.getElementById('ai-tab-claude');
   const gPanel = document.getElementById('ai-panel-gemini');
   const oPanel = document.getElementById('ai-panel-ollama');
+  const cPanel = document.getElementById('ai-panel-claude');
+  const OFF = 'flex:1;padding:8px;border:2px solid var(--border);background:var(--surface);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-mute);';
+  if (cBtn && cPanel) {
+    const on = tab === 'claude';
+    cBtn.style.cssText = on
+      ? 'flex:1;padding:8px;border:2px solid var(--navy);background:var(--accent-soft);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--navy);'
+      : OFF;
+    cPanel.style.display = on ? '' : 'none';
+    if (on) {
+      if (gBtn) gBtn.style.cssText = OFF;
+      if (oBtn) oBtn.style.cssText = OFF;
+      if (gPanel) gPanel.style.display = 'none';
+      if (oPanel) oPanel.style.display = 'none';
+      return;
+    }
+  }
   if (!gBtn||!oBtn||!gPanel||!oPanel) return;
   if (tab === 'gemini') {
     gBtn.style.cssText = 'flex:1;padding:8px;border:2px solid var(--primary);background:var(--primary-light);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--primary);';
@@ -7633,9 +8451,36 @@ function openAISettings(){
   if(store.geminiKey){const inp=document.getElementById('gemini-key-input');if(inp)inp.value=store.geminiKey;}
   const oInp=document.getElementById('ollama-model-input');
   if(oInp)oInp.value=store.ollamaModel||'exaone3.5:7.8b';
+  const cInp=document.getElementById('claude-url-input');
+  if(cInp)cInp.value=store.claudeUrl||'http://localhost:8799';
+  const mChk=document.getElementById('ai-mask-chk');
+  if(mChk)mChk.checked=store.maskPII!==false;
+}
+
+function toggleMaskPII(on){ store.maskPII=!!on; savePrefs(); }
+
+/* 로컬 브릿지 연결 확인 */
+async function testClaudeBridge(){
+  const el=document.getElementById('claude-test-result');
+  const url=(document.getElementById('claude-url-input').value.trim()||'http://localhost:8799').replace(/[/]+$/,'');
+  store.claudeUrl=url;
+  if(el){el.style.color='var(--text-sub)';el.textContent='연결 확인 중...';}
+  try{
+    const t=await callClaudeBridge('연결 확인용입니다. OK 한 단어만 답하세요.');
+    if(el){el.style.color='var(--positive)';el.textContent='\u2713 연결됨 — 응답: '+String(t).slice(0,60);}
+    savePrefs(); updateAIKeyStatus();
+  }catch(e){
+    if(el){el.style.color='var(--negative)';el.textContent='\u2715 '+e.message;}
+  }
 }
 function closeAISettings(){document.getElementById('ai-modal').style.display='none';}
 function saveAIKey(){
+  if(store.aiProvider==='claude'){
+    const u=(document.getElementById('claude-url-input').value.trim()||'http://localhost:8799');
+    store.claudeUrl=u.replace(/[/]+$/,'');
+    savePrefs(); updateAIKeyStatus(); closeAISettings();
+    return;
+  }
   if(store.aiProvider==='ollama'){
     const model=(document.getElementById('ollama-model-input').value.trim()||'exaone3.5:7.8b');
     store.ollamaModel=model;
@@ -7652,7 +8497,9 @@ function saveAIKey(){
 function updateAIKeyStatus(){
   const el=document.getElementById('ai-key-status');
   if(!el)return;
-  if(store.aiProvider==='ollama'){
+  if(store.aiProvider==='claude'){
+    el.textContent='✓ Claude CLI: '+(store.claudeUrl||'http://localhost:8799');
+  } else if(store.aiProvider==='ollama'){
     el.textContent='✓ Ollama: '+(store.ollamaModel||'exaone3.5:7.8b');
   } else {
     el.textContent=store.geminiKey?'✓ Gemini AI 연결됨':'AI 설정 (API 키 없음)';

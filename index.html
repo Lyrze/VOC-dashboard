@@ -401,16 +401,21 @@ body {
   display: flex;
   flex-direction: column;
 }
-/* 전체 화면을 채우는 뷰(리포트/리서치/필드/설정)는 퍼센트 높이 대신 flex 로 늘린다.
-   height:100% 체인은 부모 중 하나라도 auto 면 0px 이 되어 화면이 사라진다 (CLAUDE.md #16). */
+/* 콘텐츠 영역은 두 가지 모드로 동작한다.
+   · 대시보드 뷰  : #dashboard-content 가 자연 높이를 갖고 #content 가 스크롤한다
+   · 전체화면 뷰  : #dashboard-content 가 화면을 채우고 뷰 내부가 스크롤한다 (리포트/리서치/필드/설정)
+   이 구분을 안 하면 flex:1 + overflow:hidden 조합에서 내용이 잘리고 스크롤도 안 된다. */
 #dashboard-content {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 0 auto;          /* 기본(대시보드): 내용만큼 늘어난다 */
   min-height: 0;
 }
+#dashboard-content.dc-fill {
+  flex: 1 1 auto;          /* 전체화면 뷰: 화면을 채운다 */
+  overflow: hidden;
+}
 .fill-view { flex: 1 1 auto; min-height: 0; }
-.scroll-view { flex: 0 0 auto; }
 #content::-webkit-scrollbar { width: 6px; }
 #content::-webkit-scrollbar-track { background: transparent; }
 #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -1342,7 +1347,7 @@ tbody td:first-child {
     <div id="data-period-notice" style="display:none;margin:0 0 14px;padding:9px 14px;background:var(--accent-soft);border:1px solid #c7d9f7;border-radius:9px;font-size:12px;color:var(--navy-700);"></div>
 
     <!-- 대시보드 콘텐츠 -->
-    <div id="dashboard-content" style="display:none;overflow:hidden;">
+    <div id="dashboard-content" style="display:none;">
 
       <!-- ─── 채팅 탭 콘텐츠 ─── -->
       <div id="view-chat" style="display:none;">
@@ -2421,6 +2426,15 @@ function jumpToLatestDataPeriod() {
   showDataPeriodNotice(last);
 }
 
+/* 데이터가 있는 최신 기간으로 이동 (기간 라벨·단위 UI까지 함께 갱신) */
+function goToLatestDataPeriod() {
+  jumpToLatestDataPeriod();
+  syncPeriodUnitUI();
+  updatePeriodLabel();
+  savePrefs();
+  renderDashboard(currentDashboardId);
+}
+
 /* 현재 보고 있는 기간이 업로드된 최신 데이터 기준임을 알린다 */
 function showDataPeriodNotice(last) {
   const bar = document.getElementById('data-period-notice');
@@ -2429,6 +2443,24 @@ function showDataPeriodNotice(last) {
   bar.innerHTML = '업로드된 데이터는 <b>' + f(last) + '</b> 까지입니다. ' +
     '해당 월을 표시하고 있어요. <span style="text-decoration:underline;cursor:pointer;" onclick="goToNow()">현재 기간으로 보기</span>';
   bar.style.display = '';
+}
+
+/* 조회 기간에 데이터가 없으면 그 사실과 되돌아갈 방법을 알려준다.
+   (안 그러면 KPI 가 전부 0 인 빈 화면만 보여 사용자가 고장으로 오해한다) */
+function syncEmptyPeriodNotice() {
+  const bar = document.getElementById('data-period-notice');
+  if (!bar || !store.latestDataAt) return;
+  const { start, end } = getPeriodDates();
+  const n = filterPeriod(Object.values(store.chatData).flat(), start, end).length;
+  const f = d => d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+  if (n === 0) {
+    bar.innerHTML = '선택한 기간 <b>' + formatDateRange(start, end) + '</b> 에는 데이터가 없습니다. ' +
+      '업로드된 데이터는 <b>' + f(store.latestDataAt) + '</b> 까지입니다. ' +
+      '<span style="text-decoration:underline;cursor:pointer;" onclick="goToLatestDataPeriod()">데이터가 있는 기간으로 이동</span>';
+    bar.style.display = '';
+  } else {
+    showDataPeriodNotice(store.latestDataAt);
+  }
 }
 
 /* xlsx 워크북을 store에 병합 (id 기준 중복 제거) */
@@ -2613,6 +2645,8 @@ function renderDashboard(id) {
   });
   const _ct = document.getElementById('content');
   if (_ct) _ct.style.overflowY = 'auto';
+  const _dc = document.getElementById('dashboard-content');
+  if (_dc) _dc.classList.remove('dc-fill');
 
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('dashboard-content').style.display = '';
@@ -2625,6 +2659,8 @@ function renderDashboard(id) {
 
   const viewEl = document.getElementById(d.view);
   if (viewEl) viewEl.style.display = '';
+
+  syncEmptyPeriodNotice();
 
   // 순서 변경 바는 위젯 선언이 있는 대시보드에서만 노출
   const orderBar = document.getElementById('widget-order-bar');
@@ -5308,9 +5344,12 @@ function showOnlyView(id) {
     t.style.display = (id === 'view-report' || id === 'view-research') ? 'flex' : 'block';
     if (fill) t.classList.add('fill-view');
   }
-  // 전체높이 뷰는 자체 스크롤을 쓰므로 #content 스크롤을 끈다
+  // 전체높이 뷰는 자체 스크롤을 쓰고, 대시보드 뷰는 #content 가 스크롤한다
+  const fillMode = FILL_VIEWS.has(id);
   const content = document.getElementById('content');
-  if (content) content.style.overflowY = FILL_VIEWS.has(id) ? 'hidden' : 'auto';
+  if (content) content.style.overflowY = fillMode ? 'hidden' : 'auto';
+  const dc = document.getElementById('dashboard-content');
+  if (dc) dc.classList.toggle('dc-fill', fillMode);
 
   // 위젯 순서 변경 바는 대시보드 뷰에서만
   const ob = document.getElementById('widget-order-bar');

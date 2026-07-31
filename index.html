@@ -225,6 +225,44 @@ body {
   text-transform: uppercase;
 }
 
+/* 리포트 그룹 헤더 — 대시보드 사이드바와 같은 톤, 캐럿으로 접고 펼친다 */
+.rpt-group {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-align: left;
+  margin-top: 4px;
+}
+.rpt-group:hover { background: var(--canvas); color: var(--text-main); }
+.rpt-group .cr {
+  flex-shrink: 0; width: 9px; font-size: 8px; line-height: 1;
+  color: var(--text-mute); transition: transform .12s;
+}
+.rpt-group.collapsed .cr { transform: rotate(-90deg); }
+.rpt-group .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rpt-group .cnt { margin-left: auto; flex-shrink: 0; font-weight: 600; color: var(--text-mute); font-size: 10px; }
+
+/* 그룹 안의 리포트 한 줄 (삭제 버튼은 hover 시에만) */
+.rpt-row { display: flex; align-items: center; }
+.rpt-row .dashboard-item { padding-left: 24px; }
+.rpt-row .del {
+  flex-shrink: 0; padding: 3px 6px; border: none; background: none;
+  cursor: pointer; color: var(--text-mute); font-size: 12px; opacity: 0;
+  transition: opacity .1s, color .1s;
+}
+.rpt-row:hover .del { opacity: 1; }
+.rpt-row .del:hover { color: var(--negative); }
+
 /* 대시보드 아이템 */
 .dashboard-item {
   width: 100%;
@@ -1745,9 +1783,13 @@ tbody td:first-child {
               <button class="rpt-period-btn" id="rpt-p-90d" onclick="rptSetPeriod('90d')">90일</button>
               <button class="rpt-period-btn" id="rpt-p-today" onclick="rptSetPeriod('today')">오늘</button>
               <span style="width:1px;height:14px;background:var(--border);"></span>
-              <input type="date" id="rpt-date-from" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyCustomPeriod()" title="시작일">
+              <!-- 연-월 선택 (직접 입력과 병행). 데이터가 있는 달은 건수를 함께 보여준다. -->
+              <select id="rpt-ym-year" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyYearMonth('year')" title="연도 선택"></select>
+              <select id="rpt-ym-month" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyYearMonth('month')" title="월 선택"></select>
+              <span style="width:1px;height:14px;background:var(--border);"></span>
+              <input type="date" id="rpt-date-from" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyCustomPeriod()" title="시작일 직접 입력">
               <span style="font-size:11px;color:var(--text-mute);">~</span>
-              <input type="date" id="rpt-date-to" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyCustomPeriod()" title="종료일">
+              <input type="date" id="rpt-date-to" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyCustomPeriod()" title="종료일 직접 입력">
               <button onclick="rptRefreshData()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--canvas);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text-sub);">
                 &#8635; 새로고침
               </button>
@@ -5530,6 +5572,75 @@ function rptSyncPeriodNotice(count) {
   el.style.display = '';
 }
 
+/* 업로드된 데이터가 있는 달별 건수. 'YYYY-MM' -> 건수.
+   행 수가 수천 건이라 매 렌더마다 세지 않고 로드된 브랜드 수를 키로 캐시한다. */
+let _dataMonthCache = null;
+function dataMonthCounts() {
+  const brands = Object.keys(store.chatData).length + Object.keys(store.phoneData).length;
+  if (_dataMonthCache && _dataMonthCache.brands === brands) return _dataMonthCache.map;
+  const map = {};
+  Object.values(store.chatData).flat().concat(Object.values(store.phoneData).flat()).forEach(r => {
+    const d = parseDate(r.createdAt || r.managedAt || r.startedAt);
+    if (!d) return;
+    const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    map[k] = (map[k] || 0) + 1;
+  });
+  _dataMonthCache = { brands: brands, map: map };
+  return map;
+}
+
+/* 연/월 드롭다운을 채운다. 연도는 데이터가 있는 범위 + 올해까지 포함한다.
+   ⚠️ innerHTML 을 다시 쓰면 그 select 의 선택값이 풀린다.
+      그래서 연도 목록은 데이터가 새로 로드됐을 때만, 월 목록은 대상 연도가 바뀔 때만 다시 그린다. */
+function buildRptYearMonthOptions(year) {
+  const ys = document.getElementById('rpt-ym-year'), ms = document.getElementById('rpt-ym-month');
+  if (!ys || !ms) return;
+  const counts = dataMonthCounts();
+  const brands = String(Object.keys(store.chatData).length + Object.keys(store.phoneData).length);
+  const years = Object.keys(counts).map(k => +k.slice(0, 4));
+  const now = new Date().getFullYear();
+  const lo = years.length ? Math.min(Math.min.apply(null, years), now) : now;
+  const hi = years.length ? Math.max(Math.max.apply(null, years), now) : now;
+
+  if (ys.dataset.builtFor !== brands) {
+    const keepY = ys.value;
+    const yOpts = ['<option value="">연도</option>'];
+    for (let y = hi; y >= lo; y--) yOpts.push('<option value="' + y + '">' + y + '년</option>');
+    ys.innerHTML = yOpts.join('');
+    ys.value = keepY;
+    ys.dataset.builtFor = brands;
+  }
+
+  // 월 옵션은 대상 연도 기준으로 건수를 붙인다 (데이터 없는 달을 헛되이 고르지 않게)
+  const y = year || +ys.value || hi;
+  if (+ms.dataset.builtFor === y) return;
+  const keepM = ms.value;
+  const mOpts = ['<option value="">월</option>'];
+  for (let m = 1; m <= 12; m++) {
+    const n = counts[y + '-' + String(m).padStart(2, '0')] || 0;
+    mOpts.push('<option value="' + m + '">' + m + '월' + (n ? ' (' + n.toLocaleString() + ')' : '') + '</option>');
+  }
+  ms.innerHTML = mOpts.join('');
+  ms.value = keepM;
+  ms.dataset.builtFor = y;
+}
+
+/* 연 또는 월을 고르면 그 달 1일~말일로 조회 기간을 잡는다.
+   연도만 고른 상태면 아직 적용하지 않고 월 목록만 그 연도 기준으로 다시 그린다. */
+function rptApplyYearMonth(which) {
+  const ys = document.getElementById('rpt-ym-year'), ms = document.getElementById('rpt-ym-month');
+  if (!ys || !ms) return;
+  const y = +ys.value;
+  // 연도를 바꾸면 그 연도의 월별 건수로 월 목록을 다시 그린다 (고른 월은 유지된다)
+  if (which === 'year' && y) buildRptYearMonthOptions(y);
+  const m = +ms.value;
+  if (!y || !m) return;                    // 둘 다 골라야 적용
+  reportState.period = 'custom';
+  reportState.customStart = ymd(new Date(y, m - 1, 1));
+  reportState.customEnd   = ymd(new Date(y, m, 0));
+  if (reportState.activeId) renderReportContent(); else syncRptPeriodInputs();
+}
+
 /* 리포트 날짜 입력값을 현재 조회 기간에 맞춘다 */
 function syncRptPeriodInputs() {
   const f = document.getElementById('rpt-date-from'), t = document.getElementById('rpt-date-to');
@@ -5537,6 +5648,18 @@ function syncRptPeriodInputs() {
   const { start, end } = getReportPeriodDates();
   f.value = ymd(start);
   t.value = ymd(end);
+
+  // 연/월 드롭다운도 함께 맞춘다. 기간이 '어느 한 달 전체'와 정확히 일치할 때만 값을 표시하고,
+  // 7일/30일처럼 달 경계와 어긋나는 범위면 비워 둔다 (잘못된 달을 가리키지 않도록).
+  const ys = document.getElementById('rpt-ym-year'), ms = document.getElementById('rpt-ym-month');
+  if (!ys || !ms) return;
+  const y = start.getFullYear(), m = start.getMonth();
+  buildRptYearMonthOptions(y);
+  const wholeMonth = start.getDate() === 1 &&
+    end.getFullYear() === y && end.getMonth() === m &&
+    end.getDate() === new Date(y, m + 1, 0).getDate();
+  ys.value = wholeMonth ? String(y) : '';
+  ms.value = wholeMonth ? String(m + 1) : '';
 }
 
 /* 리포트 기간을 업로드된 최신 달로 */
@@ -7099,6 +7222,8 @@ const reportState = {
   statsCharts:{},
   // 대시보드와 동일한 형식의 필터 조건 목록 (evalFilters 가 해석)
   filters:[],
+  // 사이드바에서 접어 둔 리포트 그룹 이름들
+  collapsedGroups:new Set(),
 };
 
 function getReportPeriodDates(){
@@ -7141,24 +7266,58 @@ function getPrevReportChats(){const allChats=Object.values(store.chatData).flat(
 function renderReportList(){
   const el=document.getElementById('rpt-team-list');
   if(!el)return;
-  if(!savedReports.length){
-    el.innerHTML='<div style="padding:12px 10px;font-size:12px;color:var(--text-mute);text-align:center;">' +
+  const personal=document.getElementById('rpt-personal-list');
+  if(personal) personal.innerHTML=
+    '<div style="padding:8px 10px;font-size:11px;color:var(--text-mute);">개인 리포트가 없습니다.</div>';
+
+  const team=savedReports.filter(r=>r.space!=='personal');
+  if(!team.length){
+    el.innerHTML='<div style="padding:12px 10px;font-size:12px;color:var(--text-mute);text-align:center;">'+
       '아직 리포트가 없습니다.<br>위 버튼으로 새 리포트를 만들어보세요.</div>';
     return;
   }
-  el.innerHTML=savedReports.map(function(r){
-    var act=reportState.activeId===r.id;
-    var bg=act?'var(--primary-light)':'none';
-    var col=act?'var(--primary)':'var(--text-sub)';
-    var brd=act?'var(--primary)':'transparent';
-    return '<div style="display:flex;align-items:center;gap:2px;padding:1px 0;">'+
-      '<button onclick="selectReport(\x27'+r.id+'\x27)" style="flex:1;text-align:left;padding:7px 10px;border:none;background:'+bg+';cursor:pointer;font-size:12px;color:'+col+';border-left:3px solid '+brd+';display:flex;align-items:center;gap:6px;">'+
-      '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="10" height="12" rx="1"/><line x1="3" y1="4" x2="9" y2="4"/><line x1="3" y1="6.5" x2="7" y2="6.5"/><line x1="3" y1="9" x2="8" y2="9"/></svg>'+
-      escHtml(r.name)+'</button>'+
-      '<button onclick="deleteReport(\x27'+r.id+'\x27)" title="삭제" style="padding:4px 6px;border:none;background:none;cursor:pointer;color:var(--text-mute);font-size:13px;flex-shrink:0;" onmouseover="this.style.color=\x27var(--negative)\x27" onmouseout="this.style.color=\x27var(--text-mute)\x27">✕</button>'+
-      '</div>';
+
+  // 원본처럼 그룹(폴더) 안에 리포트가 들어가는 2단 구조.
+  // 그룹이 없는 리포트(사용자가 직접 만든 것)는 맨 아래 '내 리포트' 로 모은다.
+  const order=[],byGroup={};
+  team.forEach(function(r){
+    const g=r.group||'내 리포트';
+    if(!byGroup[g]){byGroup[g]=[];order.push(g);}
+    byGroup[g].push(r);
+  });
+
+  el.innerHTML=order.map(function(g){
+    const items=byGroup[g];
+    const collapsed=reportState.collapsedGroups.has(g);
+    const gj=g.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const head='<button class="rpt-group'+(collapsed?' collapsed':'')+'" title="'+escHtml(g)+'"'+
+      ' onclick="toggleReportGroup(\''+escHtml(gj)+'\')">'+
+      '<span class="cr">&#9660;</span><span class="nm">'+escHtml(g)+'</span>'+
+      '<span class="cnt">'+items.length+'</span></button>';
+    if(collapsed) return head;
+    return head+items.map(function(r){
+      const act=reportState.activeId===r.id;
+      return '<div class="rpt-row">'+
+        '<button class="dashboard-item'+(act?' active':'')+'" title="'+escHtml(r.name)+'"'+
+        ' onclick="selectReport(\''+r.id+'\')" data-id="'+r.id+'">'+
+        '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;">'+
+        '<rect x="1" y="1" width="10" height="12" rx="1"/><line x1="3" y1="4" x2="9" y2="4"/>'+
+        '<line x1="3" y1="6.5" x2="7" y2="6.5"/><line x1="3" y1="9" x2="8" y2="9"/></svg>'+
+        '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(r.name)+'</span>'+
+        '</button>'+
+        '<button class="del" title="삭제" onclick="deleteReport(\''+r.id+'\')">&#10005;</button>'+
+        '</div>';
+    }).join('');
   }).join('');
 }
+
+/* 리포트 그룹 접기/펼치기 */
+function toggleReportGroup(name){
+  if(reportState.collapsedGroups.has(name)) reportState.collapsedGroups.delete(name);
+  else reportState.collapsedGroups.add(name);
+  renderReportList();
+}
+
 function createNewReport(){
   openReportCreationModal();
 }

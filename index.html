@@ -1630,45 +1630,11 @@ tbody td:first-child {
 
   <!-- 상단 탭 (대시보드 / 차트 / ...) -->
   <div class="sidebar-tabs">
-    <button class="sidebar-tab-btn active" id="tab-dashboard">
-      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="1" y="1" width="5" height="5" rx="1"/>
-        <rect x="8" y="1" width="5" height="5" rx="1"/>
-        <rect x="1" y="8" width="5" height="5" rx="1"/>
-        <rect x="8" y="8" width="5" height="5" rx="1"/>
-      </svg>
-      대시보드
-    </button>
-    <button class="sidebar-tab-btn" id="tab-chart" onclick="switchMainTab('chart')">
-      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-        <polyline points="1,10 4,6 7,8 10,3 13,5"/>
-      </svg>
-      차트
-    </button>
-    <button class="sidebar-tab-btn" id="tab-report" onclick="switchMainTab('report')">
-      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="2" y="1" width="10" height="12" rx="1"/>
-        <line x1="4" y1="5" x2="10" y2="5"/>
-        <line x1="4" y1="7.5" x2="10" y2="7.5"/>
-        <line x1="4" y1="10" x2="7" y2="10"/>
-      </svg>
-      리포트
-    </button>
-    <button class="sidebar-tab-btn" id="tab-research" onclick="switchMainTab('research')">
-      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="6" cy="6" r="4"/>
-        <line x1="9" y1="9" x2="13" y2="13"/>
-      </svg>
-      리서치
-    </button>
-    <button class="sidebar-tab-btn" id="tab-fields" onclick="switchMainTab('fields')">
-      <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="1" y="1" width="12" height="3" rx="0.5"/>
-        <rect x="1" y="6" width="12" height="3" rx="0.5"/>
-        <rect x="1" y="11" width="8" height="2" rx="0.5"/>
-      </svg>
-      필드
-    </button>
+
+
+
+
+
     <button class="sidebar-tab-btn" id="tab-vocanalysis" onclick="switchMainTab('vocanalysis')">
       <svg class="tab-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
         <path d="M1.5 12.5V8M5 12.5V4M8.5 12.5V6.5M12 12.5V1.5"/>
@@ -1696,111 +1662,16 @@ tbody td:first-child {
   </div>
 
   <!-- 대시보드 목록 -->
-  <div class="sidebar-list" id="sidebar-list">
-    <!-- buildSidebar()로 동적 생성 -->
-  </div>
+
 
   <!-- 리포트 목록 (리포트 탭 활성 시) -->
-  <div class="sidebar-list" id="report-sidebar-list" style="display:none;">
-    <button onclick="rptNewReport()" style="display:flex;align-items:center;gap:6px;width:100%;padding:7px 10px;background:var(--primary-light);border:1.5px dashed var(--primary-light);border-radius:7px;cursor:pointer;font-size:12px;color:var(--primary);font-weight:600;margin-bottom:10px;">
-      + 새 리포트 만들기
-    </button>
-    <div class="sidebar-group-label" style="margin-top:4px;">팀 스페이스</div>
-    <div id="rpt-team-list"></div>
-    <div class="sidebar-group-label" style="margin-top:8px;">개인 스페이스</div>
-    <div id="rpt-personal-list"></div>
-  </div>
+
 </div>
 
 <!-- ━━━━━━━━━━━━━━━━━━━━━━━━ 메인 영역 ━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <div id="main">
   <!-- 툴바 -->
-  <div id="toolbar" style="position:relative;">
-    <div class="toolbar-title">
-      <span id="toolbar-title-text">상담 생산성 - 채팅</span>
-      <span class="toolbar-sub" id="toolbar-sub-text"></span>
-    </div>
 
-    <!-- 새로고침 -->
-    <button class="refresh-btn" onclick="refreshData()" title="새로고침">↻</button>
-
-    <!-- 기간 단위 드롭다운 (원본: 시간 / 일 / 주 / 월) -->
-    <div class="period-unit" style="position:relative;">
-      <button class="period-unit-btn" onclick="togglePeriodUnitMenu()">
-        <span id="period-unit-label">주</span>
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8.44 10.03a.55.55 0 0 1-.88 0L5.12 6.5a.55.55 0 0 1 .44-.83h4.89a.55.55 0 0 1 .44.83l-2.45 3.53Z"/></svg>
-      </button>
-      <div id="period-unit-menu" style="display:none;position:absolute;top:32px;left:0;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(16,33,64,.12);padding:5px;z-index:200;min-width:92px;">
-        <div class="period-unit-item" data-unit="hour"  onclick="pickPeriodUnit('hour')">시간</div>
-        <div class="period-unit-item" data-unit="day"   onclick="pickPeriodUnit('day')">일</div>
-        <div class="period-unit-item active" data-unit="week" onclick="pickPeriodUnit('week')">주</div>
-        <div class="period-unit-item" data-unit="month" onclick="pickPeriodUnit('month')">월</div>
-      </div>
-    </div>
-
-    <!-- 기간 범위: 자동 추적 / 직접 설정 -->
-    <button class="nav-arrow" onclick="movePeriod(-1)">&#8249;</button>
-    <button class="period-range-btn" onclick="togglePeriodRange()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="opacity:.55;"><path d="M7.95 4.5c.33 0 .6.24.6.54v1.1c.53-.01 1.13-.01 1.81-.01h3.21c.67 0 1.27 0 1.81.01V5.04c0-.3.27-.54.6-.54s.6.24.6.54v1.14c1.16.09 1.91.29 2.47.79.56.5.79 1.19.88 2.23l.06.55H4v-.54c.09-1.04.32-1.73.88-2.23.55-.5 1.31-.71 2.47-.79V5.04c0-.3.27-.54.6-.54Z"/><path opacity=".5" d="M20 13.5V12c0-.63 0-1.75-.01-2.25H4.01C4 10.25 4 11.37 4 12v1.5c0 2.83 0 4.24.94 5.12.93.88 2.44.88 5.06.88h4c2.62 0 3.93 0 4.86-.88.94-.88.94-2.29.94-5.12Z"/></svg>
-      <span class="period-label" id="period-label">-</span>
-    </button>
-    <button class="nav-arrow" onclick="movePeriod(1)">&#8250;</button>
-
-    <!-- 직접 설정 팝업 -->
-    <div id="period-range-panel" style="display:none;position:absolute;top:52px;left:150px;background:var(--surface);border:1px solid var(--border);border-radius:11px;box-shadow:0 8px 24px rgba(16,33,64,.12);padding:14px 16px;z-index:200;min-width:290px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text-main);margin-bottom:10px;">기간 설정</div>
-      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;margin-bottom:10px;">
-        <input type="radio" name="pmode" id="pmode-auto" onchange="usePeriodAuto()" style="accent-color:var(--primary);cursor:pointer;">
-        <span style="font-size:12px;color:var(--text-sub);">자동 (현재 기간을 따라감)</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;margin-bottom:8px;">
-        <input type="radio" name="pmode" id="pmode-fixed" onchange="applyCustomPeriod()" style="accent-color:var(--primary);cursor:pointer;">
-        <span style="font-size:12px;color:var(--text-sub);">직접 설정</span>
-      </label>
-      <div style="display:flex;align-items:center;gap:6px;padding-left:22px;">
-        <input type="date" id="period-from" class="flt-sel" onchange="applyCustomPeriod()">
-        <span style="font-size:11px;color:var(--text-mute);">~</span>
-        <input type="date" id="period-to" class="flt-sel" onchange="applyCustomPeriod()">
-      </div>
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;font-weight:700;color:var(--text-mute);margin-bottom:6px;">한 주의 시작일</div>
-        <select id="week-start-day" class="flt-sel" onchange="setWeekStartDay(this.value)" style="width:100%;">
-          <option value="0">일요일</option><option value="1">월요일</option><option value="2">화요일</option>
-          <option value="3">수요일</option><option value="4">목요일</option><option value="5">금요일</option>
-          <option value="6">토요일</option>
-        </select>
-        <div id="week-preview" style="font-size:11px;color:var(--text-mute);margin-top:6px;"></div>
-      </div>
-    </div>
-
-    <!-- 필터/옵션 -->
-    <button class="toolbar-btn" onclick="toggleDashboardFilter()" id="dash-filter-btn">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-        <line x1="1" y1="3" x2="11" y2="3"/><line x1="3" y1="6" x2="9" y2="6"/><line x1="5" y1="9" x2="7" y2="9"/>
-      </svg>
-      <span id="dash-filter-label">필터</span>
-    </button>
-    <!-- 필터 패널 -->
-    <div id="dash-filter-panel" style="display:none;position:absolute;top:52px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(16,33,64,0.12);z-index:100;min-width:640px;max-width:calc(100vw - 60px);max-height:70vh;overflow:auto;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <span style="font-size:13px;font-weight:700;color:var(--text-main);">필터</span>
-        <span style="flex:1;"></span>
-        <button onclick="addFilterRow()" style="padding:5px 11px;background:var(--primary-light);border:1px dashed var(--primary-light);border-radius:7px;cursor:pointer;font-size:12px;color:var(--primary);font-weight:600;">+ 필터 추가</button>
-        <button onclick="clearDashboardFilter()" style="padding:5px 11px;background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:7px;color:var(--negative);font-size:12px;cursor:pointer;">초기화</button>
-      </div>
-      <div id="dash-filter-rows"></div>
-      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:10px 0 0;margin-top:8px;border-top:1px solid var(--border);">
-        <input type="checkbox" id="df-exclude-alf" onchange="toggleExcludeALF()" style="cursor:pointer;accent-color:var(--primary);width:14px;height:14px;">
-        <span style="font-size:12px;color:var(--text-sub);">ALF 단독 확인불가 건 제외</span>
-      </label>
-    </div>
-    <button class="toolbar-btn" id="dash-opt-btn" onclick="openDashOptions(this)">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="6" cy="6" r="1.5"/><circle cx="2" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/>
-      </svg>
-      옵션
-    </button>
-  </div>
 
   <!-- 콘텐츠 -->
   <div id="content">
@@ -1815,627 +1686,34 @@ tbody td:first-child {
     </div>
 
     <!-- 업로드 데이터 기간 안내 -->
-    <div id="data-period-notice" style="display:none;margin:0 0 14px;padding:9px 14px;background:var(--accent-soft);border:1px solid #c7d9f7;border-radius:9px;font-size:12px;color:var(--navy-700);"></div>
+
 
     <!-- 대시보드 콘텐츠 -->
     <div id="dashboard-content" style="display:none;">
 
       <!-- ─── 채팅 탭 콘텐츠 ─── -->
-      <div id="view-chat" style="display:none;">
-        <!-- ── 그리드 A: 응대 현황(span 8, 4행) + KPI 4개(span 4, 107px) ── -->
-        <div class="widget-grid rows-sm">
-          <div class="panel span-8 row-4">
-            <div class="widget-head">
-              <span class="channel-badge">채팅</span>
-              <span class="widget-name">채팅 응대 현황</span>
-              <span class="spacer"></span>
-              <div class="trend-legend" id="chat-status-legend" style="margin-top:0;"></div>
-            </div>
-            <div style="flex:1;min-height:0;position:relative;"><canvas id="chat-bar-chart"></canvas></div>
-          </div>
-          <div class="kpi-card span-4" id="chat-kpi-0"></div>
-          <div class="kpi-card span-4" id="chat-kpi-1"></div>
-          <div class="kpi-card span-4" id="chat-kpi-2"></div>
-          <div class="kpi-card span-4" id="chat-kpi-3"></div>
-        </div>
-
-        <!-- ── 그리드 B: 시간 KPI 3개(span 4, 148px) + 만족도 2개(span 6, 148px) ── -->
-        <div class="widget-grid rows-md">
-          <div class="kpi-card span-4" id="chat-kpi-4"></div>
-          <div class="kpi-card span-4" id="chat-kpi-5"></div>
-          <div class="kpi-card span-4" id="chat-kpi-6"></div>
-          <div class="kpi-card span-6" id="chat-kpi-7"></div>
-          <div class="kpi-card span-6" id="chat-kpi-8"></div>
-        </div>
-
-        <!-- ── 그리드 C: 담당자(통합) / 주요 문의 유형 분포 / 상담 태그 (span 12) ── -->
-        <div class="widget-grid">
-          <!-- 담당자(통합) -->
-          <div class="panel panel--table span-12" id="manager-section">
-            <div class="widget-head">
-              <span class="channel-badge">채팅</span>
-              <span class="groupby-btn" data-mount="manager-table" onclick="openGroupByPicker('manager-table')">
-                <span class="gb-label">담당자(통합)</span>
-                <span class="vline"></span>
-                <span class="change">변경</span>
-              </span>
-              <span class="widget-date" id="manager-date-range"></span>
-              <span class="spacer"></span>
-              <span class="widget-act" onclick="downloadManagerExcel(event)">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v7M3.5 5.5L6 8l2.5-2.5M2 10.5h8"/></svg>
-                엑셀 다운로드
-              </span>
-              <span class="widget-divider"></span>
-              <span class="widget-act" onclick="toggleManagerGraph()">
-                <span class="sw" id="manager-graph-sw"></span>
-                그래프 보기
-              </span>
-              <span class="widget-act" onclick="openChartTypeMenu('manager-table',event)" title="그래프 유형">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="2.5" height="5"/><rect x="4.75" y="3" width="2.5" height="8"/><rect x="8.5" y="1" width="2.5" height="10"/></svg>
-                유형
-              </span>
-            </div>
-            <div class="table-chart-wrap" id="manager-chart-wrap">
-              <canvas id="manager-chart"></canvas>
-              <div class="trend-legend" id="manager-trend-legend"></div>
-            </div>
-            <div class="table-overflow">
-              <table id="manager-table"></table>
-            </div>
-          </div>
-
-          <!-- 주요 문의 유형 분포 -->
-          <div class="panel span-12" id="voc-dist-section">
-            <div class="widget-head">
-              <span class="channel-badge">채팅</span>
-              <span class="widget-name">주요 문의 유형 분포</span>
-              <span class="widget-date" id="voc-dist-date-range"></span>
-              <span class="spacer"></span>
-              <span class="widget-act" onclick="openTagExcludePicker(event)" title="분포에서 뺄 태그를 고릅니다">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 2h10L7 6.5V11L5 9.5V6.5z"/></svg>
-                제외 태그<span class="tx-badge"></span>
-              </span>
-            </div>
-            <div style="display:flex;gap:16px;align-items:flex-start;padding-top:4px;">
-              <div style="flex:1;min-width:0;position:relative;height:220px;">
-                <canvas id="voc-dist-chart"></canvas>
-              </div>
-              <div style="width:190px;flex-shrink:0;padding-top:4px;" id="voc-dist-legend"></div>
-            </div>
-          </div>
-
-          <!-- 상담 태그 -->
-          <div class="panel panel--table span-12" id="tag-section">
-            <div class="widget-head">
-              <span class="channel-badge">채팅</span>
-              <span class="groupby-btn" data-mount="tag-table" onclick="openGroupByPicker('tag-table')">
-                <span class="gb-label">상담 태그</span>
-                <span class="vline"></span>
-                <span class="change">변경</span>
-              </span>
-              <span class="widget-date" id="tag-date-range"></span>
-              <span class="spacer"></span>
-              <span class="widget-act" onclick="downloadTagExcel(event)">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v7M3.5 5.5L6 8l2.5-2.5M2 10.5h8"/></svg>
-                엑셀 다운로드
-              </span>
-              <span class="widget-divider"></span>
-              <span class="widget-act" onclick="toggleTagGraph()">
-                <span class="sw" id="tag-graph-sw"></span>
-                그래프 보기
-              </span>
-              <span class="widget-act" onclick="openChartTypeMenu('tag-table',event)" title="그래프 유형">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="2.5" height="5"/><rect x="4.75" y="3" width="2.5" height="8"/><rect x="8.5" y="1" width="2.5" height="10"/></svg>
-                유형
-              </span>
-              <span class="widget-act" onclick="openTagExcludePicker(event)" title="표와 그래프에서 뺄 태그를 고릅니다">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 2h10L7 6.5V11L5 9.5V6.5z"/></svg>
-                제외 태그<span class="tx-badge"></span>
-              </span>
-            </div>
-            <div class="table-chart-wrap" id="tag-chart-wrap">
-              <div style="font-size:11px;color:var(--text-mute);margin-bottom:6px;">상담량 기준 상위 8개만 그래프에 표시됩니다.</div>
-              <canvas id="tag-chart"></canvas>
-              <div class="trend-legend" id="tag-trend-legend"></div>
-            </div>
-            <div class="table-overflow">
-              <table id="tag-table"></table>
-            </div>
-          </div>
-        </div>
-
-        <!-- 분포 위젯 (renderDistributions 가 패널을 생성) -->
-        <div class="widget-grid" id="chat-dist-grid"></div>
-      </div><!-- /view-chat -->
+<!-- /view-chat -->
 
       <!-- ─── 전화 탭 콘텐츠 ─── -->
-      <div id="view-phone" style="display:none;">
-        <div class="widget-grid rows-sm">
-          <div class="panel span-8 row-4">
-            <div class="widget-head">
-              <span class="channel-badge phone">전화</span>
-              <span class="widget-name">전화 응대 현황</span>
-              <span class="spacer"></span>
-              <div class="trend-legend" id="phone-status-legend" style="margin-top:0;"></div>
-            </div>
-            <div style="flex:1;min-height:0;position:relative;"><canvas id="phone-bar-chart"></canvas></div>
-          </div>
-          <div class="kpi-card span-4" id="phone-kpi-0"></div>
-          <div class="kpi-card span-4" id="phone-kpi-1"></div>
-          <div class="kpi-card span-4" id="phone-kpi-2"></div>
-          <div class="kpi-card span-4" id="phone-kpi-3"></div>
-        </div>
-        <div class="widget-grid rows-md">
-          <div class="kpi-card span-6" id="phone-kpi-4"></div>
-          <div class="kpi-card span-6" id="phone-kpi-5"></div>
-        </div>
-        <div class="widget-grid">
-          <div class="panel span-12">
-            <div class="widget-head">
-              <span class="channel-badge phone">전화</span>
-              <span class="widget-name">미수신 사유 현황</span>
-            </div>
-            <div class="table-overflow">
-              <table id="phone-missed-table"></table>
-            </div>
-          </div>
-        </div>
-        <!-- 분포 위젯 -->
-        <div class="widget-grid" id="phone-dist-grid"></div>
-      </div><!-- /view-phone -->
+<!-- /view-phone -->
 
       <!-- ─── 전체(채팅+전화 통합) 탭 ─── -->
-      <div id="view-all" style="display:none;">
-        <div class="widget-grid rows-sm">
-          <div class="panel span-8 row-4">
-            <div class="widget-head">
-              <span class="channel-badge">전체</span>
-              <span class="widget-name">전체 현황</span>
-              <span class="spacer"></span>
-              <div class="chart-legend">
-                <span><span class="legend-dot" style="background:var(--chart-responded)"></span>채팅</span>
-                <span><span class="legend-dot" style="background:var(--amber)"></span>전화</span>
-              </div>
-            </div>
-            <div style="flex:1;min-height:0;position:relative;"><canvas id="all-bar-chart"></canvas></div>
-          </div>
-          <div class="kpi-card span-4" id="all-kpi-0"></div>
-          <div class="kpi-card span-4" id="all-kpi-1"></div>
-          <div class="kpi-card span-4" id="all-kpi-2"></div>
-          <div class="kpi-card span-4" id="all-kpi-3"></div>
-        </div>
-        <div class="widget-grid rows-md">
-          <div class="kpi-card span-6" id="all-kpi-4"></div>
-          <div class="kpi-card span-6" id="all-kpi-5"></div>
-        </div>
-        <div class="widget-grid">
-          <div class="panel panel--table span-12">
-            <div class="widget-head">
-              <span class="channel-badge">전체</span>
-              <span class="widget-name">담당자(통합)</span>
-              <span class="widget-date" id="all-date-range"></span>
-            </div>
-            <div class="table-overflow">
-              <table id="all-table"></table>
-            </div>
-          </div>
-        </div>
-      </div><!-- /view-all -->
+<!-- /view-all -->
 
       <!-- ─── 브랜드별 VOC 분석 탭 ─── -->
-      <div id="view-voc" style="display:none;">
-        <!-- renderVOCView()로 생성 -->
-      </div>
+
 
       <!-- ─── 브랜드별 불량 VOC 탭 ─── -->
-      <div id="view-defect" style="display:none;">
-        <!-- renderDefectView()로 생성 -->
-      </div>
+
 
       <!-- ─── 차트 탭 ─── -->
-      <div id="view-chart-extra" style="display:none;padding:0;flex-direction:column;">
-        <!-- ─── AI 차트 빌더 ─── -->
-        <div style="display:flex;height:100%;min-height:600px;">
-          <!-- 좌측 입력 패널 -->
-          <div style="width:280px;min-width:280px;border-right:1px solid var(--border);background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;">
-            <div style="font-size:15px;font-weight:700;color:var(--text-main);">AI로 차트 만들기</div>
-            <div style="font-size:11px;background:var(--primary-light);color:var(--primary-dark);padding:4px 8px;border-radius:5px;display:inline-block;font-weight:600;">BETA</div>
-            <!-- 기간 -->
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">기간</div>
-              <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                <button onclick="setChartPeriod('7d')"  id="cp-7d"  class="cp-btn active" style="padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;font-size:11px;cursor:pointer;">7일</button>
-                <button onclick="setChartPeriod('30d')" id="cp-30d" class="cp-btn" style="padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;font-size:11px;cursor:pointer;">30일</button>
-                <button onclick="setChartPeriod('60d')" id="cp-60d" class="cp-btn" style="padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;font-size:11px;cursor:pointer;">60일</button>
-                <button onclick="setChartPeriod('90d')" id="cp-90d" class="cp-btn" style="padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;font-size:11px;cursor:pointer;">90일</button>
-                <span style="width:1px;height:13px;background:#c3ccda;display:inline-block;"></span>
-                <span style="font-size:11px;color:var(--text-sub);">직접설정:</span>
-                <input type="date" id="chart-date-from" style="padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;outline:none;" onchange="applyChartCustomDate()">
-                <span style="font-size:11px;color:var(--text-mute);">~</span>
-                <input type="date" id="chart-date-to" style="padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;outline:none;" onchange="applyChartCustomDate()">
-              </div>
-            </div>
-            <!-- 차트 내용 -->
-            <div>
-              <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">차트 내용</div>
-              <textarea id="chart-ai-input" placeholder="보고 싶은 차트를 입력하세요&#10;예) 날짜별 문의 수&#10;예) 담당자별 응대 건수 비교&#10;예) Top 10 상담 태그" style="width:100%;height:120px;padding:8px;border:1px solid var(--border);border-radius:7px;font-size:12px;resize:none;outline:none;font-family:inherit;line-height:1.5;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-            </div>
-            <!-- 참고할 필드 (원본: 선택하면 AI 정확도가 올라간다) -->
-              <div style="margin-bottom:14px;">
-                <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">
-                  참고할 필드 (선택)
-                  <span title="참고할 필드를 선택하면 AI 정확도가 올라갑니다." style="color:var(--text-mute);cursor:help;">&#9432;</span>
-                </div>
-                <div id="chart-ref-fields" style="display:flex;flex-wrap:wrap;gap:4px;max-height:120px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:6px;background:var(--surface);"></div>
-              </div>
 
-              <div style="font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">이렇게 만들 수 있어요 <span style="color:var(--primary);">추천</span></div>
-              <div id="chart-suggestions" style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;"></div>
-              <button onclick="generateAIChart()" id="chart-gen-btn" style="padding:10px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%;">차트 생성하기</button>
-          </div>
-          <!-- 우측 차트 표시 영역 -->
-          <div style="flex:1;padding:20px;overflow-y:auto;background:var(--canvas);">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-              <input id="chart-title" placeholder="제목 없는 차트"
-                style="flex:1;font-size:16px;font-weight:700;color:var(--text-main);border:none;border-bottom:1px solid transparent;outline:none;padding:4px 2px;background:none;"
-                onfocus="this.style.borderBottomColor='var(--primary)'" onblur="this.style.borderBottomColor='transparent'">
-              <span style="font-size:11px;color:var(--text-mute);">제목을 눌러 이름을 바꿀 수 있어요</span>
-            </div>
-            <div id="chart-ai-output" style="background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:24px;min-height:400px;display:flex;align-items:center;justify-content:center;">
-              <div style="text-align:center;color:var(--text-mute);">
-                <div style="font-size:32px;margin-bottom:12px;">📊</div>
-                <div style="font-size:14px;font-weight:500;">왼쪽 패널에서 차트 내용을 입력하고</div>
-                <div style="font-size:13px;margin-top:4px;">차트 생성하기를 누르세요</div>
-              </div>
-            </div>
-            <div id="chart-ai-history" style="margin-top:16px;display:flex;flex-direction:column;gap:12px;"></div>
-          </div>
-        </div>
-      </div>
 
       <!-- ─── 리포트 탭 ─── -->
-      <div id="view-report" style="display:none;overflow:hidden;flex-direction:column;">
-        <!-- 리포트 헤더 -->
-        <div id="rpt-header" style="flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surface);padding:0 20px;">
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 0 8px;">
-            <button onclick="rptBack()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--canvas);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-sub);">
-              &#8592; 뒤로
-            </button>
-            <span id="rpt-title" style="font-size:15px;font-weight:700;color:var(--text-main);flex:1;"></span>
-            <button onclick="rptResearch()" style="display:flex;align-items:center;gap:5px;padding:6px 13px;background:var(--surface);border:1.5px solid var(--primary-light);border-radius:7px;cursor:pointer;font-size:12px;color:var(--primary);font-weight:600;">
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><line x1="10" y1="10" x2="13" y2="13"/></svg>
-              리서치로 분석하기
-            </button>
-            <button id="rpt-share-btn" onclick="rptCopyShareLink(this)" title="이 리포트와 조회 기간을 담은 링크를 복사합니다" style="display:flex;align-items:center;gap:5px;padding:6px 13px;background:var(--surface);border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;color:var(--text-sub);">
-              &#128279; 공유
-            </button>
-          </div>
-          <div id="rpt-desc" style="font-size:12px;color:var(--text-sub);padding-bottom:10px;"></div>
-          <!-- 서브탭 + 기간 -->
-          <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:0;">
-            <div style="display:flex;gap:0;">
-              <button id="rpt-subtab-table" class="rpt-subtab active" onclick="rptSwitchSubTab('table')">상담 테이블</button>
-              <button id="rpt-subtab-stats" class="rpt-subtab" onclick="rptSwitchSubTab('stats')">상담 통계</button>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;padding:8px 0;">
-              <button class="rpt-period-btn active" id="rpt-p-7d" onclick="rptSetPeriod('7d')">7일</button>
-              <button class="rpt-period-btn" id="rpt-p-30d" onclick="rptSetPeriod('30d')">30일</button>
-              <button class="rpt-period-btn" id="rpt-p-60d" onclick="rptSetPeriod('60d')">60일</button>
-              <button class="rpt-period-btn" id="rpt-p-90d" onclick="rptSetPeriod('90d')">90일</button>
-              <button class="rpt-period-btn" id="rpt-p-today" onclick="rptSetPeriod('today')">오늘</button>
-              <span style="width:1px;height:14px;background:var(--border);"></span>
-              <!-- 연-월 선택 (직접 입력과 병행). 데이터가 있는 달은 건수를 함께 보여준다. -->
-              <select id="rpt-ym-year" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyYearMonth('year')" title="연도 선택"></select>
-              <select id="rpt-ym-month" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyYearMonth('month')" title="월 선택"></select>
-              <span style="width:1px;height:14px;background:var(--border);"></span>
-              <input type="date" id="rpt-date-from" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyCustomPeriod()" title="시작일 직접 입력">
-              <span style="font-size:11px;color:var(--text-mute);">~</span>
-              <input type="date" id="rpt-date-to" class="flt-sel" style="font-size:11px;padding:3px 6px;" onchange="rptApplyCustomPeriod()" title="종료일 직접 입력">
-              <button onclick="rptRefreshData()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--canvas);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text-sub);">
-                &#8635; 새로고침
-              </button>
-            </div>
-          </div>
-        </div>
 
-        <!-- 필터 바 -->
-        <div id="rpt-filter-bar" style="flex-shrink:0;background:var(--canvas);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-          <span style="font-size:11px;color:var(--text-mute);font-weight:600;">필터:</span>
-          <div id="rpt-period-notice" style="display:none;width:100%;margin:6px 0 0;padding:7px 12px;background:var(--accent-soft);border:1px solid #c7d9f7;border-radius:8px;font-size:11px;color:var(--navy-700);"></div>
-          <div id="rpt-filter-summary" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;"></div>
-          <button onclick="toggleRptFilterPanel(this)" id="rpt-filter-btn" style="display:flex;align-items:center;gap:4px;padding:3px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text-sub);">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="3" x2="11" y2="3"/><line x1="3" y1="6" x2="9" y2="6"/><line x1="5" y1="9" x2="7" y2="9"/></svg>
-            <span id="rpt-filter-btn-label">필터 편집</span>
-          </button>
-          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:2px 0;" title="태그 미분류 + 상담원 미배정 건 제외">
-            <input type="checkbox" id="rpt-exclude-alf" onchange="toggleRptExcludeALF()" style="cursor:pointer;accent-color:var(--primary);">
-            <span style="font-size:11px;color:var(--text-sub);white-space:nowrap;">ALF 확인불가 제외</span>
-          </label>
-        </div>
-
-        <!-- 뷰 영역 -->
-        <div id="rpt-view-area" style="flex:1;min-height:0;position:relative;overflow:hidden;">
-          <!-- 상담 테이블 뷰 -->
-          <div id="rpt-view-table" style="overflow:auto;padding:0;height:100%;">
-            <div id="rpt-table-toolbar" style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;">
-              <span id="rpt-total-count" style="font-size:13px;font-weight:600;color:var(--text-main);"></span>
-              <input id="rpt-search" type="text" placeholder="검색..." oninput="rptApplySearch()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;width:180px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-              <div style="flex:1;"></div>
-              <button onclick="rptAITag()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--surface);border:1.5px solid var(--primary-light);border-radius:6px;cursor:pointer;font-size:11px;color:var(--primary);font-weight:600;">
-                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1l1.5 4h4l-3.5 2.5 1.5 4L7 9l-3.5 2.5 1.5-4L1 5h4z"/></svg>
-                AI로 태그 분류하기
-              </button>
-              <button onclick="rptOllamaAutoFill()" id="btn-ollama-autofill" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--positive-soft);border:1.5px solid #86efac;border-radius:6px;cursor:pointer;font-size:11px;color:var(--positive);font-weight:600;">
-                <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M5 7l1.5 1.5L9 5"/></svg>
-                AI 필드 자동완성
-              </button>
-              <button onclick="rptDownload()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;color:var(--text-sub);">
-                &#8595; 다운로드
-              </button>
-            </div>
-            <div id="rpt-table-wrap" style="min-width:945px;">
-              <table id="rpt-table" class="rpt-data-table">
-              <thead id="rpt-table-head"></thead>
-              <tbody id="rpt-table-body"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 상담 통계 뷰 -->
-          <div id="rpt-view-stats" style="display:none;overflow:auto;padding:20px;height:100%;">
-            <!-- 비교기간 -->
-            <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
-              <div id="rpt-compare-label" style="font-size:11px;color:var(--text-sub);background:var(--canvas);border:1px solid var(--border);border-radius:6px;padding:4px 10px;"></div>
-            </div>
-
-            <!-- 📋 요약 -->
-            <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">&#128203; 요약<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('summary')">기준: <b id="rpt-basis-summary">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
-              <div id="rpt-summary-cards" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;"></div>
-            </div>
-
-            <!-- 📈 추이 그래프 -->
-            <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">&#128200; 추이 그래프<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('trend')">기준: <b id="rpt-basis-trend">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span><span class="stat-opt" onclick="rptToggleTrendAll()"><span class="sw" id="rpt-trend-all-sw"></span>전체 문의 함께 보기</span><span class="stat-opt" onclick="rptCycleTrendType()">그래프 유형: <b id="rpt-trend-type">선</b></span></span></div>
-              <div style="height:210px;position:relative;"><canvas id="rpt-trend-chart"></canvas></div>
-              <div id="rpt-trend-table" style="margin-top:12px;"></div>
-            </div>
-
-            <!-- 🏆 태그별 리더보드 -->
-            <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">&#127942; 태그별 리더보드<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('tag')">기준: <b id="rpt-basis-tag">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span><span class="stat-opt" onclick="toggleTagMajor()"><span class="sw" id="tag-major-sw"></span>대분류 기준으로 순위 매기기</span></span></div>
-              <div class="lb-head" id="rpt-tag-lb-head"></div>
-              <div class="lb-wrap" id="rpt-tag-leaderboard"></div>
-            </div>
-
-            <!-- 😊 담당자별 리더보드 -->
-            <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">&#128522; 담당자별 리더보드<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('mgr')">기준: <b id="rpt-basis-mgr">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
-              <div class="lb-head" id="rpt-mgr-lb-head"></div>
-              <div class="lb-wrap" id="rpt-manager-leaderboard"></div>
-            </div>
-
-            <!-- 📊 상담 통계 -->
-            <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">&#128202; 상담 통계<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('stats')">기준: <b id="rpt-basis-stats">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
-              <div class="rpt-sc-grid">
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 요일별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dow"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-dow"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 시간별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-hour"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-hour"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 요일별 인입 경로 분포</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowMedium"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-dowMedium"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 시간별 인입 경로 분포</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-hourMedium"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-hourMedium"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 요일별 상담 상태 분포</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowState"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-dowState"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">상담 상태별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-state"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-state"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 요일별 미트 부재중 사유 분포</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowMissed"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-dowMissed"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">미트 부재중 사유별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-missed"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-missed"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 요일별 상담 만족도 분포</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowCsat"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-dowCsat"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">상담 만족도별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-csat"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-csat"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">인입 경로별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-medium"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-medium"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">AI 분류별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-aiClass"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-aiClass"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">첫 응대 시간별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-firstReply"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-firstReply"></div>
-              </div>
-              <div class="rpt-stats-card">
-                <div class="rpt-card-title">상담 처리 시간별 문의 수</div>
-                <div style="height:190px;position:relative;"><canvas id="rpt-sc-handling"></canvas></div>
-                <div class="rpt-sc-legend" id="rpt-scl-handling"></div>
-              </div>
-              </div>
-            </div>
-
-            <!-- 🔍 변화 감지 -->
-            <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">&#128269; 변화 감지 대시보드<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('change')">기준: <b id="rpt-basis-change">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
-              <div id="rpt-change-detect"></div>
-            </div>
-
-            <!-- AI 인사이트 섹션 (리서치로 분석하기 결과) -->
-            <div class="rpt-stats-card" style="margin-bottom:14px;" id="rpt-ai-section">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                <div class="rpt-card-title" style="margin-bottom:0;">AI 인사이트</div>
-                <div style="display:flex;gap:6px;">
-                  <button onclick="rptRunAIAnalysis('pattern')" style="padding:5px 11px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">패턴 분석</button>
-                  <button onclick="rptRunAIAnalysis('improve')" style="padding:5px 11px;background:var(--surface);color:var(--primary);border:1.5px solid var(--primary-light);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">개선 제안</button>
-                </div>
-              </div>
-              <div id="rpt-ai-output" style="min-height:60px;">
-                <div style="color:var(--text-mute);font-size:12px;text-align:center;padding:16px 0;">위 버튼으로 AI 분석을 실행하세요</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 상세 패널 (우측 슬라이드인) -->
-        <div id="rpt-detail-panel" style="display:none;position:absolute;top:0;right:0;bottom:0;width:360px;background:var(--surface);border-left:1px solid var(--border);overflow:auto;z-index:20;box-shadow:-4px 0 20px rgba(0,0,0,0.08);">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);">
-            <div style="font-size:14px;font-weight:700;color:var(--text-main);">상담 상세</div>
-            <button onclick="rptCloseDetail()" style="background:none;border:none;cursor:pointer;color:var(--text-mute);font-size:18px;">&#10005;</button>
-          </div>
-          <div id="rpt-detail-content" style="padding:16px;"></div>
-        </div>
-
-        <!-- 리포트 목록 (선택 전) -->
-        <div id="rpt-list-view" style="flex:1;overflow:auto;padding:28px 32px;display:none;">
-          <!-- buildReportList()로 생성 -->
-        </div>
-      </div>
 
       <!-- ─── 리서치 탭 ─── -->
-      <div id="view-research" style="display:none;flex-direction:column;">
-        <!-- ─── 리서치 AI 채팅 ─── -->
-        <div style="display:flex;height:100%;min-height:600px;">
-          <!-- 좌측: 대화 목록 + 필터 -->
-          <div style="width:220px;min-width:220px;border-right:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;">
-            <div style="padding:14px 12px 10px;border-bottom:1px solid var(--border);">
-              <button onclick="newResearchChat()" style="width:100%;padding:8px;background:var(--primary);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>새 대화 만들기
-              </button>
-            </div>
-            <!-- 기간 선택 -->
-            <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
-              <div style="font-size:11px;font-weight:600;color:var(--text-mute);margin-bottom:6px;text-transform:uppercase;">분석 기간</div>
-              <div style="display:flex;flex-wrap:wrap;gap:3px;">
-                <button onclick="setResearchPeriod('today')" id="rp-today" class="rp-btn" style="padding:3px 8px;border:1px solid var(--border);background:var(--surface);border-radius:5px;font-size:11px;cursor:pointer;color:var(--text-sub);">오늘</button>
-                <button onclick="setResearchPeriod('7d')"   id="rp-7d"   class="rp-btn" style="padding:3px 8px;border:1px solid var(--border);background:var(--surface);border-radius:5px;font-size:11px;cursor:pointer;color:var(--text-sub);">7일</button>
-                <button onclick="setResearchPeriod('30d')"  id="rp-30d"  class="rp-btn active" style="padding:3px 8px;border:1px solid var(--primary);background:var(--primary-light);border-radius:5px;font-size:11px;cursor:pointer;color:var(--primary);">30일</button>
-                <button onclick="setResearchPeriod('60d')"  id="rp-60d"  class="rp-btn" style="padding:3px 8px;border:1px solid var(--border);background:var(--surface);border-radius:5px;font-size:11px;cursor:pointer;color:var(--text-sub);">60일</button>
-                <button onclick="setResearchPeriod('90d')"  id="rp-90d"  class="rp-btn" style="padding:3px 8px;border:1px solid var(--border);background:var(--surface);border-radius:5px;font-size:11px;cursor:pointer;color:var(--text-sub);">90일</button>
-                <span style="width:1px;height:13px;background:#c3ccda;display:inline-block;"></span>
-                <span style="font-size:11px;color:var(--text-sub);">직접설정:</span>
-                <input type="date" id="research-date-from" style="padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;outline:none;" onchange="applyResearchCustomDate()">
-                <span style="font-size:11px;color:var(--text-mute);">~</span>
-                <input type="date" id="research-date-to" style="padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;outline:none;" onchange="applyResearchCustomDate()">
-              </div>
-            </div>
-            <!-- 필터 (대시보드와 같은 엔진) -->
-            <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                <span style="font-size:11px;font-weight:600;color:var(--text-mute);text-transform:uppercase;">필터</span>
-                <span style="flex:1;"></span>
-                <button onclick="addFilterRow('research')" style="padding:3px 8px;background:var(--primary-light);border:1px dashed var(--primary-light);border-radius:6px;cursor:pointer;font-size:11px;color:var(--primary);font-weight:600;">+ 추가</button>
-              </div>
-              <div id="research-filter-rows"></div>
-            </div>
 
-            <!-- 샘플링 (원본: 총 N건의 데이터 중 M건을 분석합니다.) -->
-            <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
-              <div id="research-sampling-info" style="font-size:11px;color:var(--text-sub);line-height:1.5;"></div>
-              <select id="research-sampling" class="flt-sel" style="width:100%;margin-top:6px;" onchange="setResearchSampling(this.value)">
-                <option value="500">속도 우선 (500건)</option>
-                <option value="1000" selected>기본 (1000건)</option>
-                <option value="2000">정확도 우선 (2000건)</option>
-              </select>
-            </div>
-
-            <!-- 대화 목록 -->
-            <div id="research-chat-list" style="flex:1;overflow-y:auto;padding:8px;">
-              <!-- newResearchChat()으로 생성 -->
-            </div>
-            <!-- 사용량 -->
-            <div style="padding:8px 12px;border-top:1px solid var(--border);font-size:11px;color:var(--text-mute);text-align:center;" id="research-usage">AI 설정 필요</div>
-          </div>
-          <!-- 우측: 채팅 영역 -->
-          <div style="flex:1;display:flex;flex-direction:column;background:var(--canvas);">
-            <!-- 채팅 메시지 영역 -->
-            <div id="research-messages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;">
-              <!-- 프리셋 선택 초기 화면 -->
-              <div id="research-welcome" style="display:flex;flex-direction:column;align-items:center;padding:30px 20px;gap:16px;">
-                <div style="font-size:16px;font-weight:600;color:var(--text-main);">VOC 분석을 무엇부터 시작하면 좋을까?</div>
-                <div style="font-size:13px;color:var(--text-sub);text-align:center;">아래 작업 중 하나를 선택하시거나,<br>다른 질문을 직접 입력해주세요.</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:600px;">
-                  <button onclick="sendResearchPreset('voc-top10')" class="research-preset-btn">
-                    <span style="font-size:18px;">💡</span>
-                    <strong>VOC Top10 이슈 파악</strong>
-                    <span>선택한 기간 동안에 가장 많이 발생한 Top 10 이슈를 확인합니다</span>
-                  </button>
-                  <button onclick="sendResearchPreset('complaint')" class="research-preset-btn">
-                    <span style="font-size:18px;">😠</span>
-                    <strong>주요 불만 VOC 분석하기</strong>
-                    <span>불만족 VOC를 집중 분석하여 서비스 만족도 개선을 위한 액션 아이템을 찾습니다</span>
-                  </button>
-                  <button onclick="sendResearchPreset('new-update')" class="research-preset-btn">
-                    <span style="font-size:18px;">🔥</span>
-                    <strong>신규 업데이트 반응 확인</strong>
-                    <span>신규 업데이트 혹은 주요 기능에 대한 VOC를 확인합니다</span>
-                  </button>
-                  <button onclick="sendResearchPreset('specific-issue')" class="research-preset-btn">
-                    <span style="font-size:18px;">🔍</span>
-                    <strong>특정 불편 사용자 파악</strong>
-                    <span>특정 불편을 겪고 있는 사용자의 상황을 파악하고 보고서를 작성합니다</span>
-                  </button>
-                  <button onclick="sendResearchPreset('visualize')" class="research-preset-btn">
-                    <span style="font-size:18px;">📊</span>
-                    <strong>시각화하기</strong>
-                    <span>VOC를 기반으로 막대·원형·파이 차트 등 차트를 그립니다</span>
-                  </button>
-                  <button onclick="sendResearchPreset('free')" class="research-preset-btn">
-                    <span style="font-size:18px;">💬</span>
-                    <strong>자유롭게 질문하기</strong>
-                    <span>자유롭게 질문하고 답변을 받습니다</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <!-- 입력 영역 -->
-            <div style="padding:12px 16px;background:var(--surface);border-top:1px solid var(--border);">
-              <div style="display:flex;gap:8px;align-items:flex-end;">
-                <textarea id="research-input" rows="2" placeholder="질문을 입력하세요..." style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;resize:none;outline:none;font-family:inherit;line-height:1.5;max-height:120px;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendResearchMessage();}"></textarea>
-                <button onclick="sendResearchMessage()" id="research-send-btn" style="padding:10px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">전송</button>
-              </div>
-              <div style="font-size:11px;color:var(--text-mute);margin-top:5px;text-align:center;">Enter로 전송 · Shift+Enter로 줄바꿈</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- 설정 (원본: 통계 설정 / 리서치 설정) -->
       <div id="panel-settings" style="display:none;overflow:auto;">
@@ -2489,18 +1767,7 @@ tbody td:first-child {
       </div>
 
       <!-- 위젯 순서 변경 (원본 대시보드 하단의 '순서 변경') -->
-      <div id="widget-order-bar" style="display:none;padding:10px 20px 24px;">
-        <button id="widget-order-btn" onclick="toggleWidgetOrderMode()"
-          style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;color:var(--text-sub);">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-            <line x1="2" y1="3" x2="10" y2="3"/><line x1="2" y1="6" x2="10" y2="6"/><line x1="2" y1="9" x2="10" y2="9"/>
-          </svg>
-          <span id="widget-order-label">순서 변경</span>
-        </button>
-        <div id="widget-order-hint" style="display:none;font-size:11px;color:var(--text-mute);margin-top:6px;">
-          마우스로 드래그해 순서를 변경할 수 있어요
-        </div>
-      </div>
+
 
       <!-- ─── VOC 분석 탭 (Syncly VOC 대시보드 벤치마킹) ─── -->
       <div id="view-voc-analysis" style="display:none;flex-direction:column;">
@@ -2523,50 +1790,7 @@ tbody td:first-child {
         </div>
       </div>
 
-      <div id="panel-fields" style="display:none;overflow:auto;">
-        <div style="padding:24px;max-width:1100px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-            <div>
-              <h2 style="font-size:18px;font-weight:700;color:var(--text-main);margin:0 0 4px;">필드 관리</h2>
-              <p style="font-size:12px;color:var(--text-sub);margin:0;">상담 데이터에 사용되는 필드를 관리합니다</p>
-            </div>
-            <button onclick="openNewFieldModal()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">
-              + 새 필드 추가
-            </button>
-          </div>
-          <div style="display:flex;gap:0;border-bottom:2px solid var(--canvas);margin-bottom:20px;" id="field-tabs">
-            <button class="field-tab active" onclick="switchFieldTab('all')" data-tab="all" style="padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-2px;">전체</button>
-            <button class="field-tab" onclick="switchFieldTab('direct')" data-tab="direct" style="padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text-sub);">직접 추가</button>
-            <button class="field-tab" onclick="switchFieldTab('channel')" data-tab="channel" style="padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text-sub);">채널톡</button>
-            <button class="field-tab" onclick="switchFieldTab('basic')" data-tab="basic" style="padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text-sub);">기본</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <input type="text" id="field-search" placeholder="검색어를 입력하세요" oninput="renderFieldList()"
-              style="width:280px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;"
-              onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-            <select id="field-sort" class="flt-sel" onchange="renderFieldList()">
-              <option value="usage">최다 사용 순</option>
-              <option value="name">이름 순</option>
-              <option value="type">타입 순</option>
-            </select>
-          </div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-            <table style="width:100%;border-collapse:collapse;">
-              <thead>
-                <tr style="background:var(--canvas);border-bottom:1px solid var(--border);">
-                  <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text-sub);">타입</th>
-                  <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text-sub);">필드</th>
-                  <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text-sub);">사용중인 곳</th>
-                  <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text-sub);">생성한 멤버</th>
-                  <th style="padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text-sub);">생성일</th>
-                </tr>
-              </thead>
-              <tbody id="field-list-body"></tbody>
-            </table>
-          </div>
-          <div id="field-list-count" style="margin-top:10px;font-size:12px;color:var(--text-mute);"></div>
-        </div>
-      </div>
+
 
     </div><!-- /dashboard-content -->
   </div><!-- /content -->
@@ -2669,101 +1893,10 @@ tbody td:first-child {
   </div>
 </div>
 <!-- report-create-modal -->
-<div id="report-create-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:500;align-items:center;justify-content:center;" onclick="if(event.target===this)closeReportCreationModal()">
-  <div style="background:var(--surface);border-radius:12px;padding:28px;width:460px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
-    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">&#x1F4CB; 새 리포트 만들기</div>
-    <div style="font-size:12px;color:var(--text-sub);margin-bottom:20px;">필터 조건을 설정하고 리포트 이름을 지정하세요</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div>
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">리포트 이름 *</label>
-        <input id="rpt-create-name" type="text" placeholder="예: 처리자 A 상담 실적"
-          style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;"
-          onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:5px;">브랜드</label>
-          <select id="rpt-create-brand" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;">
-            <option value="">전체 브랜드</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:5px;">상담 상태</label>
-          <select id="rpt-create-status" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;">
-            <option value="">전체</option>
-            <option value="closed">종료됨</option>
-            <option value="initial">진행중</option>
-            <option value="missed">미응대</option>
-            <option value="alfOnly">ALF 단독 처리</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:5px;">불만 여부</label>
-          <select id="rpt-create-complaint" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;">
-            <option value="">전체</option>
-            <option value="yes">&#x1F621; 불만 (1~2점)</option>
-            <option value="no">&#x1F60A; 만족 (3~5점)</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:5px;">담당자</label>
-          <select id="rpt-create-manager" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;">
-            <option value="">전체 담당자</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:5px;">태그 카테고리</label>
-          <select id="rpt-create-tagcat" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;">
-            <option value="">전체</option>
-          </select>
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-sub);margin-bottom:5px;">제품명</label>
-          <select id="rpt-create-product" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;">
-            <option value="">전체</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
-      <button onclick="closeReportCreationModal()" style="padding:8px 16px;border:1px solid var(--border);background:var(--surface);border-radius:7px;cursor:pointer;font-size:13px;color:var(--text-sub);">취소</button>
-      <button onclick="saveNewReport()" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">리포트 만들기</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- 새 필드 추가 모달 -->
-<div id="new-field-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:600;align-items:center;justify-content:center;" onclick="if(event.target===this)closeNewFieldModal()">
-  <div style="background:var(--surface);border-radius:12px;padding:28px;width:440px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
-    <div style="font-size:16px;font-weight:700;margin-bottom:4px;">+ 새 필드 추가</div>
-    <div style="font-size:12px;color:var(--text-sub);margin-bottom:20px;">상담 데이터에 사용할 새 필드를 정의하세요</div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div>
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">필드 이름 *</label>
-        <input id="nf-name" type="text" placeholder="예: 불량 유형" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">타입</label>
-        <div style="display:flex;gap:8px;">
-          <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:7px;cursor:pointer;flex:1;" onclick="this.style.borderColor='var(--primary)';document.getElementById('nf-type-text').style.borderColor='var(--border)';">
-            <input type="radio" name="nf-type" value="tag" id="nf-type-tag" checked style="accent-color:var(--primary);"> &#x1F3F7; 태그
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:7px;cursor:pointer;flex:1;" id="nf-type-text" onclick="this.style.borderColor='var(--primary)';document.getElementById('nf-type-tag').parentElement.style.borderColor='var(--border)';">
-            <input type="radio" name="nf-type" value="text" style="accent-color:var(--primary);"> &#x2261; 텍스트
-          </label>
-        </div>
-      </div>
-      <div>
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-sub);margin-bottom:6px;">설명 (선택)</label>
-        <input id="nf-desc" type="text" placeholder="이 필드의 용도를 설명하세요" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
-      <button onclick="closeNewFieldModal()" style="padding:8px 16px;border:1px solid var(--border);background:var(--surface);border-radius:7px;cursor:pointer;font-size:13px;color:var(--text-sub);">취소</button>
-      <button onclick="saveNewField()" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;">필드 추가</button>
-    </div>
-  </div>
-</div>
+
 
 <script>
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2990,26 +2123,10 @@ async function loadAllData(manifest) {
     }
   }
 
-  buildSidebar();
-  await loadSharedReports();     // 팀 공유본 (data/reports.json) 먼저 확인
-  seedOriginReports();
-  const saved = loadPrefs();
-  // 저장된 기간이 '직접 설정' 이면 그대로 존중한다.
-  // 그 외에는 조회 기간에 데이터가 실제로 있는지 확인하고, 없으면 최신 데이터 달로 옮긴다.
-  // (저장된 설정을 무조건 복원하면 데이터 없는 달로 돌아가 위젯이 전부 비어 보인다)
-  if (store.periodMode !== 'fixed') {
-    const pd = getPeriodDates();
-    const hasData = filterPeriod(Object.values(store.chatData).flat(), pd.start, pd.end).length > 0;
-    if (!hasData) jumpToLatestDataPeriod();
-  }
-  syncPeriodUnitUI();
-  updatePeriodLabel();
-  renderFilterBuilder('dash');
-  updateFilterLabel();
-  selectDashboard((saved && saved.activeDash && DASHBOARDS.some(d => d.id === saved.activeDash))
-    ? saved.activeDash : '통합-채팅');
-  // 공유 링크(#report=...)로 들어왔으면 그 리포트/기간으로 바로 이동
-  applyShareHash();
+  loadPrefs();
+  // 업로드된 데이터의 마지막 달을 기준으로 조회 기간을 맞춘다 (VOC 분석은 이 기준으로 동작한다)
+  jumpToLatestDataPeriod();
+  switchMainTab('vocanalysis');
 }
 
 /* 업로드된 데이터의 마지막 날짜가 속한 달로 초기 기간을 맞춘다.
@@ -3344,65 +2461,6 @@ function applyWidgetOrder(dashId, viewEl) {
 /* '순서 변경' 토글 — 켜면 섹션을 드래그해 재배치할 수 있다 */
 /* 툴바 '옵션' 메뉴.
    예전에는 버튼만 있고 onclick 이 없어 눌러도 아무 일도 일어나지 않았다. */
-function openDashOptions(btn) {
-  document.querySelectorAll('.dash-opt-menu').forEach(e => e.remove());
-  const d = getDashboard(currentDashboardId);
-  const items = [
-    { t: widgetOrderMode ? '위젯 순서 변경 완료' : '위젯 순서 변경', fn: toggleWidgetOrderMode },
-    { t: '집계 방식: ' + (store.aggMode === 'mean' ? '산술평균' : '중앙값') + ' (전환)', fn: toggleAggMode },
-    { t: '시간 기준: ' + (store.opHoursOnly !== false ? '운영 시간만' : '전체 시간') + ' (전환)', fn: toggleOpHours },
-    { sep: true },
-    { t: '표를 엑셀로 내려받기', fn: () => {
-        const mounts = Object.keys(widgetRows);
-        if (!mounts.length) return;
-        mounts.forEach(m => downloadTableExcel(m, widgetGroupBy[m], 'view'));
-      } },
-    { t: '필터 모두 지우기', fn: () => clearFilters('dash'), off: !store.filters.length },
-    { sep: true },
-    { t: '데이터 새로고침', fn: refreshData },
-    { t: '설정 열기', fn: openSettings },
-    { t: (document.documentElement.getAttribute('data-theme') === 'dark' ? '라이트 모드' : '다크 모드'), fn: toggleTheme },
-  ];
-  const m = document.createElement('div');
-  m.className = 'dash-opt-menu';
-  m.innerHTML = items.map((it, i) => it.sep
-    ? '<div class="dom-sep"></div>'
-    : '<button class="dom-item"' + (it.off ? ' disabled' : '') + ' data-i="' + i + '">' + escHtml(it.t) + '</button>').join('');
-  document.body.appendChild(m);
-  const r = btn.getBoundingClientRect(), w = m.offsetWidth, hgt = m.offsetHeight;
-  m.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
-  m.style.top = Math.min(r.bottom + 6, window.innerHeight - hgt - 8) + 'px';
-  m.querySelectorAll('.dom-item').forEach(b => b.addEventListener('click', () => {
-    const it = items[+b.dataset.i];
-    m.remove();
-    if (it && it.fn) it.fn();
-  }));
-  setTimeout(() => {
-    const close = ev => {
-      if (!m.contains(ev.target) && !btn.contains(ev.target)) { m.remove(); document.removeEventListener('mousedown', close); }
-    };
-    document.addEventListener('mousedown', close);
-  }, 0);
-}
-
-function toggleWidgetOrderMode() {
-  widgetOrderMode = !widgetOrderMode;
-  const d = getDashboard(currentDashboardId);
-  const viewEl = d ? document.getElementById(d.view) : null;
-  const label = document.getElementById('widget-order-label');
-  const hint = document.getElementById('widget-order-hint');
-  const btn = document.getElementById('widget-order-btn');
-  if (label) label.textContent = widgetOrderMode ? '순서 변경 완료' : '순서 변경';
-  if (hint) hint.style.display = widgetOrderMode ? '' : 'none';
-  if (btn) {
-    btn.style.borderColor = widgetOrderMode ? 'var(--primary)' : 'var(--border)';
-    btn.style.color = widgetOrderMode ? 'var(--primary)' : 'var(--text-sub)';
-  }
-  if (viewEl) attachWidgetDragHandlers(viewEl);
-}
-
-/* 현재 widgetOrderMode 상태에 맞춰 섹션에 드래그 핸들러/스타일을 붙이거나 뗀다.
-   재렌더 후에도 다시 호출해야 핸들러가 유지된다. */
 function attachWidgetDragHandlers(viewEl) {
   widgetSections(viewEl).forEach(el => {
     el.draggable = widgetOrderMode;
@@ -3960,12 +3018,6 @@ const GROUPERS = {
 const widgetRows = {};
 
 /* 기준 필드를 성격별로 묶는다 (원본의 기본/직접 추가/채널톡 탭에 대응) */
-const GROUPER_GROUPS = {
-  assigneeId: '상담 정보', teamId: '상담 정보', tags: '상담 정보',
-  __brand: '상담 정보', mediumType: '상담 정보', state: '상담 정보',
-  product: '고객 프로필',
-};
-
 function getGrouper(id) {
   return GROUPERS[id] || { label: id, key: r => r[id] ?? '(없음)', text: k => String(k) };
 }
@@ -3982,195 +3034,12 @@ const widgetGroupBy = { 'manager-table': 'assigneeId', 'tag-table': 'tags' };
       이전 구현이 정확히 그 버그였고, 그래서 기준 필드·표시 지표 변경이 전혀 먹지 않았다.
       -> 모든 핸들러는 addEventListener 로 붙인다.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const fieldPickerState = { tab: '전체', q: '', focus: null };
-
-/* 기준 필드 하나에 대한 실제 데이터 요약 (채움률 / 고유값 수 / 상위 값) */
-function grouperStats(grouperId, rows) {
-  const g = getGrouper(grouperId);
-  const counts = {};
-  let filled = 0;
-  const EMPTY = new Set(['(없음)', '(미확인)', '미배정', '태그 없음', '태그없음', '']);
-  rows.forEach(r => {
-    let k;
-    try { k = g.key(r); } catch (e) { k = null; }
-    if (k == null) return;                       // 제외 태그 등은 집계에서 빠진다
-    const label = g.text ? g.text(k) : String(k);
-    if (!EMPTY.has(label)) filled++;
-    counts[label] = (counts[label] || 0) + 1;
-  });
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  return {
-    label: g.label,
-    total: rows.length,
-    filled: filled,
-    fillPct: rows.length ? Math.round(filled / rows.length * 100) : 0,
-    distinct: sorted.filter(e => !EMPTY.has(e[0])).length,
-    top: sorted.slice(0, 5),
-    rest: Math.max(0, sorted.length - 5),
-  };
-}
-
-/* 오른쪽 정보 패널 */
-function fieldPickerInfoHTML(grouperId, rows) {
-  if (!grouperId) return '<div class="fp-empty">왼쪽에서 필드를 고르면<br>어떤 값이 들어있는지 보여드립니다.</div>';
-  const s = grouperStats(grouperId, rows);
-  const usedIn = Object.keys(widgetGroupBy).filter(k => widgetGroupBy[k] === grouperId).length;
-  let h = '<div class="fp-rname">' + escHtml(s.label) + '</div>' +
-    '<div class="fp-rdesc">' + escHtml(GROUPER_GROUPS[grouperId] || '기타') + ' 필드입니다. ' +
-    '아래 수치는 지금 화면에 보이는 ' + s.total.toLocaleString() + '건 기준입니다.</div>' +
-    '<div class="fp-stat">&#9639;&nbsp; 이 필드의 값은 <b>' + s.fillPct + '%</b> 차있어요</div>' +
-    '<div class="fp-stat">&#8594;&nbsp; 서로 다른 값이 <b>' + s.distinct.toLocaleString() + '개</b> 있어요</div>' +
-    (usedIn ? '<div class="fp-stat">&#9635;&nbsp; 다른 위젯에서 <b>' + usedIn + '회</b> 쓰이고 있어요</div>' : '');
-  if (s.top.length) {
-    h += '<div class="fp-vals"><div class="hd">이런 값이 들어있어요</div>' +
-      s.top.map((e, i) =>
-        '<div class="fp-vrow"><span class="sw" style="background:' + DIST_PALETTE[i % DIST_PALETTE.length] + '"></span>' +
-        '<span class="nm" title="' + escHtml(e[0]) + '">' + escHtml(e[0]) + '</span>' +
-        '<span class="ct">' + e[1].toLocaleString() + '건</span></div>').join('') +
-      (s.rest ? '<div class="fp-vrow" style="color:var(--text-mute);"><span class="sw" style="background:var(--border)"></span>' +
-        '<span class="nm">외 ' + s.rest.toLocaleString() + '개</span></div>' : '') +
-      '</div>';
-  }
-  return h;
-}
-
-/* 왼쪽 필드 목록 */
-function fieldPickerListHTML(cur) {
-  const q = fieldPickerState.q.trim().toLowerCase();
-  const tab = fieldPickerState.tab;
-  const ids = Object.keys(GROUPERS).filter(id => {
-    const grp = GROUPER_GROUPS[id] || '기타';
-    if (tab !== '전체' && grp !== tab) return false;
-    return !q || GROUPERS[id].label.toLowerCase().includes(q) || id.toLowerCase().includes(q);
-  });
-  if (!ids.length) return '<div class="fp-empty">검색 결과가 없습니다.</div>';
-  const byGrp = {}, order = [];
-  ids.forEach(id => {
-    const g = GROUPER_GROUPS[id] || '기타';
-    if (!byGrp[g]) { byGrp[g] = []; order.push(g); }
-    byGrp[g].push(id);
-  });
-  return order.map(g =>
-    '<div class="fp-sec">' + escHtml(g) + ' ' + byGrp[g].length + '개</div>' +
-    byGrp[g].map(id =>
-      '<button class="fp-item' + (id === cur ? ' on' : '') + '" data-gid="' + escHtml(id) + '">' +
-      '<svg class="ic" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4">' +
-      '<path d="M6.6 1.2H2.2a1 1 0 0 0-1 1v4.4l4.2 4.2a1 1 0 0 0 1.4 0l3.4-3.4a1 1 0 0 0 0-1.4z"/><circle cx="3.6" cy="3.6" r=".7" fill="currentColor"/></svg>' +
-      '<span class="nm">' + escHtml(GROUPERS[id].label) + '</span>' +
-      (id === cur ? '<span class="ck">&#10003;</span>' : '') +
-      '</button>').join('')
-  ).join('');
-}
-
-function openGroupByPicker(mountId) {
-  document.querySelectorAll('.fp-pop').forEach(el => el.remove());
-  const anchor = document.querySelector('.groupby-btn[data-mount="' + mountId + '"]');
-  if (!anchor) return;
-  const cur = widgetGroupBy[mountId];
-  const base = BASE_TABLE_METRICS[mountId] || DASH_METRICS.chatTable;
-  const st = tstate(mountId);
-  const shown = st.metrics || base;
-  const rows = widgetRows[mountId] || [];
-  fieldPickerState.focus = fieldPickerState.focus || cur;
-
-  const pop = document.createElement('div');
-  pop.className = 'fp-pop';
-  const metricIds = Object.keys(METRICS).filter(id => METRIC_GROUPS[mountId] ? METRIC_GROUPS[mountId].includes(id) : true);
-  const tabs = ['전체'].concat([...new Set(Object.keys(GROUPERS).map(id => GROUPER_GROUPS[id] || '기타'))]);
-
-  pop.innerHTML =
-    '<div class="fp-left">' +
-      '<div class="fp-title">나눠볼 기준을 선택해주세요</div>' +
-      '<input class="fp-search" type="text" placeholder="추가할 필드를 검색해주세요" value="' + escHtml(fieldPickerState.q) + '">' +
-      '<div class="fp-tabs">' + tabs.map(t =>
-        '<button class="fp-tab' + (t === fieldPickerState.tab ? ' on' : '') + '" data-tab="' + escHtml(t) + '">' + escHtml(t) + '</button>').join('') + '</div>' +
-      '<div class="fp-list">' + fieldPickerListHTML(cur) + '</div>' +
-      '<div class="fp-metrics">' +
-        '<div class="fp-sec" style="padding-top:0;">표시 지표 ' + shown.length + '개</div>' +
-        '<div class="fp-mgrid">' + metricIds.map(id =>
-          '<label class="fp-chk' + (shown.includes(id) ? ' on' : '') + '" data-mid="' + escHtml(id) + '">' +
-          '<input type="checkbox"' + (shown.includes(id) ? ' checked' : '') + '>' +
-          escHtml(METRICS[id].label) + '</label>').join('') + '</div>' +
-      '</div>' +
-    '</div>' +
-    '<div class="fp-right">' + fieldPickerInfoHTML(fieldPickerState.focus, rows) + '</div>';
-
-  document.body.appendChild(pop);
-
-  // 위치 — 앵커 아래, 화면 밖으로 나가지 않게 보정
-  const r = anchor.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
-  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8)) + 'px';
-  const wantTop = (r.bottom + 6 + ph > window.innerHeight - 8) ? r.top - ph - 6 : r.bottom + 6;
-  pop.style.top = Math.max(8, Math.min(wantTop, window.innerHeight - ph - 8)) + 'px';
-
-  const rerenderList = () => {
-    pop.querySelector('.fp-list').innerHTML = fieldPickerListHTML(widgetGroupBy[mountId]);
-    bindList();
-  };
-  const bindList = () => {
-    pop.querySelectorAll('.fp-item').forEach(b => {
-      b.addEventListener('mouseenter', () => {
-        fieldPickerState.focus = b.dataset.gid;
-        pop.querySelector('.fp-right').innerHTML = fieldPickerInfoHTML(b.dataset.gid, rows);
-      });
-      b.addEventListener('click', () => {
-        fieldPickerState.focus = b.dataset.gid;
-        setWidgetGroupBy(mountId, b.dataset.gid);   // 렌더 후 팝업을 다시 연다
-      });
-    });
-  };
-  bindList();
-
-  const sb = pop.querySelector('.fp-search');
-  sb.addEventListener('input', () => { fieldPickerState.q = sb.value; rerenderList(); });
-  pop.querySelectorAll('.fp-tab').forEach(t => t.addEventListener('click', () => {
-    fieldPickerState.tab = t.dataset.tab;
-    pop.querySelectorAll('.fp-tab').forEach(x => x.classList.toggle('on', x === t));
-    rerenderList();
-  }));
-  pop.querySelectorAll('.fp-chk').forEach(l => l.addEventListener('change', () => {
-    toggleTableMetric(mountId, l.dataset.mid, base);
-  }));
-
-  setTimeout(() => {
-    const close = ev => {
-      if (!pop.contains(ev.target) && !anchor.contains(ev.target)) {
-        pop.remove(); document.removeEventListener('mousedown', close);
-      }
-    };
-    document.addEventListener('mousedown', close);
-  }, 0);
-}
-
-/* 위젯별 기본 지표 세트 (지표 선택을 초기화할 기준) */
 const BASE_TABLE_METRICS = {
   'manager-table': DASH_METRICS.chatTable,
   'tag-table': ['count'].concat(DASH_METRICS.chatTable.slice(1)),
 };
 
 /* 위젯별로 고를 수 있는 지표 범위 (전화 지표를 채팅 테이블에 노출하지 않는다) */
-const CHAT_METRIC_IDS = ['count','responded','closedCount','responseRate','closedRate','complaintRate',
-  'firstReply','replyTime','handling','satisfaction','satisfactionRate','replyCount',
-  'alfToAgent','alfOnly','inboxChats','shareOfTotal'];
-const METRIC_GROUPS = {
-  'manager-table': CHAT_METRIC_IDS,
-  'tag-table': CHAT_METRIC_IDS,
-};
-
-
-function setWidgetGroupBy(mountId, grouperId) {
-  widgetGroupBy[mountId] = grouperId;
-  tstate(mountId).sortId = null;          // 기준이 바뀌면 이전 정렬 컬럼이 없을 수 있다
-  savePrefs();
-  document.querySelectorAll('.fp-pop').forEach(el => el.remove());
-  renderDashboard(currentDashboardId);
-  openGroupByPicker(mountId);             // 원본처럼 팝업을 열어 둔 채 결과를 보여준다
-}
-
-/* 지표 테이블 — 담당자/태그/제품명 등 어떤 기준으로도 같은 코드로 렌더.
-   ⚠️ thead와 tbody를 같은 배열(cols)에서 생성하므로 컬럼 수 불일치가 구조적으로 불가능하다. (CLAUDE.md #12)
-   opts = {mountId, groupBy, metrics, cur, prev, calcFn?, sortBy?} */
-/* 미분류 항목 — 원본 범례/그래프에는 나오지 않는다 (색을 차지하지 않게 뺀다) */
 const UNCLASSIFIED = new Set(['미배정', '태그없음', '태그 없음', '(없음)', '미지정', '(미확인)', '']);
 
 /* 정렬된 행에 시리즈 색을 배정. 미분류는 색 없이 둔다.
@@ -4355,22 +3224,6 @@ function addFilterFromGroup(mountId, grouperId, key) {
 }
 
 /* '변경' 팝업에서 표시 지표를 켜고 끈다 */
-function toggleTableMetric(mountId, metricId, baseMetrics) {
-  const st = tstate(mountId);
-  if (!st.metrics) st.metrics = baseMetrics.slice();
-  const at = st.metrics.indexOf(metricId);
-  if (at >= 0) { if (st.metrics.length > 1) st.metrics.splice(at, 1); }
-  else st.metrics.push(metricId);
-  st.sortId = null;
-  savePrefs();
-  renderDashboard(currentDashboardId);
-  openGroupByPicker(mountId);   // 팝업 유지
-}
-
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   포맷 함수
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function fmtSec(sec) {
   if (sec == null) return '-';
   sec = Math.round(Number(sec));
@@ -4594,20 +3447,6 @@ function periodRangeText(start, end) {
   return `${start.getMonth() + 1}/${start.getDate()} ${start.getHours()}시`;
 }
 
-function setPeriodType(type) {
-  if (!PERIOD_UNITS[type]) return;
-  periodType = type;
-  periodOffset = 0;
-  store.periodMode = 'auto';
-  document.querySelectorAll('.period-unit-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.unit === type);
-  });
-  updatePeriodLabel();
-  savePrefs();
-  renderDashboard(currentDashboardId);
-}
-
-/* 저장된 기간 단위를 드롭다운 UI 에 반영 */
 function syncPeriodUnitUI() {
   document.querySelectorAll('.period-unit-item').forEach(el => {
     el.classList.toggle('active', el.dataset.unit === periodType);
@@ -4616,50 +3455,9 @@ function syncPeriodUnitUI() {
   if (lb) lb.textContent = PERIOD_UNITS[periodType] || '주';
 }
 
-function togglePeriodUnitMenu() {
-  const m = document.getElementById('period-unit-menu');
-  if (m) m.style.display = m.style.display === 'none' ? '' : 'none';
-}
-
-function pickPeriodUnit(type) {
-  const m = document.getElementById('period-unit-menu');
-  if (m) m.style.display = 'none';
-  setPeriodType(type);
-}
-
-/* 직접 설정 범위 적용 */
-function applyCustomPeriod() {
-  const f = document.getElementById('period-from'), t = document.getElementById('period-to');
-  if (!f || !t || !f.value || !t.value) return;
-  store.periodMode = 'fixed';
-  store.customStart = f.value;
-  store.customEnd = t.value;
-  updatePeriodLabel();
-  savePrefs();
-  renderDashboard(currentDashboardId);
-}
-
-/* 자동 추적 모드로 되돌리기 */
 function usePeriodAuto() {
   store.periodMode = 'auto';
   periodOffset = 0;
-  updatePeriodLabel();
-  savePrefs();
-  renderDashboard(currentDashboardId);
-}
-
-function movePeriod(dir) {
-  if (store.periodMode === 'fixed') {
-    // 고정 범위는 같은 길이만큼 통째로 이동
-    const s = new Date(store.customStart), e = new Date(store.customEnd);
-    const days = Math.round((e - s) / 86400000) + 1;
-    s.setDate(s.getDate() + dir * days);
-    e.setDate(e.getDate() + dir * days);
-    store.customStart = ymd(s);
-    store.customEnd = ymd(e);
-  } else {
-    periodOffset += dir;
-  }
   updatePeriodLabel();
   savePrefs();
   renderDashboard(currentDashboardId);
@@ -4670,26 +3468,6 @@ function goToNow() {
 }
 
 /* 기간 설정 팝업 토글 */
-function togglePeriodRange() {
-  const el = document.getElementById('period-range-panel');
-  if (!el) return;
-  const open = el.style.display === 'none';
-  el.style.display = open ? '' : 'none';
-  if (open) syncPeriodPanel();
-}
-
-/* 팝업 상태를 현재 설정에 맞춘다 */
-function syncPeriodPanel() {
-  const a = document.getElementById('pmode-auto'), f = document.getElementById('pmode-fixed');
-  if (a) a.checked = store.periodMode !== 'fixed';
-  if (f) f.checked = store.periodMode === 'fixed';
-  const ws = document.getElementById('week-start-day');
-  if (ws) ws.value = String(store.weekStartDay);
-  updateWeekPreview();
-  updatePeriodLabel();
-}
-
-/* 원본 설정 화면의 '이번 주 미리보기' */
 function updateWeekPreview() {
   const el = document.getElementById('week-preview');
   if (!el) return;
@@ -4714,27 +3492,10 @@ function savePrefs() {
       opHoursOnly: store.opHoursOnly,
       weekStartDay: store.weekStartDay,
       excludedTags: [...store.excludedTags],
-      filters: store.filters,
-      periodType: periodType,
-      periodMode: store.periodMode,
-      customStart: store.customStart,
-      customEnd: store.customEnd,
-      activeDash: currentDashboardId,
-      widgetGroupBy: widgetGroupBy,
-      widgetOrder: widgetOrder,
-      tableState: Object.fromEntries(Object.entries(tableState).map(
-        ([k, v]) => [k, { sortId: v.sortId, sortDir: v.sortDir, pageSize: v.pageSize, metrics: v.metrics, chartType: v.chartType }])),
-      researchSampleSize: researchState.sampleSize,
       vaPeriod: vaState.period,
       vaCompare: vaState.compare,
       vaBriefs: vaState.briefs,
       vaChats: vaState.chats,
-      reports: savedReports,
-      rptBasis: reportState.basis,
-      rptTrendAll: reportState.trendAll,
-      rptTrendType: reportState.trendType,
-      managerGraph: managerGraphVisible,
-      tagGraph: tagGraphVisible,
       aiProvider: store.aiProvider,
       claudeUrl: store.claudeUrl,
       maskPII: store.maskPII,
@@ -4744,7 +3505,6 @@ function savePrefs() {
     localStorage.setItem(PREFS_KEY, JSON.stringify(data));
   } catch (e) { console.warn('설정 저장 실패:', e.message); }
 }
-
 function loadPrefs() {
   let d;
   try {
@@ -4759,26 +3519,10 @@ function loadPrefs() {
   if (typeof d.opHoursOnly === 'boolean') store.opHoursOnly = d.opHoursOnly;
   if (typeof d.weekStartDay === 'number') store.weekStartDay = d.weekStartDay;
   if (Array.isArray(d.excludedTags)) store.excludedTags = new Set(d.excludedTags);
-  if (Array.isArray(d.filters)) store.filters = d.filters;
-  if (d.periodType && PERIOD_UNITS[d.periodType]) periodType = d.periodType;
-  if (d.periodMode) store.periodMode = d.periodMode;
-  if (d.customStart) store.customStart = d.customStart;
-  if (d.customEnd) store.customEnd = d.customEnd;
-  if (d.widgetGroupBy) Object.assign(widgetGroupBy, d.widgetGroupBy);
-  if (d.widgetOrder) Object.assign(widgetOrder, d.widgetOrder);
-  if (d.tableState) Object.keys(d.tableState).forEach(k => Object.assign(tstate(k), d.tableState[k]));
-  if (typeof d.researchSampleSize === 'number') researchState.sampleSize = d.researchSampleSize;
   if (d.vaPeriod && VA_PERIODS[d.vaPeriod]) vaState.period = d.vaPeriod;
   if (typeof d.vaCompare === 'boolean') vaState.compare = d.vaCompare;
   if (d.vaBriefs && typeof d.vaBriefs === 'object') vaState.briefs = d.vaBriefs;
   if (Array.isArray(d.vaChats)) vaState.chats = d.vaChats;
-  // 빈 배열도 '사용자가 전부 지운 상태' 로 존중해야 하므로 length 를 보지 않는다
-  if (Array.isArray(d.reports)) { setReports(d.reports); reportsRestored = true; }
-  if (d.rptBasis && typeof d.rptBasis === 'object') reportState.basis = d.rptBasis;
-  if (typeof d.rptTrendAll === 'boolean') reportState.trendAll = d.rptTrendAll;
-  if (d.rptTrendType) reportState.trendType = d.rptTrendType;
-  if (typeof d.managerGraph === 'boolean') managerGraphVisible = d.managerGraph;
-  if (typeof d.tagGraph === 'boolean') tagGraphVisible = d.tagGraph;
   if (d.aiProvider) store.aiProvider = d.aiProvider;
   if (d.claudeUrl) store.claudeUrl = d.claudeUrl;
   if (typeof d.maskPII === 'boolean') store.maskPII = d.maskPII;
@@ -4786,7 +3530,6 @@ function loadPrefs() {
   if (d.ollamaUrl) store.ollamaUrl = d.ollamaUrl;
   return d;
 }
-
 /* 테마 적용 (버튼 라벨까지) */
 function applyTheme(mode) {
   document.documentElement.setAttribute('data-theme', mode);
@@ -5745,113 +4488,6 @@ function tagExcluded(t) {
 }
 
 /* 현재 로드된 데이터의 태그 분포. {major:[[이름,건수]..], full:[[이름,건수]..]} */
-function collectTagCounts() {
-  const major = {}, full = {};
-  Object.values(store.chatData).flat().forEach(c => {
-    const raw = String(c.tags || c.tag || '').trim();
-    if (!raw) return;
-    raw.split(/[,;]/).map(x => x.trim()).filter(Boolean).forEach(t => {
-      full[t] = (full[t] || 0) + 1;
-      const m = tagMajor(t);
-      if (m) major[m] = (major[m] || 0) + 1;
-    });
-  });
-  const sort = o => Object.entries(o).sort((a, b) => b[1] - a[1]);
-  return { major: sort(major), full: sort(full) };
-}
-
-const tagExcludeState = { tab: 'major', q: '' };
-
-/* 위젯 헤더의 '제외 태그' 버튼이 여는 팝업 */
-function openTagExcludePicker(ev) {
-  ev = ev || window.event;
-  if (ev && ev.stopPropagation) ev.stopPropagation();
-  document.querySelectorAll('.tx-pop').forEach(e => e.remove());
-  const anchor = ev && ev.currentTarget ? ev.currentTarget : (ev && ev.target ? ev.target.closest('.widget-act') : null);
-  if (!anchor) return;
-
-  const pop = document.createElement('div');
-  pop.className = 'tx-pop';
-  const draw = () => {
-    const counts = collectTagCounts();
-    const list = tagExcludeState.tab === 'major' ? counts.major : counts.full;
-    const q = tagExcludeState.q.trim().toLowerCase();
-    const shown = list.filter(e => !q || e[0].toLowerCase().includes(q));
-    pop.innerHTML =
-      '<div class="tx-head">' +
-        '<span class="tx-title">제외할 태그 고르기</span>' +
-        '<span class="tx-cnt">' + store.excludedTags.size + '개 제외 중</span>' +
-      '</div>' +
-      '<div class="tx-note">고른 태그는 <b>주요 문의 유형 분포</b>와 <b>상담 태그 테이블</b>, 상담 통계에서 함께 빠집니다. ' +
-        '대분류를 고르면 하위 태그도 모두 빠집니다.</div>' +
-      '<div class="tx-tabs">' +
-        '<button class="tx-tab' + (tagExcludeState.tab === 'major' ? ' on' : '') + '" data-tab="major">대분류 ' + counts.major.length + '</button>' +
-        '<button class="tx-tab' + (tagExcludeState.tab === 'full' ? ' on' : '') + '" data-tab="full">전체 태그 ' + counts.full.length + '</button>' +
-      '</div>' +
-      '<input class="tx-search" type="text" placeholder="태그 검색" value="' + escHtml(tagExcludeState.q) + '">' +
-      '<div class="tx-list">' + (shown.length
-        ? shown.map(e => {
-            const on = store.excludedTags.has(e[0]);
-            const byMajor = !on && store.excludedTags.has(tagMajor(e[0]));
-            return '<label class="tx-item' + (on || byMajor ? ' on' : '') + '"' +
-              (byMajor ? ' title="대분류 ' + escHtml(tagMajor(e[0])) + ' 제외로 함께 빠집니다"' : '') + '>' +
-              '<input type="checkbox"' + (on ? ' checked' : '') + (byMajor ? ' disabled' : '') +
-              ' data-tag="' + escHtml(e[0]) + '">' +
-              '<span class="nm">' + escHtml(e[0]) + '</span>' +
-              '<span class="ct">' + e[1].toLocaleString() + '</span></label>';
-          }).join('')
-        : '<div class="tx-empty">검색 결과가 없습니다.</div>') + '</div>' +
-      '<div class="tx-foot">' +
-        '<button class="tx-btn" data-act="clear"' + (store.excludedTags.size ? '' : ' disabled') + '>모두 해제</button>' +
-        '<span style="flex:1;"></span>' +
-        '<button class="tx-btn tx-primary" data-act="close">닫기</button>' +
-      '</div>';
-    bind();
-  };
-
-  const apply = () => { savePrefs(); renderDashboard(currentDashboardId); draw(); place(); };
-
-  const bind = () => {
-    pop.querySelectorAll('.tx-tab').forEach(b => b.addEventListener('click', () => {
-      tagExcludeState.tab = b.dataset.tab; draw(); place();
-    }));
-    const sb = pop.querySelector('.tx-search');
-    sb.addEventListener('input', () => {
-      tagExcludeState.q = sb.value;
-      const pos = sb.selectionStart;
-      draw(); place();
-      const ns = pop.querySelector('.tx-search');
-      ns.focus(); ns.setSelectionRange(pos, pos);
-    });
-    pop.querySelectorAll('.tx-item input').forEach(i => i.addEventListener('change', () => {
-      const t = i.dataset.tag;
-      if (store.excludedTags.has(t)) store.excludedTags.delete(t); else store.excludedTags.add(t);
-      apply();
-    }));
-    pop.querySelectorAll('.tx-btn').forEach(b => b.addEventListener('click', () => {
-      if (b.dataset.act === 'clear') { store.excludedTags.clear(); apply(); }
-      else pop.remove();
-    }));
-  };
-
-  const place = () => {
-    const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
-    pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
-    const want = (r.bottom + 6 + h > window.innerHeight - 8) ? r.top - h - 6 : r.bottom + 6;
-    pop.style.top = Math.max(8, Math.min(want, window.innerHeight - h - 8)) + 'px';
-  };
-
-  document.body.appendChild(pop);
-  draw(); place();
-  setTimeout(() => {
-    const close = e => {
-      if (!pop.contains(e.target) && !anchor.contains(e.target)) { pop.remove(); document.removeEventListener('mousedown', close); }
-    };
-    document.addEventListener('mousedown', close);
-  }, 0);
-}
-
-/* 위젯 헤더 버튼 라벨의 제외 개수를 갱신한다 */
 function syncTagExcludeLabels() {
   const n = store.excludedTags.size;
   document.querySelectorAll('.tx-badge').forEach(el => {
@@ -6004,29 +4640,6 @@ function renderTagTable(cur, prev, dateRangeStr) {
 }
 
 /* 그래프 보기 토글 (담당자) */
-function toggleManagerGraph() {
-  managerGraphVisible = !managerGraphVisible;
-  const sw = document.getElementById('manager-graph-sw');
-  if (sw) sw.classList.toggle('on', managerGraphVisible);
-  if (!managerGraphVisible) {
-    resetCanvas('manager-chart');
-    const lg = document.getElementById('manager-trend-legend'); if (lg) lg.innerHTML = '';
-  }
-  savePrefs();
-  // 렌더는 renderDashboard -> renderMetricTable -> renderManagerChart 한 경로로만 흐른다
-  renderDashboard(currentDashboardId);
-}
-
-/* ---------------------------------------------------------------
-   응대 현황 막대 차트 (원본 VOC STUDIO 스타일)
-     · 얇은 막대 + 둥근 모서리
-     · 응대 = 단색 / 미응대 = 사선 해칭
-     · 현재 버킷은 진한 색 + 회색 배경 밴드로 강조
-     · 마우스 올리면 HTML 카드 툴팁 (총 건수 + 전 구간 대비 증감 + 항목별)
---------------------------------------------------------------- */
-/* Chart.js 는 canvas 에 그리므로 CSS 변수(var(--x))를 해석하지 못한다.
-   문자열 'var(--x)' 를 그대로 넘기면 fillStyle 이 무효값이 되어 기본색(검정)으로 칠해진다.
-   -> 실제 색으로 치환해서 넘긴다. 테마를 바꾸면 캐시를 비운다(applyTheme). */
 let _cssVarCache = {};
 function cssVar(name) {
   if (_cssVarCache[name]) return _cssVarCache[name];
@@ -6482,37 +5095,6 @@ function renderTrendByGroup(opts) {
 }
 
 /* 그래프 유형 변경 */
-function setChartType(mountId, key) {
-  tstate(mountId).chartType = key;
-  savePrefs();
-  document.querySelectorAll('.ct-popup').forEach(el => el.remove());
-  renderDashboard(currentDashboardId);
-}
-
-function openChartTypeMenu(mountId, ev) {
-  document.querySelectorAll('.ct-popup').forEach(el => el.remove());
-  const anchor = ev && ev.currentTarget ? ev.currentTarget : null;
-  const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 80, left: 400 };
-  const cur = tstate(mountId).chartType || 'line';
-  const mid = jsAttr(mountId);
-  const pop = document.createElement('div');
-  pop.className = 'ct-popup';
-  pop.style.cssText = 'position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;' +
-    'box-shadow:0 8px 24px rgba(16,33,64,.12);padding:6px;z-index:400;min-width:130px;' +
-    'top:' + (rect.bottom + 6) + 'px;left:' + Math.max(12, rect.left - 40) + 'px;';
-  pop.innerHTML = '<div class="gp-sec">그래프 유형</div>' + Object.keys(CHART_TYPES).map(k =>
-    `<div class="gp-item${k === cur ? ' on' : ''}" onclick="setChartType(${mid},${jsAttr(k)})">${escHtml(CHART_TYPES[k].label)}</div>`
-  ).join('');
-  document.body.appendChild(pop);
-  setTimeout(() => {
-    const close = e => {
-      if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener('mousedown', close); }
-    };
-    document.addEventListener('mousedown', close);
-  }, 0);
-}
-
-
 function renderManagerChart(rows) {
   renderTrendByGroup({ canvasId: 'manager-chart', legendId: 'manager-trend-legend', mountId: 'manager-table',
     instanceKey: 'managerBar', groupBy: widgetGroupBy['manager-table'] || 'assigneeId', rows, top: 8,
@@ -6522,18 +5104,6 @@ function renderManagerChart(rows) {
 
 
 /* 그래프 보기 토글 (태그) */
-function toggleTagGraph() {
-  tagGraphVisible = !tagGraphVisible;
-  const sw = document.getElementById('tag-graph-sw');
-  if (sw) sw.classList.toggle('on', tagGraphVisible);
-  if (!tagGraphVisible) {
-    resetCanvas('tag-chart');
-    const lg = document.getElementById('tag-trend-legend'); if (lg) lg.innerHTML = '';
-  }
-  savePrefs();
-  renderDashboard(currentDashboardId);
-}
-
 function renderTagChartViz(rows) {
   renderTrendByGroup({ canvasId: 'tag-chart', legendId: 'tag-trend-legend', mountId: 'tag-table',
     instanceKey: 'tagBar', groupBy: widgetGroupBy['tag-table'] || 'tags', rows, top: 8,
@@ -7128,91 +5698,6 @@ function refreshData() {
      · '현재 상태의 표를 그대로'  : 화면에 보이는 컬럼만
      · '모든 필드 정보를 포함해'  : 표에 없는 필드까지 전부
 --------------------------------------------------------------- */
-function downloadTableExcel(mountId, groupById, mode) {
-  const st = tstate(mountId);
-  const base = BASE_TABLE_METRICS[mountId] || DASH_METRICS.chatTable;
-  const metrics = st.metrics || base;
-  const g = getGrouper(groupById);
-  const { start, end, prevStart, prevEnd } = getPeriodDates();
-  const cur = filterPeriod(getAllChatData(), start, end);
-  const prev = filterPeriod(getAllChatData(), prevStart, prevEnd);
-
-  if (mode === 'all') {
-    // 모든 필드 정보 — 원본 행 단위로 카탈로그 전체 컬럼을 내린다
-    const head = [g.label].concat(FIELD_CATALOG.map(f => f.label));
-    const data = [head].concat(cur.map(c =>
-      [g.text(g.key(c))].concat(FIELD_CATALOG.map(f => {
-        const v = fieldValue(c, f.key);
-        return v == null ? '' : (f.type === 'enum' ? enumLabel(f.key, v) : v);
-      }))
-    ));
-    saveSheet(data, g.label + '_전체필드');
-    return;
-  }
-
-  // 현재 표 그대로 — 집계 행 + 표시 지표
-  const grouped = groupBy(cur, g.key);
-  const prevGrouped = groupBy(prev, g.key);
-  const total = cur.length || 1, prevTotal = prev.length || 1;
-  const rows = Object.entries(grouped).map(([key, items]) => ({
-    name: g.text(key),
-    kc: calcKPIs(items), kp: calcKPIs(prevGrouped[key] || []),
-    ctxC: { count: items.length, total },
-    ctxP: { count: (prevGrouped[key] || []).length, total: prevTotal },
-  }));
-  const sortId = st.sortId && st.sortId !== '__group__' ? st.sortId : metrics[0];
-  rows.sort((a, b) => (getMetric(sortId).get(b.kc, b.ctxC) || 0) - (getMetric(sortId).get(a.kc, a.ctxC) || 0));
-
-  const head = [g.label].concat(metrics.map(id => getMetric(id).label));
-  const data = [head].concat(rows.map(r =>
-    [r.name].concat(metrics.map(id => {
-      const v = getMetric(id).get(r.kc, r.ctxC);
-      return v == null ? '' : (typeof v === 'number' ? Number(v.toFixed(2)) : v);
-    }))
-  ));
-  saveSheet(data, g.label);
-}
-
-function saveSheet(data, name) {
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 30));
-  const { start, end } = getPeriodDates();
-  XLSX.writeFile(wb, `${name}_${ymd(start)}_${ymd(end)}.xlsx`);
-}
-
-/* 엑셀 다운로드 옵션 팝업 (원본: 두 갈래 선택) */
-function openExcelMenu(mountId, groupById, ev) {
-  document.querySelectorAll('.excel-popup').forEach(el => el.remove());
-  const anchor = ev && ev.currentTarget ? ev.currentTarget : null;
-  const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 80, left: 400 };
-  const mid = jsAttr(mountId), gid = jsAttr(groupById);
-  const pop = document.createElement('div');
-  pop.className = 'excel-popup';
-  pop.style.cssText = 'position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;' +
-    'box-shadow:0 8px 24px rgba(16,33,64,.12);padding:6px;z-index:400;min-width:260px;' +
-    'top:' + (rect.bottom + 6) + 'px;left:' + Math.max(12, rect.left - 120) + 'px;';
-  pop.innerHTML =
-    `<div class="gp-item" onclick="downloadTableExcel(${mid},${gid},'view');this.parentNode.remove()">
-       <div style="font-weight:600;">현재 상태의 표를 그대로</div>
-       <div style="font-size:11px;color:var(--text-mute);">표에 추가된 필드만 파일에 포함됩니다.</div></div>` +
-    `<div class="gp-item" onclick="downloadTableExcel(${mid},${gid},'all');this.parentNode.remove()">
-       <div style="font-weight:600;">모든 필드 정보 다운 받기</div>
-       <div style="font-size:11px;color:var(--text-mute);">표에 추가되지 않은 필드도 포함됩니다.</div></div>`;
-  document.body.appendChild(pop);
-  setTimeout(() => {
-    const close = e => {
-      if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener('mousedown', close); }
-    };
-    document.addEventListener('mousedown', close);
-  }, 0);
-}
-
-/* 기존 호출부 호환 */
-function downloadManagerExcel(ev) { openExcelMenu('manager-table', widgetGroupBy['manager-table'] || 'assigneeId', ev); }
-function downloadTagExcel(ev)     { openExcelMenu('tag-table', widgetGroupBy['tag-table'] || 'tags', ev); }
-
-
 function setLoading(active, msg) {
   document.getElementById('loading').classList.toggle('active', active);
   if (msg) document.getElementById('loading-text').textContent = msg;
@@ -7221,50 +5706,30 @@ function setLoading(active, msg) {
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    메인 탭 전환 (대시보드 / 차트 / 리포트 / 리서치)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* 화면 전환. 지금은 VOC 분석 + 설정 두 개만 있다.
+   (대시보드·차트·리포트·리서치·필드 탭은 백업/index_전체기능_*.html 에 보관) */
 function switchMainTab(tab) {
-  ['dashboard','chart','report','research','fields','vocanalysis'].forEach(t => {
+  ['vocanalysis'].forEach(t => {
     const btn = document.getElementById('tab-' + t);
     if (btn) btn.classList.toggle('active', t === tab);
   });
-  const sidebarList  = document.getElementById('sidebar-list');
-  const reportList   = document.getElementById('report-sidebar-list');
-  if (sidebarList) sidebarList.style.display  = tab === 'dashboard' ? '' : 'none';
-  if (reportList)  reportList.style.display   = tab === 'report'    ? '' : 'none';
-  if (tab === 'dashboard') { renderDashboard(store.activeDash || '통합-채팅'); return; }
-  if (tab === 'chart')     { showOnlyView('view-chart-extra'); renderChartExtra(); return; }
-  if (tab === 'report')    {
-    showOnlyView('view-report');
-    renderReportList();
-    if (!reportState.activeId && savedReports.length) selectReport(savedReports[0].id);
-    else if (reportState.activeId) renderReportContent();
-    return;
-  }
-  if (tab === 'research')  { showOnlyView('view-research'); renderResearchChart(); renderResearchUI(); return; }
-  if (tab === 'fields') {
-    showOnlyView('panel-fields');
-    renderFieldList();
-    return;
-  }
-  if (tab === 'vocanalysis') {
-    showOnlyView('view-voc-analysis');
-    renderVOCAnalysis();
-    return;
-  }
+  if (tab === 'settings') { showOnlyView('panel-settings'); renderExcludedTagPicker(); updateWeekPreview2(); return; }
+  showOnlyView('view-voc-analysis');
+  renderVOCAnalysis();
 }
 
 /* 콘텐츠 영역의 모든 뷰/패널 id — 새 화면을 추가하면 반드시 여기에 등록한다.
    (등록을 빠뜨리면 다른 탭에서 화면 하단에 남는다 — CLAUDE.md #14) */
-const CONTENT_VIEWS = ['view-chat','view-phone','view-all','view-voc','view-defect',
-  'view-chart-extra','view-report','view-research','view-voc-analysis','panel-fields','panel-settings'];
+const CONTENT_VIEWS = ['view-voc-analysis', 'panel-settings'];
 
 /* 화면 전체를 채워야 하는 뷰 (내부에서 스크롤) */
-const FILL_VIEWS = new Set(['view-report', 'view-research', 'view-voc-analysis', 'panel-fields', 'panel-settings']);
+const FILL_VIEWS = new Set(['view-voc-analysis', 'panel-settings']);
 
 /* 내부를 세로 flex 로 쌓는 뷰 — 헤더 고정 + 본문만 스크롤하는 구조.
    ⚠️ 여기에 등록하지 않으면 showOnlyView 가 display:block 을 주고,
       그러면 자식의 flex:1 / min-height:0 이 전부 무효가 되어 내부 스크롤이 죽는다.
       (#content 는 fill 뷰에서 overflow:hidden 이라 바깥으로도 스크롤되지 않는다) */
-const FLEX_VIEWS = new Set(['view-report', 'view-research', 'view-voc-analysis']);
+const FLEX_VIEWS = new Set(['view-voc-analysis']);
 
 function showOnlyView(id) {
   CONTENT_VIEWS.forEach(v => {
@@ -7295,19 +5760,6 @@ function showOnlyView(id) {
 }
 
 /* ━━━━━ HTML onclick 호환 함수들 ━━━━━ */
-function rptSwitchSubTab(tab) { reportState.viewMode = tab; if (reportState.activeId) renderReportContent(); }
-/* 리포트 직접 기간 적용 */
-function rptApplyCustomPeriod() {
-  const f = document.getElementById('rpt-date-from'), t = document.getElementById('rpt-date-to');
-  if (!f || !t || !f.value || !t.value) return;
-  reportState.period = 'custom';
-  reportState.customStart = f.value;
-  reportState.customEnd = t.value;
-  if (reportState.activeId) renderReportContent();
-}
-
-/* 리포트 조회 기간에 데이터가 없으면 최신 데이터 달을 제안한다
-   (버튼이 오늘~90일뿐이면 몇 달 전 데이터에 닿을 수 없다) */
 function rptSyncPeriodNotice(count) {
   const el = document.getElementById('rpt-period-notice');
   if (!el) return;
@@ -7375,21 +5827,6 @@ function buildRptYearMonthOptions(year) {
 
 /* 연 또는 월을 고르면 그 달 1일~말일로 조회 기간을 잡는다.
    연도만 고른 상태면 아직 적용하지 않고 월 목록만 그 연도 기준으로 다시 그린다. */
-function rptApplyYearMonth(which) {
-  const ys = document.getElementById('rpt-ym-year'), ms = document.getElementById('rpt-ym-month');
-  if (!ys || !ms) return;
-  const y = +ys.value;
-  // 연도를 바꾸면 그 연도의 월별 건수로 월 목록을 다시 그린다 (고른 월은 유지된다)
-  if (which === 'year' && y) buildRptYearMonthOptions(y);
-  const m = +ms.value;
-  if (!y || !m) return;                    // 둘 다 골라야 적용
-  reportState.period = 'custom';
-  reportState.customStart = ymd(new Date(y, m - 1, 1));
-  reportState.customEnd   = ymd(new Date(y, m, 0));
-  if (reportState.activeId) renderReportContent(); else syncRptPeriodInputs();
-}
-
-/* 리포트 날짜 입력값을 현재 조회 기간에 맞춘다 */
 function syncRptPeriodInputs() {
   const f = document.getElementById('rpt-date-from'), t = document.getElementById('rpt-date-to');
   if (!f || !t) return;
@@ -7425,60 +5862,6 @@ function rptJumpToLatest() {
   renderReportContent();
 }
 
-function rptSetPeriod(p)       { setReportPeriod(p); }
-function rptApplySearch()      { reportState.searchQuery = (document.getElementById('rpt-search')||{}).value||''; reportState.page = 0; if (reportState.activeId) renderReportTable(getReportChats()); }
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   차트 탭 — 추가 시각화
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const extraCharts = {};
-
-
-/* ━━━━━ AI 차트 탭 ━━━━━ */
-let chartAIPeriod = '7d';
-let chartAIStart = null;
-let chartAIEnd = null;
-let chartAIChart = null;
-function renderChartExtra() {
-  renderChartSuggestions();
-  updateChartDataContext();
-}
-
-function setChartPeriod(p) {
-  chartAIPeriod = p;
-  document.querySelectorAll('.cp-btn').forEach(b => {
-    const isActive = b.id === 'cp-' + p;
-    b.classList.toggle('active', isActive);
-    b.style.background = isActive ? 'var(--primary)' : '#fff';
-    b.style.color      = isActive ? '#fff' : '#56657d';
-    b.style.borderColor= isActive ? 'var(--primary)' : '#e6eaf1';
-  });
-}
-
-function applyChartCustomDate(){
-  const from = document.getElementById('chart-date-from')?.value;
-  const to = document.getElementById('chart-date-to')?.value;
-  if(!from || !to) return;
-  const start = new Date(from+'T00:00:00');
-  const end = new Date(to+'T23:59:59');
-  if(start > end){ alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
-  // 기간 버튼 active 해제
-  ['7d','30d','60d','90d'].forEach(d=>{
-    const btn = document.getElementById('cp-'+d);
-    if(btn){
-      btn.classList.remove('active');
-      btn.style.background='#fff';
-      btn.style.color='#56657d';
-      btn.style.borderColor='#e6eaf1';
-    }
-  });
-  chartAIStart = start;
-  chartAIEnd = end;
-  updateChartDataContext();
-  renderChartExtra();
-}
-
-/* 원본 VOC STUDIO '이렇게 만들 수 있어요' 추천 11종 (앱 번들 실측 문구) */
 const CHART_SUGGESTIONS = [
   '날짜별 문의 수',
   '날짜별 CSAT 평균 점수',
@@ -7520,176 +5903,16 @@ function toggleChartRefField(key) {
 }
 
 /* AI 프롬프트에 붙일 참고 필드 설명 */
-function chartRefFieldsPrompt() {
-  if (!chartRefFields.size) return '';
-  const lines = [...chartRefFields].map(k => {
-    const f = getField(k);
-    return `- ${f.label} (${f.key}, ${f.type})`;
-  });
-  return '\n\n참고할 필드:\n' + lines.join('\n');
-}
-
 function setChartPrompt(text) {
   const inp = document.getElementById('chart-ai-input');
   if (inp) { inp.value = text; inp.focus(); }
 }
 
-function updateChartDataContext() {
-  // 현재 데이터 요약 생성 (AI에 전달할 컨텍스트)
-  const allC = Object.values(store.chatData).flat();
-  const now = new Date();
-  let start, end;
-  if (chartAIStart && chartAIEnd) {
-    start = chartAIStart;
-    end = chartAIEnd;
-  } else {
-    const days = chartAIPeriod === '7d' ? 7 : chartAIPeriod === '30d' ? 30 : chartAIPeriod === '60d' ? 60 : 90;
-    start = new Date(now); start.setDate(now.getDate() - days); start.setHours(0,0,0,0);
-    end = now;
-  }
-  window._chartCtxChats = filterPeriod(allC, start, end);
-}
-
-async function generateAIChart() {
-  if (!isAIReady()) { openAISettings(); return; }
-  const inp = document.getElementById('chart-ai-input');
-  const query = inp?.value?.trim();
-  if (!query) { alert('차트 내용을 입력하세요.'); return; }
-
-  const btn = document.getElementById('chart-gen-btn');
-  btn.disabled = true; btn.textContent = '생성 중...';
-  const output = document.getElementById('chart-ai-output');
-  output.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--primary);padding:40px;"><div class="spinner"></div><div style="font-size:13px;">AI가 차트를 만들고 있어요...</div></div>';
-
-  try {
-    updateChartDataContext();
-    const chats = window._chartCtxChats || [];
-    const tagMap = {};
-    chats.forEach(c => { const t=(c.tags||'기타').split('/')[0]; tagMap[t]=(tagMap[t]||0)+1; });
-    const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const managers = {};
-    chats.forEach(c => { if(!c.assigneeId) return; const n=store.managers[c.assigneeId]||c.assigneeId; managers[n]=(managers[n]||0)+1; });
-
-    // 날짜별 데이터
-    const dailyMap = {};
-    chats.forEach(c => {
-      const d = parseDate(c.createdAt||c.managedAt);
-      if (!d) return;
-      const key = (d.getMonth()+1)+'/'+(d.getDate());
-      if (!dailyMap[key]) dailyMap[key] = {count:0, complaint:0, csat:[], responded:0};
-      dailyMap[key].count++;
-      if (c['profile.csat']!=null && c['profile.csat']<=2) dailyMap[key].complaint++;
-      if (c['profile.csat']!=null) dailyMap[key].csat.push(c['profile.csat']);
-      if (c.firstAnsweredAt) dailyMap[key].responded++;
-    });
-    const dateKeys = Object.keys(dailyMap).sort();
-
-    const prompt = `당신은 데이터 시각화 전문가입니다. 아래 VOC 데이터를 분석하여 사용자가 요청한 차트를 Chart.js JSON 형식으로 만들어주세요.
-
-## 사용자 요청
-"${query}"${chartRefFieldsPrompt()}
-
-## 분석 기간: ${chartAIPeriod}
-## 총 데이터: ${chats.length}건
-
-## 날짜별 현황 (최근 10일)
-${dateKeys.slice(-10).map(k=>`${k}: ${dailyMap[k].count}건, 불만:${dailyMap[k].complaint}건, 만족도:${dailyMap[k].csat.length?((dailyMap[k].csat.reduce((a,v)=>a+v,0)/dailyMap[k].csat.length).toFixed(1))+'점':'-'}`).join('\n')}
-
-## 태그 Top10
-${top10.map((t,i)=>`${i+1}. ${t[0]}: ${t[1]}건`).join('\n')}
-
-## 담당자별 응대
-${Object.entries(managers).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([n,c])=>`${n}: ${c}건`).join('\n')}
-
-## 응답 형식 (반드시 이 JSON만 출력, 다른 텍스트 없이)
-{
-  "title": "차트 제목",
-  "type": "bar|line|doughnut|pie",
-  "labels": [...],
-  "datasets": [{"label":"...", "data":[...], "backgroundColor":["#2e6be6",...], "borderColor":["#2e6be6",...]}],
-  "options": {"indexAxis":"x", "responsive":true}
-}`;
-
-    const raw = await callGemini(prompt);
-    // JSON 추출
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('차트 데이터를 생성하지 못했습니다.');
-    const config = JSON.parse(jsonMatch[0]);
-
-    // 차트 렌더링
-    output.innerHTML = '<div style="padding:16px;"><div style="font-size:14px;font-weight:600;color:var(--text-main);margin-bottom:14px;">'+escHtml(config.title||query)+'</div><div style="height:350px;position:relative;"><canvas id="ai-generated-chart"></canvas></div></div>';
-
-    if (chartAIChart) { chartAIChart.destroy(); }
-    const ctx = document.getElementById('ai-generated-chart');
-    chartAIChart = new Chart(ctx.getContext('2d'), {
-      type: config.type || 'bar',
-      data: { labels: config.labels, datasets: config.datasets },
-      options: Object.assign({responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}, config.options||{})
-    });
-
-    // 히스토리에 추가
-    const histEl = document.getElementById('chart-ai-history');
-    const item = document.createElement('div');
-    item.innerHTML = '<div style="font-size:11px;color:var(--text-mute);padding:8px 0;border-top:1px solid var(--canvas);">이전 쿼리: '+escHtml(query)+'</div>';
-    if (histEl) histEl.insertBefore(item, histEl.firstChild);
-
-    inp.value = '';
-  } catch(e) {
-    output.innerHTML = '<div style="background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:8px;padding:16px;color:var(--negative);font-size:13px;">⚠️ '+e.message+'</div>';
-  } finally {
-    btn.disabled = false; btn.textContent = '차트 생성하기';
-  }
-}
-
-/* ━━━━━ 리서치 트렌드 차트 ━━━━━ */
-/* ━━━━━ 리서치 AI 채팅 ━━━━━ */
 let researchPeriod = '30d';
 let researchCustomStart = null;
 let researchCustomEnd = null;
 let researchSessions = []; // [{id, name, messages:[{role,content}]}]
 let researchCurrentId = null;
-
-function renderResearchUI() {
-  renderFilterBuilder('research');
-  updateResearchSamplingInfo();
-}
-
-function renderResearchChart() {
-  // 리서치 탭 초기화
-  if (!researchSessions.length) newResearchChat();
-  document.getElementById('research-usage').textContent = isAIReady() ? (store.aiProvider==='ollama'?'✓ Ollama 로컬 AI':'✓ Gemini AI 연결됨') : '좌측 하단 AI 설정 필요';
-}
-
-function setResearchPeriod(p) {
-  researchPeriod = p;
-  document.querySelectorAll('.rp-btn').forEach(b => {
-    const active = b.id === 'rp-' + p;
-    b.style.background  = active ? 'var(--primary-light)' : '#fff';
-    b.style.borderColor = active ? 'var(--primary)' : '#e6eaf1';
-    b.style.color       = active ? 'var(--primary)' : 'var(--text-sub)';
-  });
-}
-
-function applyResearchCustomDate(){
-  const from = document.getElementById('research-date-from')?.value;
-  const to = document.getElementById('research-date-to')?.value;
-  if(!from || !to) return;
-  const start = new Date(from+'T00:00:00');
-  const end = new Date(to+'T23:59:59');
-  if(start > end){ alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
-  // 버튼 active 해제
-  ['today','7d','30d','60d','90d'].forEach(d=>{
-    const btn = document.getElementById('rp-'+d);
-    if(btn){
-      btn.style.background='#fff';
-      btn.style.borderColor='#e6eaf1';
-      btn.style.color='#56657d';
-    }
-  });
-  researchCustomStart = start;
-  researchCustomEnd = end;
-  renderResearchChart();
-}
 
 function getResearchContext() {
   // researchSample() 이 기간·필터·샘플링을 모두 적용한 분석 대상을 준다.
@@ -7704,15 +5927,6 @@ function getResearchContext() {
   chats.forEach(c => { const t=c.tags||'기타'; tagMap[t]=(tagMap[t]||0)+1; });
   const top10 = Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
   return `[VOC 데이터 컨텍스트]\n기간: ${days}일 (${formatDateRange(start, end)}) | 분석 ${chats.length}건 / 전체 ${totalRows}건 | 응대율: ${kc.responseRate.toFixed(1)}% | 처리완료율: ${kc.closedRate.toFixed(1)}% | 불만율: ${kc.complaintRate.toFixed(1)}% | 평균 만족도: ${kc.avgSatisfaction?kc.avgSatisfaction.toFixed(2)+'점':'없음'}\n상위 태그: ${top10.map((t,i)=>`${i+1}.${t[0]}(${t[1]}건)`).join(', ')}`;
-}
-
-function newResearchChat() {
-  const id = Date.now().toString();
-  const name = '새 대화 ' + (researchSessions.length + 1);
-  researchSessions.push({ id, name, messages: [] });
-  researchCurrentId = id;
-  renderResearchChatList();
-  clearResearchMessages();
 }
 
 function renderResearchChatList() {
@@ -8022,15 +6236,6 @@ function researchSample() {
 
 let filterPanelOpen = false;
 
-function toggleDashboardFilter() {
-  const panel = document.getElementById('dash-filter-panel');
-  if (!panel) return;
-  filterPanelOpen = !filterPanelOpen;
-  panel.style.display = filterPanelOpen ? '' : 'none';
-  if (filterPanelOpen) renderFilterBuilder('dash');
-  updateFilterLabel();
-}
-
 function updateFilterLabel() {
   const n = store.filters.filter(f => f.field && f.op).length;
   const el = document.getElementById('dash-filter-label');
@@ -8102,7 +6307,6 @@ function clearFilters(scope) {
   fscope(scope).changed();
 }
 
-function clearDashboardFilter() { clearFilters('dash'); }
 function clearAllFilters()      { clearFilters('rpt'); }
 
 /* 원본의 '선택한 값으로 필터 추가하기' — 테이블 셀/AI 제안 값을 조건 행으로 만든다.
@@ -8204,20 +6408,6 @@ function isALFUnknown(c){
   var noTag=!tag||tag==='—'||tag==='-'||tag==='태그없음'||tag==='기타'||tag==='없음'||tag==='';
   return noAgent&&noTag;
 }
-function toggleExcludeALF(){
-  var cb=document.getElementById('df-exclude-alf');
-  store.excludeALF=cb?cb.checked:false;
-  var cbR=document.getElementById('rpt-exclude-alf');if(cbR)cbR.checked=store.excludeALF;
-  renderDashboard(currentDashboardId||store.activeDash||'통합-채팅');
-}
-function toggleRptExcludeALF(){
-  var cb=document.getElementById('rpt-exclude-alf');
-  store.excludeALF=cb?cb.checked:false;
-  var cbD=document.getElementById('df-exclude-alf');if(cbD)cbD.checked=store.excludeALF;
-  if(reportState.activeId)renderReportContent();
-}
-
-// getAllChatData에 필터 적용
 function getAllChatData() {
   // 필터 엔진 + ALF 제외 옵션을 한곳에서 적용한다.
   // (과거에는 이 함수가 두 번 정의되어 뒤 정의가 앞을 덮고 있었다 — 정리함)
@@ -8407,72 +6597,6 @@ function reportRowCount(r) {
     return evalFilters(rows, normalizeSavedFilters(r.filters)).length;
   } catch (e) { return null; }
 }
-function rptDownload(){downloadReportExcel();}
-
-/* 현재 리포트 + 조회 기간을 URL 해시에 담아 복사한다.
-   (예전에는 '공유' 버튼에 핸들러가 아예 없어 눌러도 아무 일도 일어나지 않았다) */
-function rptCopyShareLink(btn) {
-  if (!reportState.activeId) return;
-  const { start, end } = getReportPeriodDates();
-  const url = location.origin + location.pathname +
-    '#report=' + encodeURIComponent(reportState.activeId) + '&from=' + ymd(start) + '&to=' + ymd(end);
-  const done = ok => {
-    if (!btn) return;
-    const old = btn.innerHTML;
-    btn.innerHTML = ok ? '&#10003; 복사됨' : '복사 실패';
-    setTimeout(() => { btn.innerHTML = old; }, 1600);
-  };
-  if (navigator.clipboard && location.protocol !== 'file:') {
-    navigator.clipboard.writeText(url).then(() => done(true), () => done(false));
-  } else {
-    // file:// 에서는 Clipboard API 가 막히므로 execCommand 로 대체한다
-    const ta = document.createElement('textarea');
-    ta.value = url; ta.style.cssText = 'position:fixed;opacity:0;';
-    document.body.appendChild(ta); ta.select();
-    let ok = false;
-    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-    ta.remove(); done(ok);
-    if (!ok) showCopyFallback(btn, url);   // prompt() 가 막힌 환경(파일 프로토콜 등) 대비
-  }
-}
-
-/* 자동 복사가 막혔을 때 링크를 직접 고를 수 있게 띄운다 */
-function showCopyFallback(btn, url) {
-  document.querySelectorAll('.copy-fallback').forEach(e => e.remove());
-  const box = document.createElement('div');
-  box.className = 'copy-fallback dash-opt-menu';
-  box.style.cssText = 'padding:10px;min-width:340px;';
-  box.innerHTML = '<div style="font-size:11px;color:var(--text-mute);margin-bottom:6px;">' +
-    '자동 복사가 막혀 있습니다. 아래 링크를 선택해 복사하세요.</div>' +
-    '<input type="text" readonly style="width:100%;padding:6px 8px;border:1px solid var(--border);' +
-    'border-radius:6px;font-size:11px;background:var(--canvas);color:var(--text-main);">';
-  document.body.appendChild(box);
-  const inp = box.querySelector('input');
-  inp.value = url;
-  const r = (btn || document.body).getBoundingClientRect();
-  box.style.left = Math.max(8, Math.min(r.left, window.innerWidth - box.offsetWidth - 8)) + 'px';
-  box.style.top = Math.min(r.bottom + 6, window.innerHeight - box.offsetHeight - 8) + 'px';
-  inp.focus(); inp.select();
-  setTimeout(() => {
-    const close = ev => { if (!box.contains(ev.target)) { box.remove(); document.removeEventListener('mousedown', close); } };
-    document.addEventListener('mousedown', close);
-  }, 0);
-}
-
-/* 공유 링크로 들어온 경우 그 리포트/기간을 복원한다 */
-function applyShareHash() {
-  const h = location.hash.replace(/^#/, '');
-  if (!h) return false;
-  const q = {};
-  h.split('&').forEach(p => { const i = p.indexOf('='); if (i > 0) q[p.slice(0, i)] = decodeURIComponent(p.slice(i + 1)); });
-  if (!q.report) return false;
-  const r = savedReports.find(x => x.id === q.report);
-  if (!r) return false;
-  if (q.from && q.to) { reportState.period = 'custom'; reportState.customStart = q.from; reportState.customEnd = q.to; }
-  switchMainTab('report');
-  selectReport(r.id);
-  return true;
-}
 function rptRefreshData(){
   var btn=document.querySelector('[onclick="rptRefreshData()"]');
   if(btn){btn.disabled=true;btn.textContent='새로고침 중...';}
@@ -8635,102 +6759,6 @@ function rptAITag(){
 }
 
 
-async function rptOllamaAutoFill(){
-  if(!isAIReady()){openAISettings();return;}
-  const allChats=Object.values(store.chatData).flat();
-  const{start,end}=getPeriodDates();
-  // 전체 store 데이터를 대상으로 처리 (리포트 유무 무관)
-  const allStoreChats=Object.values(store.chatData).flat();
-  // 태그나 제품명이 비어있는 상담 대상 (summarizedMessage OR description 활용)
-  const targets=allStoreChats.filter(c=>{
-    const hasSummary=!!(c.summarizedMessage&&c.summarizedMessage.trim().length>10);
-    const hasDesc=!!(c.description&&c.description.trim().length>5);
-    const hasText=hasSummary||hasDesc;
-    const missingTag=!c.tags||c.tags==='기타'||c.tags==='—';
-    const missingProd=!c['profile.defective']&&!c['profile.return_product']&&!c['profile.product'];
-    return hasText&&(missingTag||missingProd);
-  }).slice(0,50);
-  if(!targets.length){alert('자동완성할 데이터가 없습니다.\n\n분석 가능한 텍스트가 없습니다.');return;}
-  const btn=document.getElementById('btn-ollama-autofill');
-  if(btn){btn.disabled=true;btn.textContent='분석 중... ('+targets.length+'건)';}
-  let filled=0,failed=0;
-  try{
-    for(let i=0;i<targets.length;i++){
-      const c=targets[i];
-      const summary=(c.summarizedMessage||c.description||'').replace(/\d{15,}/g,'').trim().slice(0,400);
-      const prompt='당신은 CS 상담 분류 전문가입니다. 아래 상담 요약을 분석해 JSON으로 응답하세요.\n\n상담요약: '+summary+'\n\n응답형식(JSON만, 설명없이):\n{"tag":"태그명","product":"제품명또는빈문자열","issue":"문제유형한줄요약"}\n\ntag는 다음 중 하나: 배송문의/교환반품/상품문의/불량/AS/결제취소/기타\nproduct는 상담에서 언급된 제품명 (없으면 빈 문자열)\nissue는 15자 이내 한국어 요약';
-      try{
-        const result=await callGemini(prompt);
-        // JSON 파싱
-        const jsonMatch=result.match(/\{[^}]+\}/);
-        if(jsonMatch){
-          const parsed=JSON.parse(jsonMatch[0]);
-          // store.chatData에서 해당 chat 찾아서 업데이트
-          for(const brand of Object.keys(store.chatData)){
-            const idx=store.chatData[brand].findIndex(r=>r.id===c.id);
-            if(idx!==-1){
-              if(!store.chatData[brand][idx].tags&&parsed.tag)store.chatData[brand][idx].tags=parsed.tag;
-              if(!store.chatData[brand][idx]['profile.defective']&&parsed.product)store.chatData[brand][idx]['profile.defective']=parsed.product;
-              if(!store.chatData[brand][idx].description&&parsed.issue)store.chatData[brand][idx].description=parsed.issue;
-              break;
-            }
-          }
-          filled++;
-        }
-      }catch(e){failed++;}
-      // 진행상황 업데이트
-      if(btn)btn.textContent='분석 중... ('+(i+1)+'/'+targets.length+'건)';
-      // Ollama 과부하 방지 - 각 요청 후 짧은 딜레이
-      if(store.aiProvider==='ollama')await new Promise(r=>setTimeout(r,200));
-    }
-  }finally{
-    if(btn){btn.disabled=false;btn.innerHTML='<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M5 7l1.5 1.5L9 5"/></svg> AI 필드 자동완성';}
-  }
-  if(reportState.activeId)renderReportTable(getReportChats());
-  // store 업데이트 내역 콘솔 확인
-  console.log('[AI자동완성] 완료:', filled, '건 업데이트');
-  alert('AI 자동완성 완료!\n\n✅ 완성: '+filled+'건\n❌ 실패: '+failed+'건\n\n표가 새로고침되었습니다.');
-}
-function rptResearch(){reportState.viewMode='stats';renderReportContent();setTimeout(()=>rptRunAIAnalysis('pattern'),300);}
-function rptAddFilter(){
-  // 팝업을 열고 조건 행을 하나 붙인다
-  if (!document.getElementById('rpt-filter-popup')) toggleRptFilterPanel();
-  addFilterRow('rpt');
-}
-
-
-function rptNewReport(){createNewReport();}
-function rptCloseDetail(){const p=document.getElementById('rpt-detail-panel');if(p)p.style.display='none';}
-function searchReportTable(){rptApplySearch();}
-
-async function rptRunAIAnalysis(type){
-  if(!isAIReady()){openAISettings();return;}
-  const outputEl=document.getElementById('rpt-ai-output');
-  if(!outputEl)return;
-  outputEl.innerHTML='<div style="display:flex;align-items:center;gap:8px;color:var(--primary);padding:12px 0;font-size:12px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span>&nbsp;분석 중...</div>';
-  document.getElementById('rpt-ai-section')?.scrollIntoView({behavior:'smooth',block:'start'});
-  try{
-    const cur=getReportChats();
-    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
-    const top10=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const kc=calcKPIs(cur);
-    let prompt;
-    if(type==='pattern'){
-      const hcTags=Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
-      prompt='CX 데이터 분석가입니다. 이 리포트 데이터에서 반복 VOC 패턴을 분석해주세요.\n\n상위 VOC 유형:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만율 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총 분석: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
-    }else{
-      prompt='이커머스 CX 개선 컨설턴트입니다.\n\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%\n주요 문의:\n'+top10.slice(0,5).map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
-    }
-    const result=await callGemini(prompt);
-    outputEl.innerHTML='<div style="font-size:12px;line-height:1.8;color:var(--text-sub);">'+renderMarkdown(result)+'</div>';
-  }catch(e){
-    outputEl.innerHTML='<div style="background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:7px;padding:12px;color:var(--negative);font-size:12px;">⚠️ '+e.message+'</div>';
-  }
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   AI API (Gemini / Ollama 라우팅)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function isAIReady() {
   if (store.aiProvider === 'ollama') return true;
   if (store.aiProvider === 'claude') return true;
@@ -8989,8 +7017,6 @@ function switchAITab(tab) {
   }
 }
 
-function showAIThinking(id){const _t=document.getElementById(id);if(!_t){console.warn('showAIThinking: 대상 컨테이너 없음 —',id);return;}_t.innerHTML='<div style="display:flex;align-items:center;gap:8px;color:var(--primary);font-size:13px;padding:20px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);animation:ai-pulse 1.2s ease-in-out infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);animation:ai-pulse 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);animation:ai-pulse 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span><span>AI가 분석 중입니다...</span></div>';}
-
 function renderMarkdown(md){
   if(!md) return '';
   return md
@@ -9069,64 +7095,6 @@ function updateAIKeyStatus(){
   }
 }
 
-async function generateReport(){
-  // UI 가 아직 연결되지 않은 기능 — 컨테이너가 없으면 아무 것도 하지 않는다
-  if(!document.getElementById('report-output')){console.warn('generateReport: UI 미연결');return;}
-  const btn=document.getElementById('report-gen-btn');if(btn)btn.disabled=true;
-  showAIThinking('report-output');
-  try{
-    const {start,end,prevStart,prevEnd}=getPeriodDates();
-    const dash=store.activeDash||'통합-채팅';const brand=dash.split('-')[0];
-    const allC=brand==='통합'?Object.values(store.chatData).flat():(store.chatData[brand]||[]);
-    const cur=filterPeriod(allC,start,end),prev=filterPeriod(allC,prevStart,prevEnd);
-    if(!cur.length){document.getElementById('report-output').innerHTML='<div style="background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:8px;padding:14px;color:var(--negative);">선택 기간에 데이터가 없습니다.</div>';return;}
-    const kc=calcKPIs(cur),kp=calcKPIs(prev);
-    const tagMap={};cur.forEach(c=>{const t=c.tags||'태그없음';tagMap[t]=(tagMap[t]||0)+1;});
-    const top7=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
-    const total=cur.length||1;
-    const periodStr=(start.getMonth()+1)+'/'+start.getDate()+' ~ '+(end.getMonth()+1)+'/'+end.getDate();
-    const brandLabel=brand==='통합'?'브랜드 통합':brand;
-    const mgrMap={};cur.forEach(c=>{if(!c.assigneeId)return;const n=store.managers[c.assigneeId]||c.assigneeId;mgrMap[n]=(mgrMap[n]||0)+1;});
-    const prompt='당신은 CX 전문 분석가입니다. 아래 데이터를 바탕으로 한국어 주간 VOC 리포트를 마크다운으로 작성해주세요.\n\n브랜드: '+brandLabel+' 기간: '+periodStr+'\n총 채팅: '+kc.totalChats+'건 (전기간: '+kp.totalChats+'건)\n응대율: '+kc.responseRate.toFixed(1)+'% / 처리완료율: '+kc.closedRate.toFixed(1)+'% / 불만율: '+kc.complaintRate.toFixed(1)+'%\n상위 문의:\n'+top7.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n담당자:\n'+Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]).map(([n,c])=>'- '+n+': '+c+'건').join('\n')+'\n\n# '+periodStr+' VOC 리포트\n## 📌 이번 주 요약\n## 📈 주요 변화\n## ⚠️ 주목할 이슈\n## 💡 개선 제안 (3가지)';
-    const result=await callGemini(prompt);
-    document.getElementById('report-output').innerHTML='<div style="line-height:1.8;color:var(--text-sub);">'+renderMarkdown(result)+'</div>';
-  }catch(e){document.getElementById('report-output').innerHTML='<div style="background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:8px;padding:14px;color:var(--negative);">⚠️ '+e.message+'</div>';}
-  finally{if(btn)btn.disabled=false;}
-}
-
-async function generatePatterns(){
-  if(!document.getElementById('research-output')){console.warn('generatePatterns: UI 미연결');return;}
-  showAIThinking('research-output');
-  try{
-    const {start,end}=getPeriodDates();const allC=Object.values(store.chatData).flat();const cur=filterPeriod(allC,start,end);
-    if(!cur.length){document.getElementById('research-output').innerHTML='<div style="background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:8px;padding:14px;color:var(--negative);">선택 기간에 데이터가 없습니다.</div>';return;}
-    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
-    const top10=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const hcTags=Object.entries(tagMap).filter(([tag,n])=>{const items=cur.filter(c=>c.tags===tag);const comp=items.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length;return n>=3&&comp/n>0.3;}).slice(0,5);
-    const prompt='CX 데이터 분석가입니다. 반복 VOC 패턴을 분석해주세요.\n상위 VOC:\n'+top10.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n불만 높은 태그:\n'+(hcTags.map(([t,n])=>'- '+t+': '+n+'건').join('\n')||'없음')+'\n총: '+cur.length+'건\n\n## 🔁 반복 VOC 패턴\n## 🚨 고위험 VOC\n## 📦 카테고리별 인사이트';
-    const result=await callGemini(prompt);
-    document.getElementById('research-output').innerHTML='<div style="line-height:1.8;color:var(--text-sub);">'+renderMarkdown(result)+'</div>';
-  }catch(e){document.getElementById('research-output').innerHTML='<div style="background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:8px;padding:14px;color:var(--negative);">⚠️ '+e.message+'</div>';}
-}
-
-async function generateImprovement(){
-  if(!document.getElementById('research-output')){console.warn('generateImprovement: UI 미연결');return;}
-  showAIThinking('research-output');
-  try{
-    const {start,end}=getPeriodDates();const allC=Object.values(store.chatData).flat();const cur=filterPeriod(allC,start,end);const kc=calcKPIs(cur);
-    const tagMap={};cur.forEach(c=>{const t=c.tags||'기타';tagMap[t]=(tagMap[t]||0)+1;});
-    const top5=Object.entries(tagMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    const prompt='이커머스 CX 개선 컨설턴트입니다.\n현황: 총 '+kc.totalChats+'건, 응대율 '+kc.responseRate.toFixed(1)+'%, 처리완료율 '+kc.closedRate.toFixed(1)+'%, 불만 '+kc.complaintRate.toFixed(1)+'%\n주요 문의:\n'+top5.map((t,i)=>(i+1)+'. '+t[0]+': '+t[1]+'건').join('\n')+'\n\n## 🎯 단기 개선 과제 (1-2주)\n## 📋 중기 개선 과제\n## 🤖 자동화 기회\n## 📊 모니터링 권고 지표';
-    const result=await callGemini(prompt);
-    document.getElementById('research-output').innerHTML='<div style="line-height:1.8;color:var(--text-sub);">'+renderMarkdown(result)+'</div>';
-  }catch(e){document.getElementById('research-output').innerHTML='<div style="background:var(--negative-soft);border:1px solid var(--negative-soft);border-radius:8px;padding:14px;color:var(--negative);">⚠️ '+e.message+'</div>';}
-}
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   리포트 탭 — 상태
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-// 사용자가 직접 생성한 리포트 목록 (세션 중 메모리에 저장)
-// 각 항목: { id, name, filters: {status, complaint, manager, tagCat, product, brand}, createdAt }
 const savedReports = [];
 
 /* ---------------------------------------------------------------
@@ -9307,31 +7275,12 @@ let sharedReports = null;      // data/reports.json 원본 (되돌리기용)
 let reportsRestored = false;
 
 /* 저장소의 팀 공유본을 읽어 둔다 (없으면 조용히 넘어간다) */
-async function loadSharedReports() {
-  try {
-    const res = await fetch(GITHUB_RAW + 'data/reports.json?t=' + Date.now());
-    if (!res.ok) return null;
-    const d = await res.json();
-    const list = Array.isArray(d) ? d : d.reports;
-    if (Array.isArray(list) && list.length) { sharedReports = list; return list; }
-  } catch (e) { /* 공유본이 아직 없을 수 있다 */ }
-  return null;
-}
-
 function setReports(list) {
   savedReports.length = 0;
   list.forEach(r => savedReports.push(Object.assign({}, r)));
 }
 
 /* 로컬 저장분 > 팀 공유본 > 코드에 박힌 원본 순으로 채운다 */
-function seedOriginReports() {
-  if (reportsRestored) return;                     // 사용자가 지운 상태(빈 목록 포함)를 존중한다
-  if (savedReports.length) return;                 // loadPrefs 가 이미 채웠다
-  if (sharedReports) { setReports(sharedReports); return; }
-  setReports(ORIGIN_REPORTS);
-}
-
-/* 리포트 목록을 JSON 파일로 내려받는다 (이 파일을 data/reports.json 으로 두고 업로드하면 팀 공유본이 된다) */
 function exportReports() {
   const blob = new Blob([JSON.stringify(savedReports, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -9499,9 +7448,6 @@ function toggleReportGroup(name){
   renderReportList();
 }
 
-function createNewReport(){
-  openReportCreationModal();
-}
 function selectReport(id){
   const report=savedReports.find(r=>r.id===id);
   if(!report)return;
@@ -9547,13 +7493,6 @@ function renderReportContent(){
   }
 }
 
-function setReportPeriod(p){
-  reportState.period=p;
-  ['today','7d','30d','60d','90d'].forEach(pp=>{const btn=document.getElementById('rpt-p-'+pp);if(btn)btn.classList.toggle('active',pp===p);});
-  if(reportState.activeId)renderReportContent();
-}
-
-/* 값 문자열에 안정적인 색을 배정 (같은 값이면 항상 같은 색) */
 function valueColorIndex(s) {
   let n = 0;
   const t = String(s);
@@ -9695,25 +7634,6 @@ function showRowDetail(id){
 }
 
 
-function downloadReportExcel(){
-  const chats=getReportChats();if(!chats.length)return alert('데이터가 없습니다.');
-  const data=[['불만여부','대표문의유형','제품명','상담태그','고객명','담당자','만족도','날짜'],
-    ...chats.map(c=>{const csat=c['profile.csat'];return[csat==null?'미측정':csat<=2?'불만':csat<=3?'보통':'만족',(c.tags||'').split('/')[0],c['profile.defective']||c['profile.return_product']||c['profile.product']||'',c.tags||'',c.name||'',store.managers[c.assigneeId]||c.assigneeId||'',csat!=null?csat:'',c.createdAt||''];})];
-  const ws=XLSX.utils.aoa_to_sheet(data),wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'리포트');
-  const r=savedReports.find(r=>r.id===reportState.activeId);
-  XLSX.writeFile(wb,(r?r.name:'리포트')+'_'+reportState.period+'.xlsx');
-}
-
-/* ━━━ 리포트 통계 뷰 ━━━ */
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   리포트 상담 통계 — 원본 VOC STUDIO 구성 재현
-     📋 요약 / 📈 추이 그래프 / 🏆 태그별 / 😊 담당자별 / 📊 상담 통계 / 🔍 변화 감지
-   각 섹션 헤더에 기준 · 계산방식 · 운영 시간만 이 붙는다.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/* 섹션 헤더의 '기준' — 원본은 섹션마다 따로 고를 수 있다 */
 const RPT_BASIS = {
   count:      { label: '문의 수',     of: rows => rows.length,                             fmt: v => v.toLocaleString() + '건' },
   complaint:  { label: '불만 수',     of: rows => rows.filter(rptIsComplaint).length,      fmt: v => v.toLocaleString() + '건' },
@@ -9722,8 +7642,6 @@ const RPT_BASIS = {
   firstReply: { label: '첫 응대 시간', of: rows => rptTimeAgg(rows, 'timeToFirstAnswerInOperation', 'timeToFirstAnswer'), fmt: fmtSec },
   handling:   { label: '상담 처리 시간', of: rows => rptTimeAgg(rows, 'memberHandlingTimeInOperation', 'memberHandlingTime'), fmt: fmtSec },
 };
-const RPT_BASIS_ORDER = ['count', 'complaint', 'complaintR', 'firstReply', 'handling'];
-
 function rptIsComplaint(c) {
   const v = c['profile.csat'];
   return v != null && v !== '' && Number(v) <= 2;
@@ -9742,25 +7660,9 @@ function rptTimeAgg(rows, opField, allField) {
   return vals.length ? aggTime(vals) : null;
 }
 
-function rptCycleBasis(scope) {
-  const cur = reportState.basis[scope] || 'count';
-  const i = RPT_BASIS_ORDER.indexOf(cur);
-  reportState.basis[scope] = RPT_BASIS_ORDER[(i + 1) % RPT_BASIS_ORDER.length];
-  savePrefs();
-  renderReportContent();
-}
 function rptBasisOf(scope) { return RPT_BASIS[reportState.basis[scope] || 'count'] || RPT_BASIS.count; }
 
-function rptToggleTrendAll() { reportState.trendAll = !reportState.trendAll; savePrefs(); renderReportContent(); }
 const RPT_TREND_TYPES = [['line', '선'], ['bar', '막대'], ['stacked', '누적 막대']];
-function rptCycleTrendType() {
-  const i = RPT_TREND_TYPES.findIndex(t => t[0] === reportState.trendType);
-  reportState.trendType = RPT_TREND_TYPES[(i + 1) % RPT_TREND_TYPES.length][0];
-  savePrefs();
-  renderReportContent();
-}
-
-/* 섹션 헤더 라벨 동기화 (계산방식/운영시간만은 전역 상태라 여러 헤더에 같이 반영해야 한다) */
 function rptSyncStatOpts() {
   document.querySelectorAll('.agg-mode-label').forEach(el => {
     el.textContent = store.aggMode === 'mean' ? '산술평균' : '중앙값';
@@ -10190,28 +8092,7 @@ function toggleTagBoard() {
 }
 
 /* 계산방식 전환 — 원본 리포트 통계의 '계산방식: 중앙값' */
-function toggleAggMode() {
-  store.aggMode = store.aggMode === 'mean' ? 'median' : 'mean';
-  savePrefs();
-  syncStatOpts();
-  renderReportContent();
-}
-
-/* '운영 시간만' 전환 — InOperation 필드 사용 여부 */
-function toggleOpHours() {
-  store.opHoursOnly = !store.opHoursOnly;
-  savePrefs();
-  syncStatOpts();
-  renderReportContent();
-}
-
-/* 설정 바 표시 동기화 */
 function syncStatOpts() { rptSyncStatOpts(); }
-
-function toggleTagMajor() {
-  reportState.tagMajorOnly = !reportState.tagMajorOnly;
-  renderReportContent();
-}
 
 function lbFilterTag(key) {
   addFilterFromValue('tagCat', key, 'rpt');
@@ -10264,152 +8145,9 @@ function deleteReport(id){
   renderReportList();
 }
 
-function openReportCreationModal(){
-  const modal=document.getElementById('report-create-modal');
-  if(!modal)return;
-  const allChats=Object.values(store.chatData).flat();
-  const brands=Object.keys(store.chatData);
-  const managers=[...new Set(allChats.map(c=>store.managers[c.assigneeId]).filter(Boolean))].sort();
-  const tagCats=[...new Set(allChats.map(c=>(c.tags||'').split('/')[0]).filter(Boolean))].sort();
-  const products=[...new Set(allChats.map(c=>normalizeProductName(c['profile.defective']||c['profile.return_product']||c['profile.product']||'')).filter(Boolean))].sort().slice(0,30);
-  const fill=(id,opts)=>{
-    const el=document.getElementById(id);if(!el)return;
-    const cur=el.children[0].outerHTML;
-    el.innerHTML=cur+opts.map(o=>'<option value="'+escHtml(o)+'">'+escHtml(o)+'</option>').join('');
-  };
-  fill('rpt-create-brand',brands);
-  fill('rpt-create-manager',managers);
-  fill('rpt-create-tagcat',tagCats);
-  fill('rpt-create-product',products);
-  document.getElementById('rpt-create-name').value='';
-  modal.style.display='flex';
-  setTimeout(()=>document.getElementById('rpt-create-name').focus(),100);
-}
-
-function closeReportCreationModal(){
-  const modal=document.getElementById('report-create-modal');
-  if(modal)modal.style.display='none';
-}
-
-function saveNewReport(){
-  const name=document.getElementById('rpt-create-name')?.value?.trim();
-  if(!name){alert('리포트 이름을 입력하세요.');return;}
-  const filters={
-    brand:document.getElementById('rpt-create-brand')?.value||'',
-    status:document.getElementById('rpt-create-status')?.value||'',
-    complaint:document.getElementById('rpt-create-complaint')?.value||'',
-    manager:document.getElementById('rpt-create-manager')?.value||'',
-    tagCat:document.getElementById('rpt-create-tagcat')?.value||'',
-    product:document.getElementById('rpt-create-product')?.value||'',
-  };
-  Object.keys(filters).forEach(k=>{if(!filters[k])delete filters[k];});
-  const id='report_'+Date.now();
-  savedReports.push({id,name,filters,createdAt:new Date().toISOString()});
-  savePrefs();
-  closeReportCreationModal();
-  renderReportList();
-  selectReport(id);
-}
-
-/* App start */
-document.getElementById('tab-dashboard').onclick = () => switchMainTab('dashboard');
-// 관리: 필드 관리 세션
-const fieldStore = {
-  tab: 'all',
-  fields: [
-    {type:'tag',  name:'대표 문의유형',  source:'direct',  usedIn:'59개', creator:'Jinok Kim', createdAt:'2025.09.02'},
-    {type:'tag',  name:'제품명',         source:'direct',  usedIn:'55개', creator:'김은주',     createdAt:'2025.08.28'},
-    {type:'text', name:'개선 요청 사항', source:'direct',  usedIn:'49개', creator:'김현지',     createdAt:'2025.09.16'},
-    {type:'tag',  name:'담당자(통합)',   source:'direct',  usedIn:'41개', creator:'김은주',     createdAt:'2025.08.27'},
-    {type:'tag',  name:'AI CSAT',        source:'direct',  usedIn:'33개', creator:'Jinok Kim', createdAt:'2025.09.02'},
-    {type:'tag',  name:'불량 라벨',      source:'direct',  usedIn:'10개', creator:'김은주',     createdAt:'2025.08.27'},
-    {type:'text', name:'문제 상황',      source:'channel', usedIn:'—',   creator:'시스템',     createdAt:'2025.01.01'},
-    {type:'tag',  name:'상담 태그',      source:'channel', usedIn:'—',   creator:'시스템',     createdAt:'2025.01.01'},
-    {type:'text', name:'고객명',         source:'basic',   usedIn:'—',   creator:'시스템',     createdAt:'2025.01.01'},
-    {type:'tag',  name:'상담 상태',      source:'basic',   usedIn:'—',   creator:'시스템',     createdAt:'2025.01.01'},
-    {type:'text', name:'인입 경로',      source:'basic',   usedIn:'—',   creator:'시스템',     createdAt:'2025.01.01'},
-    {type:'tag',  name:'만족도(CSAT)',   source:'basic',   usedIn:'—',   creator:'시스템',     createdAt:'2025.01.01'},
-  ]
-};
-
-function switchFieldTab(tab){
-  fieldStore.tab = tab;
-  document.querySelectorAll('.field-tab').forEach(function(btn){
-    var isActive = btn.dataset.tab === tab;
-    btn.style.cssText = isActive
-      ? 'padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-2px;'
-      : 'padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text-sub);';
-  });
-  renderFieldList();
-}
-
-function renderFieldList(){
-  var tbody = document.getElementById('field-list-body');
-  var countEl = document.getElementById('field-list-count');
-  if(!tbody) return;
-  var searchEl = document.getElementById('field-search');
-  var q = searchEl ? searchEl.value.toLowerCase() : '';
-  var tab = fieldStore.tab;
-  var fields = fieldStore.fields.slice();
-  if(tab !== 'all') fields = fields.filter(function(f){ return f.source === tab; });
-  if(q) fields = fields.filter(function(f){ return f.name.toLowerCase().indexOf(q) !== -1; });
-  // 원본: 기본 정렬은 '최다 사용 순'
-  var sortEl = document.getElementById('field-sort');
-  var sortBy = sortEl ? sortEl.value : 'usage';
-  fields.sort(function(a,b){
-    if(sortBy === 'name') return String(a.name).localeCompare(String(b.name));
-    if(sortBy === 'type') return String(a.type).localeCompare(String(b.type)) || String(a.name).localeCompare(String(b.name));
-    return (b.usage||0) - (a.usage||0) || String(a.name).localeCompare(String(b.name));
-  });
-  tbody.innerHTML = fields.map(function(f){
-    var typeIcon = f.type === 'tag'
-      ? '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:var(--primary-light);border-radius:4px;font-size:11px;color:var(--primary);font-weight:500;">🏷 태그</span>'
-      : '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:var(--positive-soft);border-radius:4px;font-size:11px;color:var(--positive);font-weight:500;">≡ 텍스트</span>';
-    return '<tr style=\"border-bottom:1px solid var(--canvas);cursor:pointer;\" onmouseover=\"this.style.background=\'var(--surface)\'\" onmouseout=\"this.style.background=\'\'\">'
-      + '<td style="padding:10px 16px;">' + typeIcon + '</td>'
-      + '<td style="padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-main);">' + escHtml(f.name) + '</td>'
-      + '<td style="padding:10px 16px;font-size:12px;color:var(--text-sub);">' + escHtml(f.usedIn) + '</td>'
-      + '<td style="padding:10px 16px;font-size:12px;color:var(--text-sub);">' + escHtml(f.creator) + '</td>'
-      + '<td style="padding:10px 16px;font-size:12px;color:var(--text-mute);">' + escHtml(f.createdAt) + '</td>'
-      + '</tr>';
-  }).join('');
-  if(countEl) countEl.textContent = '수 ' + fields.length + '개 필드';
-}
-
-function openNewFieldModal(){
-  const m=document.getElementById('new-field-modal');
-  m.style.cssText='display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:600;';
-  document.getElementById('nf-name').value='';
-  document.getElementById('nf-desc').value='';
-  const tagRadio=document.getElementById('nf-type-tag');
-  if(tagRadio) tagRadio.checked=true;
-  const tagLabel=tagRadio?tagRadio.parentElement:null;
-  const textLabel=document.getElementById('nf-type-text');
-  if(tagLabel) tagLabel.style.borderColor='#2e6be6';
-  if(textLabel) textLabel.style.borderColor='#e6eaf1';
-  setTimeout(()=>document.getElementById('nf-name').focus(),100);
-}
-function closeNewFieldModal(){document.getElementById('new-field-modal').style.display='none';}
-function saveNewField(){
-  const name=document.getElementById('nf-name')?.value.trim();
-  if(!name){alert('필드 이름을 입력하세요');return;}
-  if(fieldStore.fields.find(f=>f.name===name)){alert('이미 같은 이름의 필드가 있습니다');return;}
-  const type=document.querySelector('input[name="nf-type"]:checked')?.value||'tag';
-  const now=new Date();
-  const dateStr=now.getFullYear()+'.'+(now.getMonth()+1).toString().padStart(2,'0')+'.'+now.getDate().toString().padStart(2,'0');
-  fieldStore.fields.unshift({type,name,source:'direct',usedIn:'0개',creator:'나',createdAt:dateStr});
-  closeNewFieldModal();
-  renderFieldList();
-}
-function deleteField(name){
-  if(!confirm('"'+name+'" 필드를 삭제할까요?')) return;
-  const idx=fieldStore.fields.findIndex(f=>f.name===name&&f.source==='direct');
-  if(idx===-1) return;
-  fieldStore.fields.splice(idx,1);
-  renderFieldList();
-}
-
+/* ── App start ── */
 init();
+
 </script>
 </body>
 </html>

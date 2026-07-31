@@ -6725,6 +6725,12 @@ const CONTENT_VIEWS = ['view-chat','view-phone','view-all','view-voc','view-defe
 /* 화면 전체를 채워야 하는 뷰 (내부에서 스크롤) */
 const FILL_VIEWS = new Set(['view-report', 'view-research', 'view-voc-analysis', 'panel-fields', 'panel-settings']);
 
+/* 내부를 세로 flex 로 쌓는 뷰 — 헤더 고정 + 본문만 스크롤하는 구조.
+   ⚠️ 여기에 등록하지 않으면 showOnlyView 가 display:block 을 주고,
+      그러면 자식의 flex:1 / min-height:0 이 전부 무효가 되어 내부 스크롤이 죽는다.
+      (#content 는 fill 뷰에서 overflow:hidden 이라 바깥으로도 스크롤되지 않는다) */
+const FLEX_VIEWS = new Set(['view-report', 'view-research', 'view-voc-analysis']);
+
 function showOnlyView(id) {
   CONTENT_VIEWS.forEach(v => {
     const el = document.getElementById(v);
@@ -6738,7 +6744,7 @@ function showOnlyView(id) {
   const t = document.getElementById(id);
   if (t) {
     const fill = FILL_VIEWS.has(id);
-    t.style.display = (id === 'view-report' || id === 'view-research') ? 'flex' : 'block';
+    t.style.display = FLEX_VIEWS.has(id) ? 'flex' : 'block';
     if (fill) t.classList.add('fill-view');
   }
   // 전체높이 뷰는 자체 스크롤을 쓰고, 대시보드 뷰는 #content 가 스크롤한다

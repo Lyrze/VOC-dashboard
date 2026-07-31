@@ -314,6 +314,33 @@ table.va-pivot tfoot td { background: var(--canvas); font-weight: 800; color: va
   font-size: 12px; line-height: 1.65; color: #c6d4ea;
 }
 
+/* 추이 그래프 가로형 표 (원본: 열=날짜, 마지막 열=전체 기간) */
+.rpt-trend-tblwrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+table.rpt-trend-tbl { border-collapse: collapse; font-size: 11px; min-width: 100%; }
+table.rpt-trend-tbl th, table.rpt-trend-tbl td {
+  padding: 6px 10px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums;
+}
+table.rpt-trend-tbl thead th { background: var(--canvas); color: var(--text-sub); font-weight: 700; font-size: 10.5px; }
+table.rpt-trend-tbl th.nm, table.rpt-trend-tbl td.nm {
+  text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 1;
+  max-width: 190px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--ink);
+}
+table.rpt-trend-tbl thead th.nm { background: var(--canvas); }
+table.rpt-trend-tbl th.tot, table.rpt-trend-tbl td.tot { background: var(--canvas); font-weight: 800; color: var(--ink); }
+table.rpt-trend-tbl tbody tr:last-child td { border-bottom: none; }
+
+/* 상담 통계 — 섹션 헤더 옵션 & 차트 그리드 */
+.rpt-sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 1000px) { .rpt-sc-grid { grid-template-columns: 1fr; } }
+.rpt-sc-grid .rpt-stats-card { margin-bottom: 0; }
+.rpt-sc-legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; }
+.rpt-sc-legend span { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--text-sub); }
+.rpt-sc-legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.lb-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.lb-top5 { font-size: 11px; font-weight: 700; color: var(--negative); background: var(--negative-soft); border-radius: 999px; padding: 2px 9px; }
+.lb-range { font-size: 10.5px; color: var(--text-mute); }
+
 /* 태그 제외 필터 팝업 */
 .tx-pop {
   position: fixed; z-index: 450; width: 340px; max-width: calc(100vw - 24px);
@@ -2104,60 +2131,113 @@ tbody td:first-child {
               <div id="rpt-compare-label" style="font-size:11px;color:var(--text-sub);background:var(--canvas);border:1px solid var(--border);border-radius:6px;padding:4px 10px;"></div>
             </div>
 
-            <!-- 요약 카드 -->
-            <div id="rpt-summary-cards" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;margin-bottom:16px;">
-              <!-- 동적 생성 -->
+            <!-- 📋 요약 -->
+            <div class="rpt-stats-card" style="margin-bottom:14px;">
+              <div class="rpt-card-title">&#128203; 요약<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('summary')">기준: <b id="rpt-basis-summary">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
+              <div id="rpt-summary-cards" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;"></div>
             </div>
 
-            <!-- 추이 그래프 -->
+            <!-- 📈 추이 그래프 -->
             <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">추이 그래프</div>
-              <div style="height:200px;position:relative;"><canvas id="rpt-trend-chart"></canvas></div>
+              <div class="rpt-card-title">&#128200; 추이 그래프<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('trend')">기준: <b id="rpt-basis-trend">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span><span class="stat-opt" onclick="rptToggleTrendAll()"><span class="sw" id="rpt-trend-all-sw"></span>전체 문의 함께 보기</span><span class="stat-opt" onclick="rptCycleTrendType()">그래프 유형: <b id="rpt-trend-type">선</b></span></span></div>
+              <div style="height:210px;position:relative;"><canvas id="rpt-trend-chart"></canvas></div>
               <div id="rpt-trend-table" style="margin-top:12px;"></div>
             </div>
 
-            <!-- 태그별 리더보드 -->
+            <!-- 🏆 태그별 리더보드 -->
             <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">
-                🏆 태그별 리더보드
-                <span class="stat-opts">
-                  <span class="stat-opt" onclick="toggleAggMode()">계산방식: <b id="agg-mode-label">중앙값</b></span>
-                  <span class="stat-opt" onclick="toggleOpHours()"><span class="sw" id="op-hours-sw"></span>운영 시간만</span>
-                  <span class="stat-opt" onclick="toggleTagMajor()"><span class="sw" id="tag-major-sw"></span>대분류 기준으로 순위 매기기</span>
-                </span>
-              </div>
+              <div class="rpt-card-title">&#127942; 태그별 리더보드<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('tag')">기준: <b id="rpt-basis-tag">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span><span class="stat-opt" onclick="toggleTagMajor()"><span class="sw" id="tag-major-sw"></span>대분류 기준으로 순위 매기기</span></span></div>
+              <div class="lb-head" id="rpt-tag-lb-head"></div>
               <div class="lb-wrap" id="rpt-tag-leaderboard"></div>
             </div>
 
-            <!-- 담당자별 리더보드 -->
+            <!-- 😊 담당자별 리더보드 -->
             <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">😊 담당자별 리더보드</div>
+              <div class="rpt-card-title">&#128522; 담당자별 리더보드<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('mgr')">기준: <b id="rpt-basis-mgr">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
+              <div class="lb-head" id="rpt-mgr-lb-head"></div>
               <div class="lb-wrap" id="rpt-manager-leaderboard"></div>
             </div>
 
-            <!-- 상담 통계 차트들 -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <!-- 📊 상담 통계 -->
+            <div class="rpt-stats-card" style="margin-bottom:14px;">
+              <div class="rpt-card-title">&#128202; 상담 통계<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('stats')">기준: <b id="rpt-basis-stats">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
+              <div class="rpt-sc-grid">
               <div class="rpt-stats-card">
-                <div class="rpt-card-title">만족도 분포</div>
-                <div style="height:180px;position:relative;"><canvas id="rpt-csat-chart"></canvas></div>
+                <div class="rpt-card-title">인입 요일별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dow"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-dow"></div>
               </div>
               <div class="rpt-stats-card">
-                <div class="rpt-card-title">태그 카테고리 분포</div>
-                <div style="height:180px;position:relative;"><canvas id="rpt-tag-donut"></canvas></div>
+                <div class="rpt-card-title">인입 시간별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-hour"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-hour"></div>
               </div>
               <div class="rpt-stats-card">
-                <div class="rpt-card-title">시간대별 문의 분포</div>
-                <div style="height:180px;position:relative;"><canvas id="rpt-hour-chart"></canvas></div>
+                <div class="rpt-card-title">인입 요일별 인입 경로 분포</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowMedium"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-dowMedium"></div>
               </div>
               <div class="rpt-stats-card">
-                <div class="rpt-card-title">요일별 문의 분포</div>
-                <div style="height:180px;position:relative;"><canvas id="rpt-dow-chart"></canvas></div>
+                <div class="rpt-card-title">인입 시간별 인입 경로 분포</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-hourMedium"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-hourMedium"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">인입 요일별 상담 상태 분포</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowState"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-dowState"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">상담 상태별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-state"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-state"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">인입 요일별 미트 부재중 사유 분포</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowMissed"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-dowMissed"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">미트 부재중 사유별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-missed"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-missed"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">인입 요일별 상담 만족도 분포</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-dowCsat"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-dowCsat"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">상담 만족도별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-csat"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-csat"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">인입 경로별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-medium"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-medium"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">AI 분류별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-aiClass"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-aiClass"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">첫 응대 시간별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-firstReply"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-firstReply"></div>
+              </div>
+              <div class="rpt-stats-card">
+                <div class="rpt-card-title">상담 처리 시간별 문의 수</div>
+                <div style="height:190px;position:relative;"><canvas id="rpt-sc-handling"></canvas></div>
+                <div class="rpt-sc-legend" id="rpt-scl-handling"></div>
+              </div>
               </div>
             </div>
 
-            <!-- 변화 감지 -->
+            <!-- 🔍 변화 감지 -->
             <div class="rpt-stats-card" style="margin-bottom:14px;">
-              <div class="rpt-card-title">변화 감지 대시보드</div>
+              <div class="rpt-card-title">&#128269; 변화 감지 대시보드<span class="stat-opts"><span class="stat-opt" onclick="rptCycleBasis('change')">기준: <b id="rpt-basis-change">문의 수</b></span><span class="stat-opt" onclick="toggleAggMode()">계산방식: <b class="agg-mode-label">중앙값</b></span><span class="stat-opt" onclick="toggleOpHours()"><span class="sw op-hours-sw"></span>운영 시간만</span></span></div>
               <div id="rpt-change-detect"></div>
             </div>
 
@@ -4590,6 +4670,9 @@ function savePrefs() {
       vaPeriod: vaState.period,
       vaCompare: vaState.compare,
       vaBriefs: vaState.briefs,
+      rptBasis: reportState.basis,
+      rptTrendAll: reportState.trendAll,
+      rptTrendType: reportState.trendType,
       managerGraph: managerGraphVisible,
       tagGraph: tagGraphVisible,
       aiProvider: store.aiProvider,
@@ -4628,6 +4711,9 @@ function loadPrefs() {
   if (d.vaPeriod && VA_PERIODS[d.vaPeriod]) vaState.period = d.vaPeriod;
   if (typeof d.vaCompare === 'boolean') vaState.compare = d.vaCompare;
   if (d.vaBriefs && typeof d.vaBriefs === 'object') vaState.briefs = d.vaBriefs;
+  if (d.rptBasis && typeof d.rptBasis === 'object') reportState.basis = d.rptBasis;
+  if (typeof d.rptTrendAll === 'boolean') reportState.trendAll = d.rptTrendAll;
+  if (d.rptTrendType) reportState.trendType = d.rptTrendType;
   if (typeof d.managerGraph === 'boolean') managerGraphVisible = d.managerGraph;
   if (typeof d.tagGraph === 'boolean') tagGraphVisible = d.tagGraph;
   if (d.aiProvider) store.aiProvider = d.aiProvider;
@@ -8749,6 +8835,8 @@ const reportState = {
   collapsedGroups:new Set(),
   // 상담 테이블 페이지 (예전엔 상위 200개 고정이라 나머지를 볼 수 없었다)
   page:0, pageSize:200,
+  // 섹션별 '기준' 지표 (원본은 섹션마다 따로 고른다) / 추이 그래프 옵션
+  basis:{}, trendAll:false, trendType:'line',
 };
 
 function getReportPeriodDates(){
@@ -9050,14 +9138,242 @@ function downloadReportExcel(){
 }
 
 /* ━━━ 리포트 통계 뷰 ━━━ */
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   리포트 상담 통계 — 원본 VOC STUDIO 구성 재현
+     📋 요약 / 📈 추이 그래프 / 🏆 태그별 / 😊 담당자별 / 📊 상담 통계 / 🔍 변화 감지
+   각 섹션 헤더에 기준 · 계산방식 · 운영 시간만 이 붙는다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* 섹션 헤더의 '기준' — 원본은 섹션마다 따로 고를 수 있다 */
+const RPT_BASIS = {
+  count:      { label: '문의 수',     of: rows => rows.length,                             fmt: v => v.toLocaleString() + '건' },
+  complaint:  { label: '불만 수',     of: rows => rows.filter(rptIsComplaint).length,      fmt: v => v.toLocaleString() + '건' },
+  complaintR: { label: '불만 비율',   of: rows => rows.length ? rows.filter(rptIsComplaint).length / rows.length * 100 : 0,
+                fmt: v => v.toFixed(1) + '%' },
+  firstReply: { label: '첫 응대 시간', of: rows => rptTimeAgg(rows, 'timeToFirstAnswerInOperation', 'timeToFirstAnswer'), fmt: fmtSec },
+  handling:   { label: '상담 처리 시간', of: rows => rptTimeAgg(rows, 'memberHandlingTimeInOperation', 'memberHandlingTime'), fmt: fmtSec },
+};
+const RPT_BASIS_ORDER = ['count', 'complaint', 'complaintR', 'firstReply', 'handling'];
+
+function rptIsComplaint(c) {
+  const v = c['profile.csat'];
+  return v != null && v !== '' && Number(v) <= 2;
+}
+
+/* 시간 지표는 '운영 시간만' 토글과 계산방식(중앙값/평균)을 따른다 */
+function rptTimeAgg(rows, opField, allField) {
+  const opOnly = store.opHoursOnly !== false;
+  const vals = rows.map(c => {
+    const a = opOnly ? c[opField] : c[allField];
+    const b = opOnly ? c[allField] : c[opField];
+    if (a != null && a !== '') return Number(a);
+    if (b != null && b !== '') return Number(b);
+    return null;
+  }).filter(v => v != null);
+  return vals.length ? aggTime(vals) : null;
+}
+
+function rptCycleBasis(scope) {
+  const cur = reportState.basis[scope] || 'count';
+  const i = RPT_BASIS_ORDER.indexOf(cur);
+  reportState.basis[scope] = RPT_BASIS_ORDER[(i + 1) % RPT_BASIS_ORDER.length];
+  savePrefs();
+  renderReportContent();
+}
+function rptBasisOf(scope) { return RPT_BASIS[reportState.basis[scope] || 'count'] || RPT_BASIS.count; }
+
+function rptToggleTrendAll() { reportState.trendAll = !reportState.trendAll; savePrefs(); renderReportContent(); }
+const RPT_TREND_TYPES = [['line', '선'], ['bar', '막대'], ['stacked', '누적 막대']];
+function rptCycleTrendType() {
+  const i = RPT_TREND_TYPES.findIndex(t => t[0] === reportState.trendType);
+  reportState.trendType = RPT_TREND_TYPES[(i + 1) % RPT_TREND_TYPES.length][0];
+  savePrefs();
+  renderReportContent();
+}
+
+/* 섹션 헤더 라벨 동기화 (계산방식/운영시간만은 전역 상태라 여러 헤더에 같이 반영해야 한다) */
+function rptSyncStatOpts() {
+  document.querySelectorAll('.agg-mode-label').forEach(el => {
+    el.textContent = store.aggMode === 'mean' ? '산술평균' : '중앙값';
+  });
+  document.querySelectorAll('.op-hours-sw').forEach(el => {
+    el.classList.toggle('on', store.opHoursOnly !== false);
+  });
+  Object.keys(RPT_BASIS).length;
+  ['summary', 'trend', 'tag', 'mgr', 'stats', 'change'].forEach(s => {
+    const el = document.getElementById('rpt-basis-' + s);
+    if (el) el.textContent = rptBasisOf(s).label;
+  });
+  const tt = document.getElementById('rpt-trend-type');
+  if (tt) tt.textContent = (RPT_TREND_TYPES.find(t => t[0] === reportState.trendType) || RPT_TREND_TYPES[0])[1];
+  const ta = document.getElementById('rpt-trend-all-sw');
+  if (ta) ta.classList.toggle('on', !!reportState.trendAll);
+  const tm = document.getElementById('tag-major-sw');
+  if (tm) tm.classList.toggle('on', !!reportState.tagMajorOnly);
+}
+
+/* ━━━ 📊 상담 통계 14종 ━━━
+   dim: 가로축 그룹(요일/시간/값) · series: 누적 계열(없으면 단일) */
+const DOW_LABELS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => i + '시');
+
+function rptDow(c) { const d = parseDate(c.createdAt); return d ? d.getDay() : null; }
+function rptHour(c) { const d = parseDate(c.createdAt); return d ? d.getHours() : null; }
+function rptCsatBand(c) {
+  const v = c['profile.csat'];
+  if (v == null || v === '') return '평가 대상 아님';
+  const n = Number(v);
+  return n >= 5 ? '매우 만족' : n >= 4 ? '만족' : n >= 3 ? '보통' : n >= 2 ? '불만족' : '매우 불만족';
+}
+const CSAT_ORDER = ['매우 만족', '만족', '보통', '불만족', '매우 불만족', '평가 대상 아님'];
+const CSAT_COLORS = { '매우 만족': '#0e7a4f', '만족': '#7fc95f', '보통': '#e8a33d', '불만족': '#f0803c', '매우 불만족': '#e05252', '평가 대상 아님': '#c5cfdf' };
+
+const RPT_STAT_CHARTS = [
+  { id: 'dow',        type: 'bar',      dim: 'dow' },
+  { id: 'hour',       type: 'bar',      dim: 'hour' },
+  { id: 'dowMedium',  type: 'stacked',  dim: 'dow',  series: c => enumLabel('mediumType', c.mediumType) },
+  { id: 'hourMedium', type: 'stacked',  dim: 'hour', series: c => enumLabel('mediumType', c.mediumType) },
+  { id: 'dowState',   type: 'stacked',  dim: 'dow',  series: c => enumLabel('__state', c.__state) },
+  { id: 'state',      type: 'doughnut', dim: 'value', value: c => enumLabel('__state', c.__state) },
+  { id: 'dowMissed',  type: 'stacked',  dim: 'dow',  series: c => c.missedReason ? enumLabel('missedReason', c.missedReason) : '응대' },
+  { id: 'missed',     type: 'doughnut', dim: 'value', value: c => c.missedReason ? enumLabel('missedReason', c.missedReason) : '응대' },
+  { id: 'dowCsat',    type: 'stacked',  dim: 'dow',  series: rptCsatBand, order: CSAT_ORDER, colors: CSAT_COLORS },
+  { id: 'csat',       type: 'bar',      dim: 'value', value: rptCsatBand, order: CSAT_ORDER, colors: CSAT_COLORS },
+  { id: 'medium',     type: 'doughnut', dim: 'value', value: c => enumLabel('mediumType', c.mediumType) },
+  { id: 'aiClass',    type: 'doughnut', dim: 'value', value: c => String(c.tags || '미분류').split('/')[0].trim() || '미분류' },
+  { id: 'firstReply', type: 'bar',      dim: 'bucket', field: c => rptPickTime(c, 'timeToFirstAnswerInOperation', 'timeToFirstAnswer') },
+  { id: 'handling',   type: 'bar',      dim: 'bucket', field: c => rptPickTime(c, 'memberHandlingTimeInOperation', 'memberHandlingTime') },
+];
+
+function rptPickTime(c, opField, allField) {
+  const opOnly = store.opHoursOnly !== false;
+  const a = opOnly ? c[opField] : c[allField];
+  const b = opOnly ? c[allField] : c[opField];
+  if (a != null && a !== '') return Number(a);
+  if (b != null && b !== '') return Number(b);
+  return null;
+}
+
+function rptRenderStatCharts(chats) {
+  RPT_STAT_CHARTS.forEach(def => rptRenderStatChart(def, chats));
+}
+
+function rptRenderStatChart(def, chats) {
+  const cid = 'rpt-sc-' + def.id;
+  const canvas = document.getElementById(cid);
+  if (!canvas) return;
+  // 이전 인스턴스 정리 (재렌더 시 canvas 크기 누적 방지 — CLAUDE.md 13·17)
+  if (reportState.statsCharts[cid]) { try { reportState.statsCharts[cid].destroy(); } catch (e) {} }
+
+  const legendEl = document.getElementById('rpt-scl-' + def.id);
+  if (legendEl) legendEl.innerHTML = '';
+  const colorOf = (name, i) => (def.colors && def.colors[name]) || DIST_PALETTE[i % DIST_PALETTE.length];
+
+  let labels, datasets, stacked = false;
+
+  if (def.dim === 'dow' || def.dim === 'hour') {
+    const keyFn = def.dim === 'dow' ? rptDow : rptHour;
+    labels = def.dim === 'dow' ? DOW_LABELS : HOUR_LABELS;
+    if (!def.series) {
+      const counts = labels.map(() => 0);
+      chats.forEach(c => { const k = keyFn(c); if (k != null) counts[k]++; });
+      datasets = [{ data: counts, backgroundColor: '#2e6be6', borderRadius: 3 }];
+    } else {
+      stacked = true;
+      const names = new Set();
+      const grid = labels.map(() => ({}));
+      chats.forEach(c => {
+        const k = keyFn(c); if (k == null) return;
+        const s = def.series(c) || '(없음)';
+        names.add(s);
+        grid[k][s] = (grid[k][s] || 0) + 1;
+      });
+      const order = def.order ? def.order.filter(n => names.has(n)) : [...names].sort();
+      datasets = order.map((n, i) => ({
+        label: n, data: grid.map(g => g[n] || 0),
+        backgroundColor: colorOf(n, i), borderRadius: 2,
+      }));
+      if (legendEl) legendEl.innerHTML = order.map((n, i) =>
+        '<span><i style="background:' + colorOf(n, i) + '"></i>' + escHtml(n) + '</span>').join('');
+    }
+  } else if (def.dim === 'value') {
+    const c2 = {};
+    chats.forEach(c => { const v = def.value(c) || '(없음)'; c2[v] = (c2[v] || 0) + 1; });
+    let order;
+    if (def.order) {
+      order = def.order.filter(n => c2[n]);
+    } else {
+      // 상위 12개만 그리면 나머지가 조용히 사라져 합계가 모집단과 어긋난다 -> '그 외 N개' 로 묶는다
+      const sorted = Object.keys(c2).sort((a, b) => c2[b] - c2[a]);
+      order = sorted.slice(0, 12);
+      const rest = sorted.slice(12);
+      if (rest.length) {
+        const restName = '그 외 ' + rest.length + '개';
+        c2[restName] = rest.reduce((s, n) => s + c2[n], 0);
+        order.push(restName);
+      }
+    }
+    labels = order;
+    datasets = [{ data: order.map(n => c2[n]),
+      backgroundColor: order.map((n, i) => colorOf(n, i)), borderRadius: 3, borderWidth: 0 }];
+    if (def.type === 'doughnut' && legendEl) {
+      const tot = order.reduce((s, n) => s + c2[n], 0) || 1;
+      legendEl.innerHTML = order.map((n, i) =>
+        '<span><i style="background:' + colorOf(n, i) + '"></i>' + escHtml(n) +
+        ' ' + c2[n].toLocaleString() + '건 (' + (c2[n] / tot * 100).toFixed(1) + '%)</span>').join('');
+    }
+  } else {   // bucket — 시간 구간
+    labels = TIME_BUCKETS.map(b => b.label);
+    const counts = TIME_BUCKETS.map(() => 0);
+    let have = 0;
+    chats.forEach(c => {
+      const v = def.field(c);
+      if (v == null) return;
+      have++;
+      for (let i = 0; i < TIME_BUCKETS.length; i++) {
+        if (v < TIME_BUCKETS[i].max) { counts[i]++; break; }
+      }
+    });
+    datasets = [{ data: counts, backgroundColor: DIST_PALETTE.slice(0, counts.length), borderRadius: 3 }];
+    // 이 지표는 응대/처리가 일어난 건에만 값이 있다 -> 모집단과 다른 이유를 밝힌다
+    if (legendEl) legendEl.innerHTML =
+      '<span style="color:var(--text-mute);">값이 있는 ' + have.toLocaleString() +
+      '건 기준 (전체 ' + chats.length.toLocaleString() + '건 중)</span>';
+  }
+
+  const isDoughnut = def.type === 'doughnut';
+  reportState.statsCharts[cid] = new Chart(canvas.getContext('2d'), {
+    type: isDoughnut ? 'doughnut' : 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => (ctx.dataset.label ? ctx.dataset.label + ' ' : '') +
+          (isDoughnut ? ctx.parsed : ctx.parsed.y) + '건' } },
+      },
+      scales: isDoughnut ? {} : {
+        x: { stacked, grid: { display: false },
+          ticks: { font: { size: def.dim === 'hour' ? 8 : 9 }, color: cssVar('--text-mute'), maxRotation: 0, autoSkip: def.dim === 'hour' } },
+        y: { stacked, beginAtZero: true, grid: { color: cssVar('--canvas') },
+          ticks: { font: { size: 9 }, color: cssVar('--text-mute'), maxTicksLimit: 5 } },
+      },
+      cutout: isDoughnut ? '58%' : undefined,
+    },
+  });
+}
+
 function renderReportStats(cur,prev,start,end){
   Object.values(reportState.statsCharts).forEach(function(c){try{c.destroy();}catch(e){}});reportState.statsCharts={};
   renderReportSummary(cur,prev);
   renderReportTrend(cur,start,end);
   renderTagLeaderboard(cur,prev);
   renderManagerLeaderboard(cur,prev);
-  renderStatCharts(cur);
+  rptLeaderboardHeads(start,end);
+  rptRenderStatCharts(cur);
   renderChangeDetection(cur,prev);
+  rptSyncStatOpts();
 }
 
 function renderReportSummary(cur,prev){
@@ -9081,14 +9397,92 @@ function renderReportSummary(cur,prev){
 }
 
 function renderReportTrend(chats,start,end){
-  const trendTable=document.getElementById('rpt-trend-table');
-  const days=Math.round((end-start)/(1000*60*60*24));
-  const interval=days<=7?'day':'week';
-  const buckets=[];
-  if(interval==='day'){for(let i=0;i<=days;i++){const d=new Date(start);d.setDate(start.getDate()+i);const e=new Date(d);e.setHours(23,59,59,999);const dc=filterPeriod(chats,d,e);buckets.push({label:(d.getMonth()+1)+'/'+(d.getDate()),count:dc.length,complaint:dc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}}
-  else{const tw=Math.ceil(days/7);for(let i=0;i<tw;i++){const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);const wc=filterPeriod(chats,ws2,we2);buckets.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()),count:wc.length,complaint:wc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}}
-  if(trendTable)trendTable.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:var(--canvas);"><th style="padding:6px 10px;text-align:left;color:var(--text-sub);">기간</th><th style="padding:6px 10px;text-align:right;color:var(--text-sub);">문의수</th><th style="padding:6px 10px;text-align:right;color:var(--text-sub);">불만수</th><th style="padding:6px 10px;text-align:right;color:var(--text-sub);">불만율</th></tr></thead><tbody>'+buckets.map(b=>'<tr><td style="padding:5px 10px;">'+b.label+'</td><td style="padding:5px 10px;text-align:right;">'+b.count+'건</td><td style="padding:5px 10px;text-align:right;color:var(--negative);">'+b.complaint+'건</td><td style="padding:5px 10px;text-align:right;color:var(--text-mute);">'+(b.count?((b.complaint/b.count*100).toFixed(1)+'%'):'—')+'</td></tr>').join('')+'</tbody></table></div>';
-  setTimeout(()=>{const ctx=document.getElementById('rpt-trend-chart');if(ctx){if(reportState.statsCharts['trend'])reportState.statsCharts['trend'].destroy();reportState.statsCharts['trend']=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:buckets.map(b=>b.label),datasets:[{label:'문의수',data:buckets.map(b=>b.count),borderColor:'#2e6be6',backgroundColor:'rgba(99,102,241,0.08)',fill:true,tension:0.3,pointRadius:3},{label:'불만수',data:buckets.map(b=>b.complaint),borderColor:'#c63238',backgroundColor:'rgba(239,68,68,0.05)',fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10}}}}}});}}  ,50);
+  const basis = rptBasisOf('trend');
+  const days = Math.round((end - start) / 86400000);
+  const unit = days <= 14 ? 'day' : days <= 120 ? 'week' : 'month';
+
+  // 버킷 만들기
+  const buckets = [];
+  if (unit === 'day') {
+    for (let i = 0; i <= days; i++) {
+      const s = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      const e = new Date(s); e.setHours(23, 59, 59, 999);
+      buckets.push({ label: (s.getMonth() + 1) + '/' + s.getDate(), s, e });
+    }
+  } else if (unit === 'week') {
+    const n = Math.ceil((days + 1) / 7);
+    for (let i = 0; i < n; i++) {
+      const s = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i * 7);
+      const e = new Date(s); e.setDate(s.getDate() + 6); e.setHours(23, 59, 59, 999);
+      buckets.push({ label: (s.getMonth() + 1) + '/' + s.getDate(), s, e });
+    }
+  } else {
+    let d = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (d <= end) {
+      const s = new Date(d), e = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+      buckets.push({ label: (s.getMonth() + 1) + '월', s, e });
+      d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    }
+  }
+
+  // 계열: 이 리포트 + (옵션) 전체 문의
+  const report = savedReports.find(r => r.id === reportState.activeId);
+  const series = [{ name: report ? report.name : '리포트', rows: chats, color: '#2e6be6' }];
+  if (reportState.trendAll) {
+    series.push({ name: '전체 문의', rows: filterPeriod(getAllChatData(), start, end), color: '#8a97ab' });
+  }
+  series.forEach(s => {
+    s.vals = buckets.map(b => basis.of(filterPeriod(s.rows, b.s, b.e)) || 0);
+    s.total = basis.of(s.rows) || 0;
+  });
+
+  // ── 표: 원본은 가로형이다. 열 = 날짜 + '전체 기간', 행 = 리포트 이름 ──
+  const tbl = document.getElementById('rpt-trend-table');
+  if (tbl) {
+    tbl.innerHTML =
+      '<div class="rpt-trend-tblwrap"><table class="rpt-trend-tbl"><thead><tr>' +
+        '<th class="nm">리포트 이름</th>' +
+        buckets.map(b => '<th>' + escHtml(b.label) + '</th>').join('') +
+        '<th class="tot">전체 기간</th></tr></thead><tbody>' +
+        series.map(s =>
+          '<tr><td class="nm" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</td>' +
+          s.vals.map(v => '<td>' + basis.fmt(v) + '</td>').join('') +
+          '<td class="tot">' + basis.fmt(s.total) + '</td></tr>').join('') +
+      '</tbody></table></div>';
+  }
+
+  // ── 그래프 ──
+  const cid = 'rpt-trend-chart';
+  if (reportState.statsCharts[cid]) { try { reportState.statsCharts[cid].destroy(); } catch (e) {} }
+  const ctx = document.getElementById(cid);
+  if (!ctx) return;
+  const isStacked = reportState.trendType === 'stacked';
+  const isBar = reportState.trendType === 'bar' || isStacked;
+  reportState.statsCharts[cid] = new Chart(ctx.getContext('2d'), {
+    type: isBar ? 'bar' : 'line',
+    data: {
+      labels: buckets.map(b => b.label),
+      datasets: series.map(s => isBar
+        ? { label: s.name, data: s.vals, backgroundColor: s.color, borderRadius: 3 }
+        : { label: s.name, data: s.vals, borderColor: s.color,
+            backgroundColor: s.color === '#2e6be6' ? 'rgba(46,107,230,.10)' : 'rgba(138,151,171,.10)',
+            fill: true, tension: .3, pointRadius: 2, borderWidth: 2 }),
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ' ' + basis.fmt(c.parsed.y) } },
+      },
+      scales: {
+        x: { stacked: isStacked, grid: { display: false },
+          ticks: { font: { size: 9 }, color: cssVar('--text-mute'), maxTicksLimit: 14, maxRotation: 0 } },
+        y: { stacked: isStacked, beginAtZero: true, grid: { color: cssVar('--canvas') },
+          ticks: { font: { size: 9 }, color: cssVar('--text-mute'),
+            callback: v => basis.fmt(v) } },
+      },
+    },
+  });
 }
 
 /* ---------------------------------------------------------------
@@ -9108,6 +9502,17 @@ function meetDurationIndex() {
     if (s != null) idx[r.userChatId] = (idx[r.userChatId] || 0) + s;
   });
   return idx;
+}
+
+/* 리더보드 상단 '🔥 TOP5 · 비교 기간' 표기 (원본 실측) */
+function rptLeaderboardHeads(start, end) {
+  const f = d => d.getFullYear() + '. ' + String(d.getMonth() + 1).padStart(2, '0') + '. ' + String(d.getDate()).padStart(2, '0');
+  const html = '<span class="lb-top5">&#128293; TOP' + LB_SHOW + '</span>' +
+    '<span class="lb-range">' + f(start) + ' ~ ' + f(end) + '</span>';
+  ['rpt-tag-lb-head', 'rpt-mgr-lb-head'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
 }
 
 /* 리더보드 공용 렌더 */
@@ -9141,11 +9546,19 @@ function renderLeaderboard(opts) {
     };
   };
 
-  const curRows = Object.keys(curG).map(k => ({ key: k, s: stat(curG[k]), prevCount: (prevG[k] || []).length }))
-    .sort((a, b) => b.s.count - a.s.count);
-  // 비교 기간 순위 (순위 변동 계산용)
+  // 섹션 헤더의 '기준' 으로 순위를 매긴다 (원본 동작). 시간 지표는 짧을수록 상위.
+  const basisId = reportState.basis[opts.scope] || 'count';
+  const basis = RPT_BASIS[basisId] || RPT_BASIS.count;
+  const asc = basisId === 'firstReply' || basisId === 'handling';
+  const scoreOf = rows => { const v = basis.of(rows); return v == null ? (asc ? Infinity : -1) : v; };
+  const cmp = (a, b) => asc ? a.score - b.score : b.score - a.score;
+
+  const curRows = Object.keys(curG)
+    .map(k => ({ key: k, s: stat(curG[k]), prevCount: (prevG[k] || []).length, score: scoreOf(curG[k]) }))
+    .sort(cmp);
+  // 비교 기간 순위 (순위 변동 계산용) — 같은 기준으로 매겨야 변동값이 의미가 있다
   const prevRank = {};
-  Object.keys(prevG).map(k => ({ k, n: prevG[k].length })).sort((a, b) => b.n - a.n)
+  Object.keys(prevG).map(k => ({ k, score: scoreOf(prevG[k]) })).sort(cmp)
     .forEach((r, i) => { prevRank[r.k] = i + 1; });
 
   const expanded = !!opts.expanded;
@@ -9197,7 +9610,7 @@ function renderTagLeaderboard(cur, prev) {
     return major ? t.split('/')[0].trim() : t;
   };
   renderLeaderboard({
-    mountId: 'rpt-tag-leaderboard', label: '태그', cur, prev,
+    mountId: 'rpt-tag-leaderboard', label: '태그', scope: 'tag', cur, prev,
     keyOf, textOf: k => k, expanded: !!reportState.tagBoardOpen,
     toggleFn: 'toggleTagBoard', filterFn: 'lbFilterTag',
   });
@@ -9225,14 +9638,7 @@ function toggleOpHours() {
 }
 
 /* 설정 바 표시 동기화 */
-function syncStatOpts() {
-  const l = document.getElementById('agg-mode-label');
-  if (l) l.textContent = store.aggMode === 'mean' ? '산술평균' : '중앙값';
-  const a = document.getElementById('op-hours-sw');
-  if (a) a.classList.toggle('on', store.opHoursOnly !== false);
-  const b = document.getElementById('tag-major-sw');
-  if (b) b.classList.toggle('on', !!reportState.tagMajorOnly);
-}
+function syncStatOpts() { rptSyncStatOpts(); }
 
 function toggleTagMajor() {
   reportState.tagMajorOnly = !reportState.tagMajorOnly;
@@ -9251,7 +9657,7 @@ function lbFilterManager(key) {
 
 function renderManagerLeaderboard(cur, prev) {
   renderLeaderboard({
-    mountId: 'rpt-manager-leaderboard', label: '담당자명', cur, prev,
+    mountId: 'rpt-manager-leaderboard', label: '담당자명', scope: 'mgr', cur, prev,
     keyOf: c => (c.assigneeId == null ? null : (store.managers[c.assigneeId] || String(c.assigneeId))),
     textOf: k => k + ' 매니저', expanded: !!reportState.mgrBoardOpen,
     toggleFn: 'toggleMgrBoard', filterFn: 'lbFilterManager',
@@ -9263,24 +9669,6 @@ function toggleMgrBoard() {
   renderReportContent();
 }
 
-function renderStatCharts(chats){
-  const csatDist=[0,0,0,0,0];chats.forEach(c=>{const v=c['profile.csat'];if(v!=null&&v>=1&&v<=5)csatDist[Math.round(v)-1]++;});
-  const hourDist=new Array(24).fill(0);chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)hourDist[d.getHours()]++;});
-  const dayDist=new Array(7).fill(0);chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)dayDist[d.getDay()]++;});
-  const tm={};chats.forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
-  const top7d=Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,7);
-  const clrsD=DIST_PALETTE;     // CSS 변수는 canvas 에서 검게 칠해진다 (CLAUDE.md 25)
-  setTimeout(()=>{
-    const cc=document.getElementById('rpt-csat-chart');
-    if(cc){if(reportState.statsCharts['csat'])reportState.statsCharts['csat'].destroy();reportState.statsCharts['csat']=new Chart(cc.getContext('2d'),{type:'bar',data:{labels:['1점','2점','3점','4점','5점'],datasets:[{data:csatDist,backgroundColor:['#c63238','#f97316','#eab308','#84cc16','#0e7a4f'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10},stepSize:1}}}}});}
-    const td=document.getElementById('rpt-tag-donut');
-    if(td){if(reportState.statsCharts['tagd'])reportState.statsCharts['tagd'].destroy();reportState.statsCharts['tagd']=new Chart(td.getContext('2d'),{type:'doughnut',data:{labels:top7d.map(t=>t[0]),datasets:[{data:top7d.map(t=>t[1]),backgroundColor:clrsD,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}}}});}
-    const hc=document.getElementById('rpt-hour-chart');
-    if(hc){if(reportState.statsCharts['hour'])reportState.statsCharts['hour'].destroy();reportState.statsCharts['hour']=new Chart(hc.getContext('2d'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+'시'),datasets:[{data:hourDist,backgroundColor:'#2e6be6',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10}}}}}});}
-    const dc2=document.getElementById('rpt-dow-chart');
-    if(dc2){if(reportState.statsCharts['day'])reportState.statsCharts['day'].destroy();reportState.statsCharts['day']=new Chart(dc2.getContext('2d'),{type:'bar',data:{labels:['일','월','화','수','목','금','토'],datasets:[{data:dayDist,backgroundColor:['#f472b6','#2e6be6','#2e6be6','#2e6be6','#2e6be6','#2e6be6','#5a8cf5'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10}}}}}});}
-  },50);
-}
 
 function deleteReport(id){
   const idx=savedReports.findIndex(r=>r.id===id);

@@ -225,6 +225,58 @@ body {
   text-transform: uppercase;
 }
 
+/* 태그 제외 필터 팝업 */
+.tx-pop {
+  position: fixed; z-index: 450; width: 340px; max-width: calc(100vw - 24px);
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(16,33,64,.16); padding: 12px;
+}
+.tx-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.tx-title { font-size: 13px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
+.tx-cnt { margin-left: auto; font-size: 10.5px; font-weight: 600; color: var(--text-mute); }
+.tx-note { font-size: 10.5px; color: var(--text-mute); line-height: 1.5; margin-bottom: 9px; }
+.tx-note b { color: var(--text-sub); font-weight: 700; }
+.tx-tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.tx-tab {
+  padding: 5px 1px; border: none; background: none; cursor: pointer; font-family: inherit;
+  font-size: 11.5px; font-weight: 600; color: var(--text-mute);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tx-tab.on { color: var(--ink); font-weight: 800; border-bottom-color: var(--ink); }
+.tx-search {
+  width: 100%; padding: 6px 9px; border: 1px solid var(--border); border-radius: 7px;
+  font-size: 11.5px; font-family: inherit; background: var(--surface); color: var(--text-main); outline: none;
+}
+.tx-search:focus { border-color: var(--accent); }
+.tx-list { max-height: 250px; overflow: auto; margin: 8px -4px 0; padding: 0 4px; }
+.tx-item {
+  display: flex; align-items: center; gap: 7px; padding: 5px 7px; border-radius: 7px;
+  cursor: pointer; font-size: 11.5px; color: var(--text-main); user-select: none;
+}
+.tx-item:hover { background: var(--canvas); }
+.tx-item.on { background: var(--negative-soft); color: var(--negative); font-weight: 600; }
+.tx-item input { accent-color: var(--negative); cursor: pointer; flex-shrink: 0; }
+.tx-item input:disabled { cursor: default; }
+.tx-item .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx-item .ct { flex-shrink: 0; font-size: 10.5px; color: var(--text-mute); font-variant-numeric: tabular-nums; }
+.tx-empty { padding: 16px 4px; text-align: center; font-size: 11.5px; color: var(--text-mute); }
+.tx-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border); }
+.tx-btn {
+  padding: 5px 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface);
+  cursor: pointer; font-family: inherit; font-size: 11.5px; color: var(--text-sub);
+}
+.tx-btn:hover:not(:disabled) { background: var(--canvas); }
+.tx-btn:disabled { color: var(--text-mute); cursor: default; }
+.tx-btn.tx-primary { background: var(--navy); border-color: var(--navy); color: #f5f8ff; }
+
+/* 헤더 버튼의 제외 개수 배지 */
+.tx-badge {
+  display: none; min-width: 15px; padding: 0 4px; margin-left: 3px; border-radius: 999px;
+  background: var(--negative); color: #fff; font-size: 9.5px; font-weight: 700;
+  line-height: 15px; text-align: center;
+}
+
 /* 툴바 옵션 드롭다운 */
 .dash-opt-menu {
   position: fixed; z-index: 500; min-width: 216px; padding: 6px;
@@ -1659,6 +1711,11 @@ tbody td:first-child {
               <span class="channel-badge">채팅</span>
               <span class="widget-name">주요 문의 유형 분포</span>
               <span class="widget-date" id="voc-dist-date-range"></span>
+              <span class="spacer"></span>
+              <span class="widget-act" onclick="openTagExcludePicker(event)" title="분포에서 뺄 태그를 고릅니다">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 2h10L7 6.5V11L5 9.5V6.5z"/></svg>
+                제외 태그<span class="tx-badge"></span>
+              </span>
             </div>
             <div style="display:flex;gap:16px;align-items:flex-start;padding-top:4px;">
               <div style="flex:1;min-width:0;position:relative;height:220px;">
@@ -1691,6 +1748,10 @@ tbody td:first-child {
               <span class="widget-act" onclick="openChartTypeMenu('tag-table',event)" title="그래프 유형">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="2.5" height="5"/><rect x="4.75" y="3" width="2.5" height="8"/><rect x="8.5" y="1" width="2.5" height="10"/></svg>
                 유형
+              </span>
+              <span class="widget-act" onclick="openTagExcludePicker(event)" title="표와 그래프에서 뺄 태그를 고릅니다">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 2h10L7 6.5V11L5 9.5V6.5z"/></svg>
+                제외 태그<span class="tx-badge"></span>
               </span>
             </div>
             <div class="table-chart-wrap" id="tag-chart-wrap">
@@ -2953,6 +3014,7 @@ function renderDashboard(id) {
   const ctx = { dash: d, start, end, prevStart, prevEnd, dateRangeStr };
   orderedWidgets(d).forEach(w => renderWidget(w, ctx));
 
+  syncTagExcludeLabels();
   // 사용자가 드래그로 바꾼 섹션 순서를 DOM에 반영하고, 순서 변경 모드면 핸들러를 다시 붙인다
   applyWidgetOrder(d.id, viewEl);
   if (widgetOrderMode) attachWidgetDragHandlers(viewEl);
@@ -3589,8 +3651,8 @@ const GROUPERS = {
     label: '상담 태그',
     key: r => {
       const t = String(r.tags || r.tag || '태그 없음').split(/[,;]/)[0].trim() || '태그 없음';
-      // 설정 > 통계 설정 > 제외 태그 에서 고른 태그는 집계에서 뺀다
-      return store.excludedTags.has(t) ? null : t;
+      // 제외 태그(대분류 포함)는 집계에서 뺀다 — 분포 위젯과 같은 기준을 쓴다
+      return tagExcluded(t) ? null : t;
     },
     text: k => String(k),
   },
@@ -4467,6 +4529,140 @@ function renderExcludedTagPicker() {
   ).join('');
 }
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   태그 제외 필터 — 분포 위젯과 상담 태그 테이블이 공유한다.
+
+   ⚠️ 두 위젯이 태그를 보는 단위가 다르다:
+      · 주요 문의 유형 분포 → 대분류 ('태스크')
+      · 상담 태그 테이블     → 전체 태그 ('태스크/반품')
+      그래서 단순히 문자열이 같은지만 보면 분포에서 '태스크' 를 뺐는데
+      테이블에는 '태스크/반품' 이 그대로 남는다.
+      -> 대분류가 제외 목록에 있으면 그 하위 태그도 전부 제외되게 한다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function tagMajor(t) { return String(t == null ? '' : t).split('/')[0].trim(); }
+
+function tagExcluded(t) {
+  if (!store.excludedTags.size) return false;
+  const s = String(t == null ? '' : t).trim();
+  return store.excludedTags.has(s) || store.excludedTags.has(tagMajor(s));
+}
+
+/* 현재 로드된 데이터의 태그 분포. {major:[[이름,건수]..], full:[[이름,건수]..]} */
+function collectTagCounts() {
+  const major = {}, full = {};
+  Object.values(store.chatData).flat().forEach(c => {
+    const raw = String(c.tags || c.tag || '').trim();
+    if (!raw) return;
+    raw.split(/[,;]/).map(x => x.trim()).filter(Boolean).forEach(t => {
+      full[t] = (full[t] || 0) + 1;
+      const m = tagMajor(t);
+      if (m) major[m] = (major[m] || 0) + 1;
+    });
+  });
+  const sort = o => Object.entries(o).sort((a, b) => b[1] - a[1]);
+  return { major: sort(major), full: sort(full) };
+}
+
+const tagExcludeState = { tab: 'major', q: '' };
+
+/* 위젯 헤더의 '제외 태그' 버튼이 여는 팝업 */
+function openTagExcludePicker(ev) {
+  ev = ev || window.event;
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  document.querySelectorAll('.tx-pop').forEach(e => e.remove());
+  const anchor = ev && ev.currentTarget ? ev.currentTarget : (ev && ev.target ? ev.target.closest('.widget-act') : null);
+  if (!anchor) return;
+
+  const pop = document.createElement('div');
+  pop.className = 'tx-pop';
+  const draw = () => {
+    const counts = collectTagCounts();
+    const list = tagExcludeState.tab === 'major' ? counts.major : counts.full;
+    const q = tagExcludeState.q.trim().toLowerCase();
+    const shown = list.filter(e => !q || e[0].toLowerCase().includes(q));
+    pop.innerHTML =
+      '<div class="tx-head">' +
+        '<span class="tx-title">제외할 태그 고르기</span>' +
+        '<span class="tx-cnt">' + store.excludedTags.size + '개 제외 중</span>' +
+      '</div>' +
+      '<div class="tx-note">고른 태그는 <b>주요 문의 유형 분포</b>와 <b>상담 태그 테이블</b>, 상담 통계에서 함께 빠집니다. ' +
+        '대분류를 고르면 하위 태그도 모두 빠집니다.</div>' +
+      '<div class="tx-tabs">' +
+        '<button class="tx-tab' + (tagExcludeState.tab === 'major' ? ' on' : '') + '" data-tab="major">대분류 ' + counts.major.length + '</button>' +
+        '<button class="tx-tab' + (tagExcludeState.tab === 'full' ? ' on' : '') + '" data-tab="full">전체 태그 ' + counts.full.length + '</button>' +
+      '</div>' +
+      '<input class="tx-search" type="text" placeholder="태그 검색" value="' + escHtml(tagExcludeState.q) + '">' +
+      '<div class="tx-list">' + (shown.length
+        ? shown.map(e => {
+            const on = store.excludedTags.has(e[0]);
+            const byMajor = !on && store.excludedTags.has(tagMajor(e[0]));
+            return '<label class="tx-item' + (on || byMajor ? ' on' : '') + '"' +
+              (byMajor ? ' title="대분류 ' + escHtml(tagMajor(e[0])) + ' 제외로 함께 빠집니다"' : '') + '>' +
+              '<input type="checkbox"' + (on ? ' checked' : '') + (byMajor ? ' disabled' : '') +
+              ' data-tag="' + escHtml(e[0]) + '">' +
+              '<span class="nm">' + escHtml(e[0]) + '</span>' +
+              '<span class="ct">' + e[1].toLocaleString() + '</span></label>';
+          }).join('')
+        : '<div class="tx-empty">검색 결과가 없습니다.</div>') + '</div>' +
+      '<div class="tx-foot">' +
+        '<button class="tx-btn" data-act="clear"' + (store.excludedTags.size ? '' : ' disabled') + '>모두 해제</button>' +
+        '<span style="flex:1;"></span>' +
+        '<button class="tx-btn tx-primary" data-act="close">닫기</button>' +
+      '</div>';
+    bind();
+  };
+
+  const apply = () => { savePrefs(); renderDashboard(currentDashboardId); draw(); place(); };
+
+  const bind = () => {
+    pop.querySelectorAll('.tx-tab').forEach(b => b.addEventListener('click', () => {
+      tagExcludeState.tab = b.dataset.tab; draw(); place();
+    }));
+    const sb = pop.querySelector('.tx-search');
+    sb.addEventListener('input', () => {
+      tagExcludeState.q = sb.value;
+      const pos = sb.selectionStart;
+      draw(); place();
+      const ns = pop.querySelector('.tx-search');
+      ns.focus(); ns.setSelectionRange(pos, pos);
+    });
+    pop.querySelectorAll('.tx-item input').forEach(i => i.addEventListener('change', () => {
+      const t = i.dataset.tag;
+      if (store.excludedTags.has(t)) store.excludedTags.delete(t); else store.excludedTags.add(t);
+      apply();
+    }));
+    pop.querySelectorAll('.tx-btn').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.act === 'clear') { store.excludedTags.clear(); apply(); }
+      else pop.remove();
+    }));
+  };
+
+  const place = () => {
+    const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+    const want = (r.bottom + 6 + h > window.innerHeight - 8) ? r.top - h - 6 : r.bottom + 6;
+    pop.style.top = Math.max(8, Math.min(want, window.innerHeight - h - 8)) + 'px';
+  };
+
+  document.body.appendChild(pop);
+  draw(); place();
+  setTimeout(() => {
+    const close = e => {
+      if (!pop.contains(e.target) && !anchor.contains(e.target)) { pop.remove(); document.removeEventListener('mousedown', close); }
+    };
+    document.addEventListener('mousedown', close);
+  }, 0);
+}
+
+/* 위젯 헤더 버튼 라벨의 제외 개수를 갱신한다 */
+function syncTagExcludeLabels() {
+  const n = store.excludedTags.size;
+  document.querySelectorAll('.tx-badge').forEach(el => {
+    el.textContent = n ? String(n) : '';
+    el.style.display = n ? '' : 'none';
+  });
+}
+
 function toggleExcludedTag(tag) {
   if (store.excludedTags.has(tag)) store.excludedTags.delete(tag); else store.excludedTags.add(tag);
   savePrefs();
@@ -4531,7 +4727,7 @@ function renderTagDistChart(chats, dateStr, canvasId, legendId, dateRangeId) {
   chats.forEach(function(c){
     var t = String(c.tags||c.tag||'태그없음').split('/')[0].trim() || '태그없음';
     // 설정 > 제외 태그 또는 범례에서 뺀 태그는 분포에서 제외한다 (분모에서도 뺀다)
-    if (store.excludedTags.has(t)) { excluded++; return; }
+    if (tagExcluded(t)) { excluded++; return; }
     tagMap[t] = (tagMap[t]||0) + 1;
   });
   var sorted = Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];});
@@ -5243,7 +5439,7 @@ function getCurrentMetricFn() {
 }
 
 function aggregateVOCTrend(chats, start, end, interval, getCategory) {
-  var PALETTE = ['var(--primary)','var(--positive)','var(--amber)','#f87171','var(--accent)','#a78bfa','var(--amber)','#4ade80','#38bdf8','#f472b6'];
+  var PALETTE = DIST_PALETTE;   // CSS 변수는 canvas 에서 검게 칠해진다 (CLAUDE.md 25)
   var TOP_N = 8;
   var catCount = {};
   chats.forEach(function(c){
@@ -5449,7 +5645,7 @@ function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
     }
     return cat;
   };
-  var PALETTE = ['var(--primary)','var(--positive)','var(--amber)','#f87171','var(--accent)','#a78bfa','var(--amber)','#4ade80','#38bdf8','#f472b6'];
+  var PALETTE = DIST_PALETTE;   // CSS 변수는 canvas 에서 검게 칠해진다 (CLAUDE.md 25)
 
   var catCount = {}; var prevCatCount = {};
   cur.forEach(function(c){
@@ -5577,7 +5773,7 @@ function renderDefectView(brand, start, end, prevStart, prevEnd) {
   var kp = calcKPIs(prev);
   var dateStr = formatDateRange(start, end);
 
-  var PALETTE = ['#f87171','var(--amber)','var(--amber)','#a3e635','var(--positive)','#38bdf8','var(--primary)','#e879f9','#f472b6','var(--accent)'];
+  var PALETTE = DIST_PALETTE;   // CSS 변수는 canvas 에서 검게 칠해진다 (CLAUDE.md 25)
 
   var complaintTotal = cur.filter(function(c){ var s=c['profile.csat']; return s!=null&&Number(s)<=2; }).length;
   var complaintRate  = cur.length ? (complaintTotal/cur.length*100) : 0;
@@ -8220,7 +8416,7 @@ function renderStatCharts(chats){
   const dayDist=new Array(7).fill(0);chats.forEach(c=>{const d=parseDate(c.createdAt||c.managedAt);if(d)dayDist[d.getDay()]++;});
   const tm={};chats.forEach(c=>{const cat=(c.tags||'기타').split('/')[0];tm[cat]=(tm[cat]||0)+1;});
   const top7d=Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,7);
-  const clrsD=['var(--primary)','var(--positive)','var(--amber)','#f472b6','var(--accent)','#a78bfa','var(--text-mute)'];
+  const clrsD=DIST_PALETTE;     // CSS 변수는 canvas 에서 검게 칠해진다 (CLAUDE.md 25)
   setTimeout(()=>{
     const cc=document.getElementById('rpt-csat-chart');
     if(cc){if(reportState.statsCharts['csat'])reportState.statsCharts['csat'].destroy();reportState.statsCharts['csat']=new Chart(cc.getContext('2d'),{type:'bar',data:{labels:['1점','2점','3점','4점','5점'],datasets:[{data:csatDist,backgroundColor:['#c63238','#f97316','#eab308','#84cc16','#0e7a4f'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10},stepSize:1}}}}});}

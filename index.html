@@ -341,6 +341,27 @@ table.rpt-trend-tbl tbody tr:last-child td { border-bottom: none; }
 .lb-top5 { font-size: 11px; font-weight: 700; color: var(--negative); background: var(--negative-soft); border-radius: 999px; padding: 2px 9px; }
 .lb-range { font-size: 10.5px; color: var(--text-mute); }
 
+.va-note { margin-top: 8px; font-size: 10.5px; color: var(--text-mute); line-height: 1.6; }
+.va-note b { color: var(--text-sub); font-weight: 700; }
+.va-legend .va-lg { font-size: 10.5px; }
+
+/* AI 대화 위젯 */
+.va-chat-title { cursor: pointer; border-bottom: 1px dashed transparent; }
+.va-chat-title:hover { border-bottom-color: var(--text-mute); }
+.va-chat-rename { font-size: 11px; font-weight: 700; padding: 2px 6px; border: 1px solid var(--accent); border-radius: 5px; background: var(--surface); color: var(--text-main); outline: none; }
+.va-chat-thread { max-height: 420px; overflow-y: auto; padding-right: 4px; }
+.va-chat-empty { padding: 22px 6px; text-align: center; font-size: 11.5px; color: var(--text-mute); line-height: 1.8; }
+.va-chat-empty b { color: var(--text-sub); font-weight: 600; }
+.va-chat-wait { color: var(--text-mute); font-size: 11.5px; padding: 6px 0; }
+.va-msg-at { font-size: 10px; color: var(--text-mute); margin-top: 4px; }
+.va-chat-bar { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.va-chat-input {
+  flex: 1; padding: 8px 11px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 12px; font-family: inherit; background: var(--surface); color: var(--text-main); outline: none;
+}
+.va-chat-input:focus { border-color: var(--accent); }
+.va-msg-ai + .va-msg-user { margin-top: 14px; }
+
 /* AI 대화상자 (Smart brief) — 차트와 별개 카드 */
 .va-brief-card { background: var(--canvas); }
 .va-brief-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
@@ -4707,6 +4728,7 @@ function savePrefs() {
       vaPeriod: vaState.period,
       vaCompare: vaState.compare,
       vaBriefs: vaState.briefs,
+      vaChats: vaState.chats,
       reports: savedReports,
       rptBasis: reportState.basis,
       rptTrendAll: reportState.trendAll,
@@ -4749,6 +4771,7 @@ function loadPrefs() {
   if (d.vaPeriod && VA_PERIODS[d.vaPeriod]) vaState.period = d.vaPeriod;
   if (typeof d.vaCompare === 'boolean') vaState.compare = d.vaCompare;
   if (d.vaBriefs && typeof d.vaBriefs === 'object') vaState.briefs = d.vaBriefs;
+  if (Array.isArray(d.vaChats)) vaState.chats = d.vaChats;
   // 빈 배열도 '사용자가 전부 지운 상태' 로 존중해야 하므로 length 를 보지 않는다
   if (Array.isArray(d.reports)) { setReports(d.reports); reportsRestored = true; }
   if (d.rptBasis && typeof d.rptBasis === 'object') reportState.basis = d.rptBasis;
@@ -4821,7 +4844,7 @@ function renderExcludedTagPicker() {
    VOC 분석 — 구좌(Section) 선언 + 위젯 렌더
    Syncly 구조: 구좌(이름+설명) 안에 위젯이 들어가고, 위젯마다 기간/비교 헤더가 붙는다.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const vaState = { period: '1m', compare: true, charts: {}, briefs: {}, openGroups: {} };
+const vaState = { period: '1m', compare: true, charts: {}, briefs: {}, openGroups: {}, chats: [] };
 
 const VA_PERIODS = {
   '1m':  { label: '이번 달 포함 최근 1개월', months: 1 },
@@ -4872,7 +4895,7 @@ const VA_SECTIONS = [
   { id: 'product', name: '제품 관련 VOC', desc: '어느 제품에서 어떤 불량이 나오는지 봅니다.',
     widgets: [
       { type: 'defectBar',  id: 'defectAll', name: '불량 VOC_전체 SKU', span: 12 },
-      { type: 'skuOpinion', id: 'skuBack',   name: '제품 불만/개선 VOC_등/허리 SKU', span: 12, group: '등/허리' },
+      { type: 'skuOpinion', id: 'skuBack',   name: '제품 VOC 유형별_등/허리 SKU', span: 12, group: '등/허리' },
       { type: 'pivot',      id: 'taxonomy',  name: '제품군 × 불량 유형 (Taxonomy)', span: 12 },
     ] },
 ];
@@ -4955,8 +4978,13 @@ function renderVOCAnalysis() {
   body.innerHTML = VA_SECTIONS.map(sec =>
     '<div class="va-sec">' +
       '<div class="va-sec-head"><span class="va-sec-name">' + escHtml(sec.name) + '</span>' +
-      '<span class="va-sec-desc">' + escHtml(sec.desc) + '</span></div>' +
-      '<div class="va-grid">' + sec.widgets.map(cardHTML).join('') + '</div>' +
+      '<span class="va-sec-desc">' + escHtml(sec.desc) + '</span>' +
+      '<span style="flex:1;"></span>' +
+      '<button class="va-btn sm" data-addchat="' + escHtml(sec.id) + '">&#10024; AI 대화 추가</button>' +
+      '</div>' +
+      '<div class="va-grid">' + sec.widgets.map(cardHTML).join('') +
+        vaState.chats.filter(c => c.section === sec.id).map(vaChatCardHTML).join('') +
+      '</div>' +
     '</div>').join('');
 
   VA_SECTIONS.forEach(sec => sec.widgets.forEach(w => {
@@ -4966,6 +4994,225 @@ function renderVOCAnalysis() {
 
   body.querySelectorAll('[data-addbrief]').forEach(b =>
     b.addEventListener('click', () => vaAddBrief(b.dataset.addbrief)));
+  body.querySelectorAll('[data-addchat]').forEach(b =>
+    b.addEventListener('click', () => vaAddChat(b.dataset.addchat)));
+  vaState.chats.forEach(vaBindChat);
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   AI 대화 위젯 — 차트에 붙이는 Smart brief 와 별개로,
+   위젯 자체를 하나 얹어 데이터에 대해 자유롭게 물어보는 칸 (원본 Syncly 사용 방식).
+   대화가 이어지므로 이전 문답을 프롬프트에 함께 넣는다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let _vaChatSeq = 0;
+
+function vaAddChat(sectionId) {
+  _vaChatSeq++;
+  const id = 'chat' + Date.now().toString(36) + _vaChatSeq;
+  vaState.chats.push({ id, section: sectionId, title: 'AI 대화', messages: [] });
+  savePrefs();
+  renderVOCAnalysis();
+  setTimeout(() => {
+    const inp = document.querySelector('#va-chat-' + id + ' .va-chat-input');
+    if (inp) inp.focus();
+  }, 30);
+}
+
+function vaRemoveChat(id) {
+  if (!confirm('이 AI 대화 위젯을 삭제합니다. 대화 내용도 함께 지워집니다. 계속할까요?')) return;
+  vaState.chats = vaState.chats.filter(c => c.id !== id);
+  savePrefs();
+  renderVOCAnalysis();
+}
+
+function vaChatOf(id) { return vaState.chats.find(c => c.id === id); }
+
+function vaChatCardHTML(c) {
+  const msgs = c.messages.length
+    ? c.messages.map((m, i) => m.role === 'user'
+        ? '<div class="va-msg-user"><span class="bubble">' + escHtml(m.text) + '</span><span class="ava">승</span></div>'
+        : '<div class="va-msg-ai">' + aiTextBlock(m.text, m.mask, 'va-cm-' + c.id + '-' + i) +
+          (m.at ? '<div class="va-msg-at">' + escHtml(m.at) + '</div>' : '') + '</div>').join('')
+    : '<div class="va-chat-empty">이 기간의 상담 데이터를 바탕으로 답합니다.<br>' +
+      '예) <b>충전 불량이 가장 많은 제품은?</b> · <b>지난달보다 늘어난 불만은?</b></div>';
+
+  return '<div class="va-card va-brief-card span-12" id="va-chat-' + escHtml(c.id) + '">' +
+    '<div class="va-brief-head">' +
+      '<span class="lnk">&#10024;</span>' +
+      '<span class="tgt va-chat-title" data-title="' + escHtml(c.id) + '" title="클릭해서 이름 변경">' + escHtml(c.title) + '</span>' +
+      '<span class="lbl">데이터에 직접 질문하기</span>' +
+      '<span style="flex:1;"></span>' +
+      '<button class="va-dots" data-chatmenu="' + escHtml(c.id) + '" title="옵션">&#8943;</button>' +
+    '</div>' +
+    '<div class="va-chat-thread" id="va-chat-thread-' + escHtml(c.id) + '">' + msgs + '</div>' +
+    '<div class="va-chat-bar">' +
+      '<input class="va-chat-input" type="text" placeholder="데이터에 대해 물어보세요" data-chatinput="' + escHtml(c.id) + '">' +
+      '<button class="va-btn sm primary" data-chatsend="' + escHtml(c.id) + '">보내기</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function vaBindChat(c) {
+  const card = document.getElementById('va-chat-' + c.id);
+  if (!card) return;
+  bindUnmask(card, Object.assign({}, ...c.messages.filter(m => m.mask).map(m => m.mask)));
+  const inp = card.querySelector('[data-chatinput]');
+  const send = () => { const v = inp.value.trim(); if (v) { inp.value = ''; vaChatSend(c.id, v); } };
+  card.querySelector('[data-chatsend]').addEventListener('click', send);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+  card.querySelector('[data-chatmenu]').addEventListener('click', ev => vaChatMenu(c.id, ev.currentTarget));
+  const t = card.querySelector('[data-title]');
+  if (t) t.addEventListener('click', () => vaRenameChat(c.id));
+}
+
+function vaRenameChat(id) {
+  const c = vaChatOf(id); if (!c) return;
+  const v = prompt ? null : null;   // prompt 가 막힌 환경이 있어 인라인 편집을 쓴다
+  const el = document.querySelector('#va-chat-' + id + ' [data-title]');
+  if (!el) return;
+  const old = c.title;
+  el.outerHTML = '<input class="va-chat-rename" value="' + escHtml(old) + '">';
+  const inp = document.querySelector('#va-chat-' + id + ' .va-chat-rename');
+  inp.focus(); inp.select();
+  const done = ok => { if (ok) { c.title = inp.value.trim() || old; savePrefs(); } renderVOCAnalysis(); };
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); });
+  inp.addEventListener('blur', () => done(true));
+}
+
+function vaChatMenu(id, anchor) {
+  document.querySelectorAll('.dash-opt-menu').forEach(e => e.remove());
+  const m = document.createElement('div');
+  m.className = 'dash-opt-menu';
+  m.innerHTML = '<button class="dom-item" data-a="rename">이름 변경</button>' +
+                '<button class="dom-item" data-a="clear">대화 비우기</button>' +
+                '<button class="dom-item" data-a="del">위젯 삭제</button>';
+  document.body.appendChild(m);
+  const r = anchor.getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(r.right - m.offsetWidth, window.innerWidth - m.offsetWidth - 8)) + 'px';
+  m.style.top = Math.min(r.bottom + 6, window.innerHeight - m.offsetHeight - 8) + 'px';
+  m.querySelectorAll('.dom-item').forEach(b => b.addEventListener('click', () => {
+    const a = b.dataset.a; m.remove();
+    if (a === 'del') vaRemoveChat(id);
+    else if (a === 'rename') vaRenameChat(id);
+    else { const c = vaChatOf(id); if (c) { c.messages = []; savePrefs(); renderVOCAnalysis(); } }
+  }));
+  setTimeout(() => {
+    const close = ev => { if (!m.contains(ev.target)) { m.remove(); document.removeEventListener('mousedown', close); } };
+    document.addEventListener('mousedown', close);
+  }, 0);
+}
+
+/* 조회 기간 데이터를 AI 가 읽을 수 있는 요약으로 압축한다 (원문 전체를 보내지 않는다) */
+function vaChatContext() {
+  const pd = vaPeriodDates();
+  const rows = vaRows(pd.start, pd.end);
+  const inbox = rows.filter(r => r.__state !== 'alfOnly');
+  const complaint = inbox.filter(r => r.__vaComplaint);
+  const dcount = {};
+  rows.forEach(r => r.__vaDefects.forEach(d => { dcount[d] = (dcount[d] || 0) + 1; }));
+  const defects = DEFECT_TAXONOMY.filter(d => dcount[d.id])
+    .sort((a, b) => dcount[b.id] - dcount[a.id])
+    .map(d => d.label + ' ' + dcount[d.id] + '건').join(', ');
+  const gcount = {};
+  rows.forEach(r => { if (r.__vaGroup) gcount[r.__vaGroup] = (gcount[r.__vaGroup] || 0) + 1; });
+  const groups = Object.entries(gcount).sort((a, b) => b[1] - a[1]).map(e => e[0] + ' ' + e[1] + '건').join(', ');
+  const pcount = {};
+  rows.forEach(r => { if (r.__vaProduct) pcount[r.__vaProduct] = (pcount[r.__vaProduct] || 0) + 1; });
+  const products = Object.entries(pcount).sort((a, b) => b[1] - a[1]).slice(0, 15)
+    .map(e => e[0] + ' ' + e[1] + '건').join(', ');
+  const tcount = {};
+  rows.forEach(r => { const t = String(r.tags || '').split('/')[0].trim(); if (t) tcount[t] = (tcount[t] || 0) + 1; });
+  const tags = Object.entries(tcount).sort((a, b) => b[1] - a[1]).slice(0, 12)
+    .map(e => e[0] + ' ' + e[1] + '건').join(', ');
+  // 제품 × 불량 유형 교차표. 1차원 분포만 주면 '어느 제품에서 어떤 불량이 많나' 를 답할 수 없다.
+  const cross = {};
+  rows.forEach(r => {
+    if (!r.__vaProduct || !r.__vaDefects.length) return;
+    const cell = (cross[r.__vaProduct] = cross[r.__vaProduct] || {});
+    r.__vaDefects.forEach(d => { cell[d] = (cell[d] || 0) + 1; });
+  });
+  const sumOf = cell => Object.keys(cell).reduce((s, k) => s + cell[k], 0);
+  const crossTxt = Object.entries(cross)
+    .sort((a, b) => sumOf(b[1]) - sumOf(a[1]))
+    .slice(0, 20)
+    .map(function (e) {
+      const p = e[0], cell = e[1];
+      return '- ' + p + ' (총 ' + sumOf(cell) + '건): ' + DEFECT_TAXONOMY.filter(d => cell[d.id])
+        .sort((a, b) => cell[b.id] - cell[a.id])
+        .map(d => d.label + ' ' + cell[d.id]).join(', ');
+    }).join('\n');
+
+  const samples = rows.filter(r => r.summarizedMessage).slice(0, 80)
+    .map(r => '- ' + String(r.summarizedMessage).replace(/\s+/g, ' ').slice(0, 90)).join('\n');
+
+  // 이 대시보드는 '건수' 보다 '의견' 이 중요하다.
+  //   '불량 관련 의견 중 고객 불만은 어떤 의견이 가장 많은가요?' 같은 질문에 답하려면
+  //   집계만으로는 부족하고 실제 상담 내용이 필요하다.
+  //   -> 불량 유형별로 묶어 요약문을 충분히 길게(200자) 넣고, CSAT 주관식도 함께 넣는다.
+  const opinionBlocks = DEFECT_TAXONOMY.map(function (d) {
+    const rs = rows.filter(r => r.__vaDefects.indexOf(d.id) >= 0 && r.summarizedMessage);
+    if (!rs.length) return null;
+    const lines = rs.slice(0, 40).map(function (r) {
+      const p = r.__vaProduct ? '[' + r.__vaProduct + '] ' : '';
+      return '  - ' + p + String(r.summarizedMessage).replace(/\s+/g, ' ').slice(0, 200);
+    });
+    return '### ' + d.label + ' (' + rs.length + '건, 아래는 최대 40건 표본)\n' + lines.join('\n');
+  }).filter(Boolean).join('\n\n');
+
+  const csatLines = rows.filter(r => r['profile.csatComment'])
+    .slice(0, 60)
+    .map(function (r) {
+      const s = r['profile.csat'];
+      return '  - (' + (s != null && s !== '' ? s + '점' : '점수없음') + ') ' +
+        String(r['profile.csatComment']).replace(/\s+/g, ' ').slice(0, 160);
+    }).join('\n');
+
+  return '[분석 대상]\n' +
+    '기간: ' + formatDateRange(pd.start, pd.end) + '\n' +
+    '전체 상담 ' + rows.length + '건 (상담원 인입 ' + inbox.length + '건, 불만 ' + complaint.length + '건)\n' +
+    '불량 유형 분포: ' + (defects || '없음') + '\n' +
+    '제품군 분포: ' + (groups || '없음') + '\n' +
+    '제품 분포(상위 15): ' + (products || '없음') + '\n' +
+    '상담 태그(상위 12): ' + (tags || '없음') + '\n\n' +
+    '[제품 x 불량 유형 교차표 (상위 20개 제품)]\n' + (crossTxt || '(교차 데이터 없음)') + '\n\n' +
+    '[불량 유형별 고객 의견 표본 — 의견 질문은 이 내용을 근거로 답하세요]\n' + (opinionBlocks || '(표본 없음)') + '\n\n' +
+    (csatLines ? '[CSAT 주관식 의견 (고객이 직접 쓴 문장)]\n' + csatLines + '\n\n' : '') +
+    '[상담 요약 표본]\n' + (samples || '(요약 없음)');
+}
+
+async function vaChatSend(id, text) {
+  const c = vaChatOf(id);
+  if (!c) return;
+  c.messages.push({ role: 'user', text });
+  savePrefs();
+  renderVOCAnalysis();
+
+  const thread = document.getElementById('va-chat-thread-' + id);
+  if (thread) {
+    thread.insertAdjacentHTML('beforeend', '<div class="va-msg-ai va-chat-wait" id="va-wait-' + id + '">분석 중...</div>');
+    thread.scrollTop = thread.scrollHeight;
+  }
+  try {
+    const history = c.messages.slice(-7, -1)
+      .map(m => (m.role === 'user' ? '사용자: ' : 'AI: ') + String(m.text).slice(0, 400)).join('\n');
+    const prompt = 'CX 데이터 분석가입니다. 아래 VOC 자료만 근거로 한국어로 답하세요.\n' +
+      '이 대시보드에서는 건수보다 고객이 실제로 무슨 말을 했는지가 중요합니다. ' +
+      '의견을 묻는 질문이면 [고객 의견 표본] 과 [CSAT 주관식 의견] 을 읽고 ' +
+      '비슷한 불만을 대분류 3~5개로 묶어, 각 항목에 대표 사례와 건수를 함께 적어 주세요.\n' +
+      '자료에 없는 내용은 추측하지 말고 없다고 말하세요.\n\n' +
+      vaChatContext() + '\n\n' +
+      (history ? '[이전 대화]\n' + history + '\n\n' : '') +
+      '[질문]\n' + text;
+    const answer = await callGemini(prompt);
+    c.messages.push({ role: 'ai', text: answer, mask: store.lastMask, at: new Date().toLocaleString('ko-KR') });
+  } catch (e) {
+    c.messages.push({ role: 'ai', text: '분석에 실패했습니다: ' + e.message, at: new Date().toLocaleString('ko-KR') });
+  }
+  savePrefs();
+  renderVOCAnalysis();
+  const t2 = document.getElementById('va-chat-thread-' + id);
+  if (t2) t2.scrollTop = t2.scrollHeight;
 }
 
 /* AI 대화상자 카드 (원본: 🔗 Smart brief for <위젯명>) */
@@ -4992,14 +5239,21 @@ function vaRenderWidget(w, cur, prev, pd) {
   if (w.type === 'skuOpinion') return vaRenderSkuOpinion(w, el, cur);
 }
 
-/* 제품 불만 / 제품 개선 을 SKU 별로 나눠 보는 가로 누적 막대 (원본 위젯) */
+/* SKU 별 VOC 유형 분해 (원본 '제품 불만/개선 VOC' 위젯에 대응).
+
+   ⚠️ 원본 Syncly 의 '제품 개선' 은 AI 가 상담 전문을 읽고 뽑아낸 '개선 요청 사항' 필드다.
+      채널톡 RAW 에는 그 필드가 없다. 처음에는 '불만이 아닌 나머지'를 '제품 개선' 이라고
+      표시했는데, 실제 내용을 열어보니 A/S 안내 · 보증 기간 안내 · 상담 종료 안내 였다.
+      개선 요청이 아니므로 그렇게 부르면 안 된다 -> 근거 있는 이름으로 바꿨다:
+        · 불만·불량 : CSAT 1~2점 또는 불량/불만/반품/환불/교환 태그 또는 불량 유형 키워드 매칭
+        · 기타 문의 : 그 밖의 상담 (A/S·보증·배송 문의 등). '개선 요청' 이라고 단정하지 않는다.
+      개선 요청을 정말 구분하려면 AI 분류가 필요하다 (아래 안내 문구로 노출). */
 function vaRenderSkuOpinion(w, el, cur) {
   const rows = cur.filter(r => r.__vaGroup === w.group && r.__vaProduct);
   if (!rows.length) {
     el.innerHTML = '<div class="va-empty">이 기간에는 ' + escHtml(w.group) + ' 제품 상담이 없습니다.</div>';
     return;
   }
-  // 불만 = CSAT 낮음 또는 불량 유형이 잡힌 건 / 개선 = 그 외 (요청·문의성)
   const by = {};
   rows.forEach(r => {
     const p = r.__vaProduct;
@@ -5013,8 +5267,8 @@ function vaRenderSkuOpinion(w, el, cur) {
   vaState.charts[w.id] = new Chart(cv.getContext('2d'), {
     type: 'bar',
     data: { labels: list.map(e => e[0]), datasets: [
-      { label: '제품 불만', data: list.map(e => e[1].bad), backgroundColor: '#e05252', borderRadius: 2 },
-      { label: '제품 개선', data: list.map(e => e[1].imp), backgroundColor: '#2fa88a', borderRadius: 2 },
+      { label: '불만·불량', data: list.map(e => e[1].bad), backgroundColor: '#e05252', borderRadius: 2 },
+      { label: '기타 문의', data: list.map(e => e[1].imp), backgroundColor: '#8a97ab', borderRadius: 2 },
     ] },
     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false },
@@ -5026,8 +5280,12 @@ function vaRenderSkuOpinion(w, el, cur) {
       } },
   });
   el.insertAdjacentHTML('beforeend',
-    '<div class="va-legend"><span class="va-lg"><i style="background:#e05252"></i>제품 불만</span>' +
-    '<span class="va-lg"><i style="background:#2fa88a"></i>제품 개선</span></div>');
+    '<div class="va-legend">' +
+      '<span class="va-lg"><i style="background:#e05252"></i>불만·불량 — CSAT 1~2점 / 불만 계열 태그 / 불량 키워드</span>' +
+      '<span class="va-lg"><i style="background:#8a97ab"></i>기타 문의 — A/S·보증·배송 등 그 밖의 상담</span>' +
+    '</div>' +
+    '<div class="va-note">원본의 <b>제품 개선</b> 은 AI 가 상담 전문에서 뽑는 항목이라 RAW 에 없습니다. ' +
+    '여기서는 근거가 있는 두 갈래로만 나눴습니다 — 아래 AI 대화에서 개선 요청을 직접 물어볼 수 있습니다.</div>');
 }
 
 /* 캔버스를 매번 새로 만든다 — destroy 만으로는 canvas 내부 크기가 누적된다 (CLAUDE.md 17) */
@@ -5332,10 +5590,16 @@ async function vaRunBriefAI(id, q, rows, btn) {
     rows.forEach(r => r.__vaDefects.forEach(d => { top[d] = (top[d] || 0) + 1; }));
     const stat = DEFECT_TAXONOMY.filter(d => top[d.id]).sort((a, b) => top[b.id] - top[a.id])
       .map(d => d.label + ' ' + top[d.id] + '건').join(', ');
-    const samples = rows.slice(0, 60).map(r => '- ' + String(r.summarizedMessage || r.tags || '').replace(/\s+/g, ' ').slice(0, 80)).join('\n');
-    const prompt = 'CX 분석가입니다. 아래 VOC 데이터를 근거로 질문에 한국어로 답하세요.\n\n' +
-      '질문: ' + q + '\n\n불량 유형 분포: ' + stat + '\n\n상담 요약 표본:\n' + samples +
-      '\n\n대분류 3~5개로 묶고 각 항목 끝에 관련 건수를 붙여 간결하게 정리하세요.';
+    const samples = rows.filter(r => r.summarizedMessage).slice(0, 120).map(r =>
+      '- ' + (r.__vaProduct ? '[' + r.__vaProduct + '] ' : '') +
+      String(r.summarizedMessage).replace(/\s+/g, ' ').slice(0, 200)).join('\n');
+    const csat = rows.filter(r => r['profile.csatComment']).slice(0, 40).map(r =>
+      '- ' + String(r['profile.csatComment']).replace(/\s+/g, ' ').slice(0, 160)).join('\n');
+    const prompt = 'CX 분석가입니다. 아래 VOC 자료만 근거로 질문에 한국어로 답하세요.\n' +
+      '건수보다 고객이 실제로 무슨 말을 했는지가 중요합니다.\n\n' +
+      '질문: ' + q + '\n\n불량 유형 분포: ' + stat + '\n\n' +
+      '고객 의견 표본:\n' + samples + (csat ? '\n\nCSAT 주관식 의견:\n' + csat : '') +
+      '\n\n비슷한 의견을 대분류 3~5개로 묶고, 각 항목에 대표 사례 한두 개와 관련 건수를 함께 적어 주세요.';
     const text = await callGemini(prompt);
     // 마스킹 매핑을 함께 보관해야 나중에 '원문 보기' 로 되돌릴 수 있다
     vaState.briefs[id] = Object.assign({}, vaState.briefs[id],

@@ -225,6 +225,107 @@ body {
   text-transform: uppercase;
 }
 
+/* 툴바 옵션 드롭다운 */
+.dash-opt-menu {
+  position: fixed; z-index: 500; min-width: 216px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(16,33,64,.14);
+}
+.dash-opt-menu .dom-item {
+  display: block; width: 100%; text-align: left; padding: 8px 10px; border: none;
+  background: none; cursor: pointer; border-radius: 7px; font-family: inherit;
+  font-size: 12px; color: var(--text-main);
+}
+.dash-opt-menu .dom-item:hover:not(:disabled) { background: var(--canvas); }
+.dash-opt-menu .dom-item:disabled { color: var(--text-mute); cursor: default; }
+.dash-opt-menu .dom-sep { height: 1px; background: var(--border); margin: 5px 4px; }
+
+/* 리포트 그룹 목록 화면 */
+.rl-group { margin-bottom: 26px; }
+.rl-ghead { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.rl-gname { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
+.rl-gcnt  { font-size: 11.5px; font-weight: 600; color: var(--text-mute); }
+.rl-table { width: 100%; border-collapse: collapse; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.rl-table th { text-align: left; font-size: 11px; font-weight: 700; color: var(--text-mute);
+               padding: 9px 14px; background: var(--canvas); border-bottom: 1px solid var(--border); }
+.rl-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.rl-table tr:last-child td { border-bottom: none; }
+.rl-row { cursor: pointer; }
+.rl-row:hover td { background: var(--accent-soft); }
+.rl-name { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.rl-desc { font-size: 11px; color: var(--text-mute); margin-top: 2px; line-height: 1.45; }
+.rl-mut  { font-size: 11.5px; color: var(--text-sub); }
+
+/* 기준 필드 선택기 (원본 '나눠볼 기준을 선택해주세요') */
+.fp-pop {
+  position: fixed; z-index: 400; display: flex;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(16,33,64,.16); overflow: hidden;
+  width: 660px; max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 24px);   /* 화면 밖으로 넘치지 않게 — 내부 목록이 스크롤된다 */
+}
+.fp-left  { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; padding: 16px 14px 12px; }
+.fp-right { flex: 1; min-width: 0; border-left: 1px solid var(--border); background: var(--canvas); padding: 16px 16px 14px; overflow: auto; }
+.fp-title { font-size: 14.5px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; margin-bottom: 10px; }
+.fp-search {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 12px; font-family: inherit; background: var(--surface); color: var(--text-main); outline: none;
+}
+.fp-search:focus { border-color: var(--accent); }
+.fp-tabs { display: flex; gap: 12px; border-bottom: 1px solid var(--border); margin: 10px 0 6px; }
+.fp-tab {
+  padding: 6px 1px; border: none; background: none; cursor: pointer; font-family: inherit;
+  font-size: 12px; font-weight: 600; color: var(--text-mute); border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.fp-tab.on { color: var(--ink); font-weight: 800; border-bottom-color: var(--ink); }
+.fp-sec { font-size: 11px; font-weight: 700; color: var(--text-mute); padding: 8px 2px 4px; }
+.fp-list { flex: 1; min-height: 0; overflow: auto; margin-right: -6px; padding-right: 6px; }
+.fp-item {
+  display: flex; align-items: center; gap: 7px; width: 100%; padding: 8px 9px; border: none;
+  background: none; cursor: pointer; border-radius: 8px; font-family: inherit;
+  font-size: 12.5px; color: var(--text-main); text-align: left;
+}
+.fp-item:hover { background: var(--canvas); }
+.fp-item.on { background: var(--accent-soft); color: var(--navy); font-weight: 700; }
+.fp-item .ic { flex-shrink: 0; color: var(--text-mute); }
+.fp-item .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-item .ck { flex-shrink: 0; color: var(--accent); font-size: 11px; }
+.fp-empty { padding: 18px 4px; font-size: 12px; color: var(--text-mute); text-align: center; }
+.fp-rname { font-size: 13.5px; font-weight: 800; color: var(--ink); margin-bottom: 3px; }
+.fp-rdesc { font-size: 11px; color: var(--text-mute); margin-bottom: 12px; line-height: 1.5; }
+.fp-stat {
+  display: flex; align-items: center; gap: 8px; padding: 9px 11px; margin-bottom: 7px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 9px; font-size: 11.5px; color: var(--text-sub);
+}
+.fp-stat b { color: var(--ink); font-weight: 800; }
+.fp-vals { margin-top: 13px; }
+.fp-vals .hd { font-size: 11px; color: var(--text-mute); margin-bottom: 8px; }
+.fp-vrow { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-sub); margin-bottom: 4px; }
+.fp-vrow .sw { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.fp-vrow .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-vrow .ct { font-weight: 600; color: var(--text-sub); }
+
+/* 아래쪽 표시 지표 영역 */
+.fp-metrics { border-top: 1px solid var(--border); padding-top: 9px; margin-top: 8px; }
+.fp-mgrid { display: flex; flex-wrap: wrap; gap: 4px 6px; max-height: 96px; overflow: auto; }
+.fp-chk {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+  font-size: 11px; color: var(--text-sub); user-select: none;
+}
+.fp-chk.on { background: var(--accent-soft); border-color: var(--accent); color: var(--navy); font-weight: 600; }
+.fp-chk input { display: none; }
+
+/* 분포 범례의 태그 제외 버튼 — 평소엔 흐리게, hover 시 뚜렷하게 */
+.dist-x {
+  flex-shrink: 0; width: 14px; padding: 0; border: none; background: none;
+  cursor: pointer; color: var(--text-mute); font-size: 10px; line-height: 1; opacity: .35;
+  transition: opacity .1s, color .1s;
+}
+.dist-lg-row:hover .dist-x { opacity: 1; }
+.dist-x:hover { color: var(--negative); }
+
 /* 리포트 그룹 헤더 — 대시보드 사이드바와 같은 톤, 캐럿으로 접고 펼친다 */
 .rpt-group {
   width: 100%;
@@ -1462,7 +1563,7 @@ tbody td:first-child {
         <span style="font-size:12px;color:var(--text-sub);">ALF 단독 확인불가 건 제외</span>
       </label>
     </div>
-    <button class="toolbar-btn">
+    <button class="toolbar-btn" id="dash-opt-btn" onclick="openDashOptions(this)">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
         <circle cx="6" cy="6" r="1.5"/><circle cx="2" cy="6" r="1.5"/><circle cx="10" cy="6" r="1.5"/>
       </svg>
@@ -1522,7 +1623,7 @@ tbody td:first-child {
           <div class="panel panel--table span-12" id="manager-section">
             <div class="widget-head">
               <span class="channel-badge">채팅</span>
-              <span class="groupby-btn" onclick="openGroupByPicker('manager-table')">
+              <span class="groupby-btn" data-mount="manager-table" onclick="openGroupByPicker('manager-table')">
                 <span class="gb-label">담당자(통합)</span>
                 <span class="vline"></span>
                 <span class="change">변경</span>
@@ -1571,7 +1672,7 @@ tbody td:first-child {
           <div class="panel panel--table span-12" id="tag-section">
             <div class="widget-head">
               <span class="channel-badge">채팅</span>
-              <span class="groupby-btn" onclick="openGroupByPicker('tag-table')">
+              <span class="groupby-btn" data-mount="tag-table" onclick="openGroupByPicker('tag-table')">
                 <span class="gb-label">상담 태그</span>
                 <span class="vline"></span>
                 <span class="change">변경</span>
@@ -1765,8 +1866,8 @@ tbody td:first-child {
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><line x1="10" y1="10" x2="13" y2="13"/></svg>
               리서치로 분석하기
             </button>
-            <button style="display:flex;align-items:center;gap:5px;padding:6px 13px;background:var(--surface);border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;color:var(--text-sub);">
-              공유
+            <button id="rpt-share-btn" onclick="rptCopyShareLink(this)" title="이 리포트와 조회 기간을 담은 링크를 복사합니다" style="display:flex;align-items:center;gap:5px;padding:6px 13px;background:var(--surface);border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12px;color:var(--text-sub);">
+              &#128279; 공유
             </button>
           </div>
           <div id="rpt-desc" style="font-size:12px;color:var(--text-sub);padding-bottom:10px;"></div>
@@ -2557,6 +2658,8 @@ async function loadAllData(manifest) {
   updateFilterLabel();
   selectDashboard((saved && saved.activeDash && DASHBOARDS.some(d => d.id === saved.activeDash))
     ? saved.activeDash : '통합-채팅');
+  // 공유 링크(#report=...)로 들어왔으면 그 리포트/기간으로 바로 이동
+  applyShareHash();
 }
 
 /* 업로드된 데이터의 마지막 날짜가 속한 달로 초기 기간을 맞춘다.
@@ -2888,6 +2991,49 @@ function applyWidgetOrder(dashId, viewEl) {
 }
 
 /* '순서 변경' 토글 — 켜면 섹션을 드래그해 재배치할 수 있다 */
+/* 툴바 '옵션' 메뉴.
+   예전에는 버튼만 있고 onclick 이 없어 눌러도 아무 일도 일어나지 않았다. */
+function openDashOptions(btn) {
+  document.querySelectorAll('.dash-opt-menu').forEach(e => e.remove());
+  const d = getDashboard(currentDashboardId);
+  const items = [
+    { t: widgetOrderMode ? '위젯 순서 변경 완료' : '위젯 순서 변경', fn: toggleWidgetOrderMode },
+    { t: '집계 방식: ' + (store.aggMode === 'mean' ? '산술평균' : '중앙값') + ' (전환)', fn: toggleAggMode },
+    { t: '시간 기준: ' + (store.opHoursOnly !== false ? '운영 시간만' : '전체 시간') + ' (전환)', fn: toggleOpHours },
+    { sep: true },
+    { t: '표를 엑셀로 내려받기', fn: () => {
+        const mounts = Object.keys(widgetRows);
+        if (!mounts.length) return;
+        mounts.forEach(m => downloadTableExcel(m, widgetGroupBy[m], 'view'));
+      } },
+    { t: '필터 모두 지우기', fn: () => clearFilters('dash'), off: !store.filters.length },
+    { sep: true },
+    { t: '데이터 새로고침', fn: refreshData },
+    { t: '설정 열기', fn: openSettings },
+    { t: (document.documentElement.getAttribute('data-theme') === 'dark' ? '라이트 모드' : '다크 모드'), fn: toggleTheme },
+  ];
+  const m = document.createElement('div');
+  m.className = 'dash-opt-menu';
+  m.innerHTML = items.map((it, i) => it.sep
+    ? '<div class="dom-sep"></div>'
+    : '<button class="dom-item"' + (it.off ? ' disabled' : '') + ' data-i="' + i + '">' + escHtml(it.t) + '</button>').join('');
+  document.body.appendChild(m);
+  const r = btn.getBoundingClientRect(), w = m.offsetWidth, hgt = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + 'px';
+  m.style.top = Math.min(r.bottom + 6, window.innerHeight - hgt - 8) + 'px';
+  m.querySelectorAll('.dom-item').forEach(b => b.addEventListener('click', () => {
+    const it = items[+b.dataset.i];
+    m.remove();
+    if (it && it.fn) it.fn();
+  }));
+  setTimeout(() => {
+    const close = ev => {
+      if (!m.contains(ev.target) && !btn.contains(ev.target)) { m.remove(); document.removeEventListener('mousedown', close); }
+    };
+    document.addEventListener('mousedown', close);
+  }, 0);
+}
+
 function toggleWidgetOrderMode() {
   widgetOrderMode = !widgetOrderMode;
   const d = getDashboard(currentDashboardId);
@@ -3010,8 +3156,8 @@ function renderAllTrendChart(currentStart) {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: 'var(--text-sub)' } },
-        y: { stacked: true, beginAtZero: true, grid: { color: 'var(--canvas)' }, ticks: { font: { size: 10 }, color: 'var(--text-sub)' } },
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: cssVar('--text-sub') } },
+        y: { stacked: true, beginAtZero: true, grid: { color: cssVar('--canvas') }, ticks: { font: { size: 10 }, color: cssVar('--text-sub') } },
       },
     },
   });
@@ -3214,6 +3360,21 @@ function escHtml(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+/* HTML 속성(큰따옴표) 안에 넣을 JS 문자열 리터럴을 만든다.
+   ⚠️ JSON.stringify() 를 그대로 쓰면 값이 큰따옴표로 감싸여 나오는데,
+      그게 onclick="..." 안에 들어가면 HTML 파서가 첫 큰따옴표에서 속성을 끊는다.
+      결과적으로 onclick 값이 'sortMetricTable(' 처럼 잘리고 핸들러가 통째로 죽는다.
+      (실제로 테이블 정렬 / 셀 클릭 필터 / 페이지 이동이 이 버그로 전부 동작하지 않았다)
+   -> 작은따옴표로 감싸고 HTML 특수문자는 엔티티로 바꾼다. */
+function jsAttr(v) {
+  const s = String(v == null ? '' : v)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r?\n/g, '\\n');
+  return "'" + s.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;').replace(/>/g, '&gt;') + "'";
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3443,6 +3604,17 @@ const GROUPERS = {
   },
 };
 
+/* 각 지표 테이블이 마지막으로 렌더한 행. 기준 필드 선택기가 '이 필드에 어떤 값이 들어있는지'를
+   화면에 보이는 데이터 그대로 보여주기 위해 쓴다. */
+const widgetRows = {};
+
+/* 기준 필드를 성격별로 묶는다 (원본의 기본/직접 추가/채널톡 탭에 대응) */
+const GROUPER_GROUPS = {
+  assigneeId: '상담 정보', teamId: '상담 정보', tags: '상담 정보',
+  __brand: '상담 정보', mediumType: '상담 정보', state: '상담 정보',
+  product: '고객 프로필',
+};
+
 function getGrouper(id) {
   return GROUPERS[id] || { label: id, key: r => r[id] ?? '(없음)', text: k => String(k) };
 }
@@ -3450,37 +3622,164 @@ function getGrouper(id) {
 /* 위젯별 기준 필드 선택 — 원본의 '변경' 버튼. {mountId: grouperId} */
 const widgetGroupBy = { 'manager-table': 'assigneeId', 'tag-table': 'tags' };
 
-/* '변경' 클릭 시 기준 필드 목록 팝업 */
-/* '변경' 클릭 시 기준 필드 + 표시 지표 선택 팝업 (원본 _TagColumnIdSettingBtn) */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   기준 필드 선택기 — 원본 '나눠볼 기준을 선택해주세요'
+   왼쪽: 검색 + 그룹 탭 + 필드 목록 / 오른쪽: 고른 필드의 실제 데이터 요약
+
+   ⚠️ 인라인 onclick 안에 JSON.stringify() 결과(큰따옴표 포함)를 넣으면
+      HTML 파서가 속성을 첫 따옴표에서 끊어버려 핸들러가 통째로 죽는다.
+      이전 구현이 정확히 그 버그였고, 그래서 기준 필드·표시 지표 변경이 전혀 먹지 않았다.
+      -> 모든 핸들러는 addEventListener 로 붙인다.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const fieldPickerState = { tab: '전체', q: '', focus: null };
+
+/* 기준 필드 하나에 대한 실제 데이터 요약 (채움률 / 고유값 수 / 상위 값) */
+function grouperStats(grouperId, rows) {
+  const g = getGrouper(grouperId);
+  const counts = {};
+  let filled = 0;
+  const EMPTY = new Set(['(없음)', '(미확인)', '미배정', '태그 없음', '태그없음', '']);
+  rows.forEach(r => {
+    let k;
+    try { k = g.key(r); } catch (e) { k = null; }
+    if (k == null) return;                       // 제외 태그 등은 집계에서 빠진다
+    const label = g.text ? g.text(k) : String(k);
+    if (!EMPTY.has(label)) filled++;
+    counts[label] = (counts[label] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return {
+    label: g.label,
+    total: rows.length,
+    filled: filled,
+    fillPct: rows.length ? Math.round(filled / rows.length * 100) : 0,
+    distinct: sorted.filter(e => !EMPTY.has(e[0])).length,
+    top: sorted.slice(0, 5),
+    rest: Math.max(0, sorted.length - 5),
+  };
+}
+
+/* 오른쪽 정보 패널 */
+function fieldPickerInfoHTML(grouperId, rows) {
+  if (!grouperId) return '<div class="fp-empty">왼쪽에서 필드를 고르면<br>어떤 값이 들어있는지 보여드립니다.</div>';
+  const s = grouperStats(grouperId, rows);
+  const usedIn = Object.keys(widgetGroupBy).filter(k => widgetGroupBy[k] === grouperId).length;
+  let h = '<div class="fp-rname">' + escHtml(s.label) + '</div>' +
+    '<div class="fp-rdesc">' + escHtml(GROUPER_GROUPS[grouperId] || '기타') + ' 필드입니다. ' +
+    '아래 수치는 지금 화면에 보이는 ' + s.total.toLocaleString() + '건 기준입니다.</div>' +
+    '<div class="fp-stat">&#9639;&nbsp; 이 필드의 값은 <b>' + s.fillPct + '%</b> 차있어요</div>' +
+    '<div class="fp-stat">&#8594;&nbsp; 서로 다른 값이 <b>' + s.distinct.toLocaleString() + '개</b> 있어요</div>' +
+    (usedIn ? '<div class="fp-stat">&#9635;&nbsp; 다른 위젯에서 <b>' + usedIn + '회</b> 쓰이고 있어요</div>' : '');
+  if (s.top.length) {
+    h += '<div class="fp-vals"><div class="hd">이런 값이 들어있어요</div>' +
+      s.top.map((e, i) =>
+        '<div class="fp-vrow"><span class="sw" style="background:' + DIST_PALETTE[i % DIST_PALETTE.length] + '"></span>' +
+        '<span class="nm" title="' + escHtml(e[0]) + '">' + escHtml(e[0]) + '</span>' +
+        '<span class="ct">' + e[1].toLocaleString() + '건</span></div>').join('') +
+      (s.rest ? '<div class="fp-vrow" style="color:var(--text-mute);"><span class="sw" style="background:var(--border)"></span>' +
+        '<span class="nm">외 ' + s.rest.toLocaleString() + '개</span></div>' : '') +
+      '</div>';
+  }
+  return h;
+}
+
+/* 왼쪽 필드 목록 */
+function fieldPickerListHTML(cur) {
+  const q = fieldPickerState.q.trim().toLowerCase();
+  const tab = fieldPickerState.tab;
+  const ids = Object.keys(GROUPERS).filter(id => {
+    const grp = GROUPER_GROUPS[id] || '기타';
+    if (tab !== '전체' && grp !== tab) return false;
+    return !q || GROUPERS[id].label.toLowerCase().includes(q) || id.toLowerCase().includes(q);
+  });
+  if (!ids.length) return '<div class="fp-empty">검색 결과가 없습니다.</div>';
+  const byGrp = {}, order = [];
+  ids.forEach(id => {
+    const g = GROUPER_GROUPS[id] || '기타';
+    if (!byGrp[g]) { byGrp[g] = []; order.push(g); }
+    byGrp[g].push(id);
+  });
+  return order.map(g =>
+    '<div class="fp-sec">' + escHtml(g) + ' ' + byGrp[g].length + '개</div>' +
+    byGrp[g].map(id =>
+      '<button class="fp-item' + (id === cur ? ' on' : '') + '" data-gid="' + escHtml(id) + '">' +
+      '<svg class="ic" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4">' +
+      '<path d="M6.6 1.2H2.2a1 1 0 0 0-1 1v4.4l4.2 4.2a1 1 0 0 0 1.4 0l3.4-3.4a1 1 0 0 0 0-1.4z"/><circle cx="3.6" cy="3.6" r=".7" fill="currentColor"/></svg>' +
+      '<span class="nm">' + escHtml(GROUPERS[id].label) + '</span>' +
+      (id === cur ? '<span class="ck">&#10003;</span>' : '') +
+      '</button>').join('')
+  ).join('');
+}
+
 function openGroupByPicker(mountId) {
-  document.querySelectorAll('.groupby-popup').forEach(el => el.remove());
-  const anchor = document.querySelector(`.groupby-btn[onclick*="${mountId}"]`);
+  document.querySelectorAll('.fp-pop').forEach(el => el.remove());
+  const anchor = document.querySelector('.groupby-btn[data-mount="' + mountId + '"]');
   if (!anchor) return;
   const cur = widgetGroupBy[mountId];
   const base = BASE_TABLE_METRICS[mountId] || DASH_METRICS.chatTable;
   const st = tstate(mountId);
   const shown = st.metrics || base;
-  const rect = anchor.getBoundingClientRect();
-  const mid = JSON.stringify(mountId);
+  const rows = widgetRows[mountId] || [];
+  fieldPickerState.focus = fieldPickerState.focus || cur;
 
   const pop = document.createElement('div');
-  pop.className = 'groupby-popup';
-  pop.style.cssText = 'position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;' +
-    'box-shadow:0 8px 24px rgba(16,33,64,.12);padding:8px;z-index:400;min-width:220px;max-height:70vh;overflow:auto;' +
-    'top:' + (rect.bottom + 6) + 'px;left:' + rect.left + 'px;';
+  pop.className = 'fp-pop';
+  const metricIds = Object.keys(METRICS).filter(id => METRIC_GROUPS[mountId] ? METRIC_GROUPS[mountId].includes(id) : true);
+  const tabs = ['전체'].concat([...new Set(Object.keys(GROUPERS).map(id => GROUPER_GROUPS[id] || '기타'))]);
 
   pop.innerHTML =
-    '<div class="gp-sec">기준 필드</div>' +
-    Object.keys(GROUPERS).map(id =>
-      `<div class="gp-item${id === cur ? ' on' : ''}" onclick="setWidgetGroupBy(${mid},${JSON.stringify(id)})">${escHtml(GROUPERS[id].label)}</div>`
-    ).join('') +
-    '<div class="gp-sec" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">표시 지표</div>' +
-    Object.keys(METRICS).filter(id => METRIC_GROUPS[mountId] ? METRIC_GROUPS[mountId].includes(id) : true).map(id =>
-      `<label class="gp-chk"><input type="checkbox"${shown.includes(id) ? ' checked' : ''}` +
-      ` onchange="toggleTableMetric(${mid},${JSON.stringify(id)},${JSON.stringify(base)})">` +
-      escHtml(METRICS[id].label) + '</label>'
-    ).join('');
+    '<div class="fp-left">' +
+      '<div class="fp-title">나눠볼 기준을 선택해주세요</div>' +
+      '<input class="fp-search" type="text" placeholder="추가할 필드를 검색해주세요" value="' + escHtml(fieldPickerState.q) + '">' +
+      '<div class="fp-tabs">' + tabs.map(t =>
+        '<button class="fp-tab' + (t === fieldPickerState.tab ? ' on' : '') + '" data-tab="' + escHtml(t) + '">' + escHtml(t) + '</button>').join('') + '</div>' +
+      '<div class="fp-list">' + fieldPickerListHTML(cur) + '</div>' +
+      '<div class="fp-metrics">' +
+        '<div class="fp-sec" style="padding-top:0;">표시 지표 ' + shown.length + '개</div>' +
+        '<div class="fp-mgrid">' + metricIds.map(id =>
+          '<label class="fp-chk' + (shown.includes(id) ? ' on' : '') + '" data-mid="' + escHtml(id) + '">' +
+          '<input type="checkbox"' + (shown.includes(id) ? ' checked' : '') + '>' +
+          escHtml(METRICS[id].label) + '</label>').join('') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="fp-right">' + fieldPickerInfoHTML(fieldPickerState.focus, rows) + '</div>';
+
   document.body.appendChild(pop);
+
+  // 위치 — 앵커 아래, 화면 밖으로 나가지 않게 보정
+  const r = anchor.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8)) + 'px';
+  const wantTop = (r.bottom + 6 + ph > window.innerHeight - 8) ? r.top - ph - 6 : r.bottom + 6;
+  pop.style.top = Math.max(8, Math.min(wantTop, window.innerHeight - ph - 8)) + 'px';
+
+  const rerenderList = () => {
+    pop.querySelector('.fp-list').innerHTML = fieldPickerListHTML(widgetGroupBy[mountId]);
+    bindList();
+  };
+  const bindList = () => {
+    pop.querySelectorAll('.fp-item').forEach(b => {
+      b.addEventListener('mouseenter', () => {
+        fieldPickerState.focus = b.dataset.gid;
+        pop.querySelector('.fp-right').innerHTML = fieldPickerInfoHTML(b.dataset.gid, rows);
+      });
+      b.addEventListener('click', () => {
+        fieldPickerState.focus = b.dataset.gid;
+        setWidgetGroupBy(mountId, b.dataset.gid);   // 렌더 후 팝업을 다시 연다
+      });
+    });
+  };
+  bindList();
+
+  const sb = pop.querySelector('.fp-search');
+  sb.addEventListener('input', () => { fieldPickerState.q = sb.value; rerenderList(); });
+  pop.querySelectorAll('.fp-tab').forEach(t => t.addEventListener('click', () => {
+    fieldPickerState.tab = t.dataset.tab;
+    pop.querySelectorAll('.fp-tab').forEach(x => x.classList.toggle('on', x === t));
+    rerenderList();
+  }));
+  pop.querySelectorAll('.fp-chk').forEach(l => l.addEventListener('change', () => {
+    toggleTableMetric(mountId, l.dataset.mid, base);
+  }));
 
   setTimeout(() => {
     const close = ev => {
@@ -3510,9 +3809,11 @@ const METRIC_GROUPS = {
 
 function setWidgetGroupBy(mountId, grouperId) {
   widgetGroupBy[mountId] = grouperId;
+  tstate(mountId).sortId = null;          // 기준이 바뀌면 이전 정렬 컬럼이 없을 수 있다
   savePrefs();
-  document.querySelectorAll('.groupby-popup').forEach(el => el.remove());
+  document.querySelectorAll('.fp-pop').forEach(el => el.remove());
   renderDashboard(currentDashboardId);
+  openGroupByPicker(mountId);             // 원본처럼 팝업을 열어 둔 채 결과를 보여준다
 }
 
 /* 지표 테이블 — 담당자/태그/제품명 등 어떤 기준으로도 같은 코드로 렌더.
@@ -3550,6 +3851,8 @@ function tstate(mountId) {
 function renderMetricTable(opts) {
   const el = document.getElementById(opts.mountId);
   if (!el) return [];
+  // 기준 필드 선택기가 '지금 화면 기준' 통계를 보여줄 수 있게 이 위젯이 그린 행을 남겨 둔다
+  widgetRows[opts.mountId] = opts.cur;
   const st = tstate(opts.mountId);
   const metrics = st.metrics || opts.metrics;
   const g = getGrouper(opts.groupBy);
@@ -3590,7 +3893,7 @@ function renderMetricTable(opts) {
   if (st.page >= pages) st.page = pages - 1;
   const pageRows = rows.slice(st.page * st.pageSize, (st.page + 1) * st.pageSize);
 
-  const mid = JSON.stringify(opts.mountId);
+  const mid = jsAttr(opts.mountId);
   // 원본은 정렬 가능한 모든 컬럼에 caret 을 보여주고, 현재 정렬 컬럼만 진하게 표시한다
   const arrow = id => sortId === id
     ? `<span class="th-caret on">${st.sortDir === 'asc' ? '▲' : '▼'}</span>`
@@ -3614,7 +3917,7 @@ function renderMetricTable(opts) {
         ? `<span class="name-pill" style="background:${TREND_COLORS_SOFT[ci % TREND_COLORS_SOFT.length]};box-shadow:inset 3px 0 0 ${c};">${escHtml(r.name)}</span>`
         : escHtml(r.name);
       return `<span class="cell-filterable" title="이 값으로 필터 추가"
-        onclick="addFilterFromGroup(${mid},${JSON.stringify(opts.groupBy)},${JSON.stringify(r.key)})">${inner}</span>`;
+        onclick="addFilterFromGroup(${mid},${jsAttr(opts.groupBy)},${jsAttr(r.key)})">${inner}</span>`;
     },
   }].concat(metrics.map(id => ({
     id,
@@ -3628,7 +3931,7 @@ function renderMetricTable(opts) {
 
   el.innerHTML =
     '<thead><tr>' + cols.map(c =>
-      `<th class="th-sortable" onclick="sortMetricTable(${mid},${JSON.stringify(c.id)})">` +
+      `<th class="th-sortable" onclick="sortMetricTable(${mid},${jsAttr(c.id)})">` +
       (c.icon ? '<span class="th-icon">🏷</span>' : '') +
       escHtml(c.head) + arrow(c.id) + '</th>'
     ).join('') + '</tr></thead>' +
@@ -3651,18 +3954,18 @@ function renderPager(mountId, totalRows, pages, st) {
     pager.className = 'table-pager';
     holder.parentNode.insertBefore(pager, holder.nextSibling);
   }
-  const mid = JSON.stringify(mountId);
+  const mid = jsAttr(mountId);
   const from = totalRows ? st.page * st.pageSize + 1 : 0;
   const to = Math.min(totalRows, (st.page + 1) * st.pageSize);
   const btn = (label, page, disabled, title) =>
     `<button class="pg-btn" ${disabled ? 'disabled' : ''} title="${title}" onclick="gotoMetricPage(${mid},${page})">${label}</button>`;
   pager.innerHTML =
     `<span class="pg-info">${from}–${to} / 총 ${totalRows}개</span>` +
-    btn('&#8676;', 0, st.page === 0, 'First Page') +
-    btn('&#8592;', st.page - 1, st.page === 0, 'Previous Page') +
+    btn('&#8676;', 0, st.page === 0, '처음으로') +
+    btn('&#8592;', st.page - 1, st.page === 0, '이전 페이지') +
     `<span class="pg-info">${st.page + 1} / ${pages}</span>` +
-    btn('&#8594;', st.page + 1, st.page >= pages - 1, 'Next Page') +
-    btn('&#8677;', pages - 1, st.page >= pages - 1, 'Last Page');
+    btn('&#8594;', st.page + 1, st.page >= pages - 1, '다음 페이지') +
+    btn('&#8677;', pages - 1, st.page >= pages - 1, '마지막으로');
 }
 
 function gotoMetricPage(mountId, page) {
@@ -3708,6 +4011,7 @@ function toggleTableMetric(mountId, metricId, baseMetrics) {
   if (at >= 0) { if (st.metrics.length > 1) st.metrics.splice(at, 1); }
   else st.metrics.push(metricId);
   st.sortId = null;
+  savePrefs();
   renderDashboard(currentDashboardId);
   openGroupByPicker(mountId);   // 팝업 유지
 }
@@ -4114,6 +4418,7 @@ function loadPrefs() {
 /* 테마 적용 (버튼 라벨까지) */
 function applyTheme(mode) {
   document.documentElement.setAttribute('data-theme', mode);
+  _cssVarCache = {};   // 테마가 바뀌면 차트 색을 다시 읽어야 한다
   const ic = document.getElementById('theme-icon'), lb = document.getElementById('theme-label');
   if (ic) ic.textContent = mode === 'dark' ? '☀️' : '🌙';
   if (lb) lb.textContent = mode === 'dark' ? '라이트 모드' : '다크 모드';
@@ -4158,7 +4463,7 @@ function renderExcludedTagPicker() {
   el.innerHTML = tags.map(t =>
     `<label class="ref-chip${store.excludedTags.has(t) ? ' on' : ''}">
       <input type="checkbox"${store.excludedTags.has(t) ? ' checked' : ''}
-        onchange="toggleExcludedTag(${JSON.stringify(t).replace(/"/g, '&quot;')})">${escHtml(t)}</label>`
+        onchange="toggleExcludedTag(${jsAttr(t)})">${escHtml(t)}</label>`
   ).join('');
 }
 
@@ -4209,7 +4514,7 @@ function renderManagerTable(cur, prev, dateRangeStr) {
 
 /* '변경' 버튼 라벨을 현재 기준 필드로 갱신 */
 function syncGroupByLabel(mountId, grouperId) {
-  const btn = document.querySelector(`.groupby-btn[onclick*="${mountId}"] .gb-label`);
+  const btn = document.querySelector('.groupby-btn[data-mount="' + mountId + '"] .gb-label');
   if (btn) btn.textContent = getGrouper(grouperId).label;
 }
 
@@ -4220,18 +4525,23 @@ function renderTagDistChart(chats, dateStr, canvasId, legendId, dateRangeId) {
   dateRangeId = dateRangeId || 'voc-dist-date-range';
   var dateEl = document.getElementById(dateRangeId);
   if(dateEl) dateEl.textContent = dateStr;
-  var PALETTE = ['var(--primary)','var(--positive)','var(--amber)','#f87171','var(--accent)','#a78bfa','var(--amber)','#4ade80','#38bdf8','#f472b6'];
+  var PALETTE = DIST_PALETTE;
   var tagMap = {};
+  var excluded = 0;
   chats.forEach(function(c){
     var t = String(c.tags||c.tag||'태그없음').split('/')[0].trim() || '태그없음';
+    // 설정 > 제외 태그 또는 범례에서 뺀 태그는 분포에서 제외한다 (분모에서도 뺀다)
+    if (store.excludedTags.has(t)) { excluded++; return; }
     tagMap[t] = (tagMap[t]||0) + 1;
   });
   var sorted = Object.entries(tagMap).sort(function(a,b){return b[1]-a[1];});
   var TOP = 8;
   var topE = sorted.slice(0,TOP);
   var otherCnt = sorted.slice(TOP).reduce(function(s,e){return s+e[1];},0);
-  if(otherCnt > 0) topE.push(['기타', otherCnt]);
-  var total = chats.length || 1;
+  // 실제 '기타' 태그가 따로 있으므로 묶음 라벨은 '그 외 N개' 로 구분한다 (같은 이름이면 어느 쪽인지 알 수 없다)
+  var otherLabel = '그 외 ' + (sorted.length - TOP) + '개';
+  if(otherCnt > 0) topE.push([otherLabel, otherCnt]);
+  var total = (chats.length - excluded) || 1;
   var labels = topE.map(function(e){return e[0];});
   var data   = topE.map(function(e){return e[1];});
   var colors = topE.map(function(e,i){return PALETTE[i%PALETTE.length];});
@@ -4252,21 +4562,36 @@ function renderTagDistChart(chats, dateStr, canvasId, legendId, dateRangeId) {
         tooltip: { callbacks: { label: function(ctx){ return ctx.raw+'건 ('+(ctx.raw/total*100).toFixed(1)+'%)'; } } },
       },
       scales: {
-        x: { grid: { color: 'var(--canvas)' }, ticks: { font: { size: 10 }, color: 'var(--text-mute)' } },
-        y: { grid: { display: false }, ticks: { font: { size: 10 }, color: 'var(--text-sub)' } },
+        x: { grid: { color: cssVar('--canvas') }, ticks: { font: { size: 10 }, color: cssVar('--text-mute') } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 }, color: cssVar('--text-sub') } },
       },
     },
   });
   var lgd = document.getElementById(legendId);
   if(lgd){
+    // 범례 행마다 ✕ 를 두어 그 태그를 바로 분포에서 뺄 수 있게 한다 ('기타' 는 묶음이라 제외 불가)
     lgd.innerHTML = topE.map(function(e,i){
-      return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
+      var canHide = e[0] !== otherLabel;   // 묶음 행은 개별 제외 불가
+      return '<div class="dist-lg-row" style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
         +'<span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:'+PALETTE[i%PALETTE.length]+'"></span>'
         +'<span style="font-size:11px;color:var(--text-sub);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(e[0])+'">'+escHtml(e[0])+'</span>'
         +'<span style="font-size:11px;color:var(--text-sub);font-weight:600;">'+e[1]+'건</span>'
         +'<span style="font-size:11px;color:var(--text-mute);min-width:32px;text-align:right;">'+(e[1]/total*100).toFixed(1)+'%</span>'
+        +(canHide ? '<button class="dist-x" title="이 태그를 분포에서 제외" data-tag="'+escHtml(e[0])+'">&#10005;</button>'
+                  : '<span style="width:14px;flex-shrink:0;"></span>')
         +'</div>';
-    }).join('');
+    }).join('')
+    + (excluded ? '<div style="margin-top:8px;padding-top:7px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;">'
+        +'<span style="font-size:10.5px;color:var(--text-mute);flex:1;">제외 '+store.excludedTags.size+'개 · '+excluded.toLocaleString()+'건</span>'
+        +'<button class="dist-reset" style="font-size:10.5px;padding:2px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text-sub);cursor:pointer;">모두 해제</button>'
+        +'</div>' : '');
+
+    // 인라인 onclick 은 태그명에 따옴표가 들어가면 깨진다 -> 리스너로 붙인다
+    lgd.querySelectorAll('.dist-x').forEach(function(b){
+      b.onclick = function(){ toggleExcludedTag(b.dataset.tag); };
+    });
+    var rs = lgd.querySelector('.dist-reset');
+    if (rs) rs.onclick = function(){ store.excludedTags.clear(); savePrefs(); renderDashboard(currentDashboardId); };
   }
 }
 
@@ -4306,6 +4631,25 @@ function toggleManagerGraph() {
      · 현재 버킷은 진한 색 + 회색 배경 밴드로 강조
      · 마우스 올리면 HTML 카드 툴팁 (총 건수 + 전 구간 대비 증감 + 항목별)
 --------------------------------------------------------------- */
+/* Chart.js 는 canvas 에 그리므로 CSS 변수(var(--x))를 해석하지 못한다.
+   문자열 'var(--x)' 를 그대로 넘기면 fillStyle 이 무효값이 되어 기본색(검정)으로 칠해진다.
+   -> 실제 색으로 치환해서 넘긴다. 테마를 바꾸면 캐시를 비운다(applyTheme). */
+let _cssVarCache = {};
+function cssVar(name) {
+  if (_cssVarCache[name]) return _cssVarCache[name];
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return (_cssVarCache[name] = v || '#8a97ab');
+}
+
+/* 태그·분류 분포용 팔레트. 겹치는 색이 있으면 서로 다른 항목이 같아 보이므로 20색 모두 구분되게 둔다.
+   (기존 팔레트는 var(--amber) 가 두 번 들어 있었고 CSS 변수라 캔버스에서 전부 검게 나왔다) */
+const DIST_PALETTE = [
+  '#2e6be6', '#0e7a4f', '#e8a33d', '#e05252', '#7c6df2',
+  '#ec6f9e', '#35b57f', '#f0803c', '#3f9ee6', '#8fc23f',
+  '#b062d6', '#d94f8a', '#4bbfd8', '#b98a3f', '#5a8cf5',
+  '#2fa88a', '#c96a2e', '#8a97ab', '#6f7fd6', '#a35ba3',
+];
+
 const BAR_COLORS = {
   responded:      '#93c0f7',   // 응대 (연한 파랑)
   respondedNow:   '#2e6be6',   // 현재 버킷 응대 (진한 파랑 = Accent)
@@ -4497,7 +4841,7 @@ function trendChartOptions(unitSuffix) {
     scales: {
       x: {
         grid: { color: '#d9d9d9', lineWidth: 0.5, borderDash: [12, 12], drawTicks: false },
-        ticks: { font: { size: 10 }, color: 'var(--text-mute)', autoSkip: false },
+        ticks: { font: { size: 10 }, color: cssVar('--text-mute'), autoSkip: false },
       },
       y: {
         beginAtZero: true,
@@ -4676,7 +5020,7 @@ function renderDistributions(mountId, ids, ctx, source) {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 9 }, color: 'var(--text-mute)', autoSkip: false, maxRotation: 0 } },
+          x: { grid: { display: false }, ticks: { font: { size: 9 }, color: cssVar('--text-mute'), autoSkip: false, maxRotation: 0 } },
           y: { beginAtZero: true, grid: { color: '#d9d9d9', lineWidth: 0.5, borderDash: [12, 12] },
                ticks: { font: { size: 10 }, color: '#6d6d6d', callback: v => v + '건' } },
         },
@@ -4757,14 +5101,14 @@ function openChartTypeMenu(mountId, ev) {
   const anchor = ev && ev.currentTarget ? ev.currentTarget : null;
   const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 80, left: 400 };
   const cur = tstate(mountId).chartType || 'line';
-  const mid = JSON.stringify(mountId);
+  const mid = jsAttr(mountId);
   const pop = document.createElement('div');
   pop.className = 'ct-popup';
   pop.style.cssText = 'position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;' +
     'box-shadow:0 8px 24px rgba(16,33,64,.12);padding:6px;z-index:400;min-width:130px;' +
     'top:' + (rect.bottom + 6) + 'px;left:' + Math.max(12, rect.left - 40) + 'px;';
   pop.innerHTML = '<div class="gp-sec">그래프 유형</div>' + Object.keys(CHART_TYPES).map(k =>
-    `<div class="gp-item${k === cur ? ' on' : ''}" onclick="setChartType(${mid},${JSON.stringify(k)})">${escHtml(CHART_TYPES[k].label)}</div>`
+    `<div class="gp-item${k === cur ? ' on' : ''}" onclick="setChartType(${mid},${jsAttr(k)})">${escHtml(CHART_TYPES[k].label)}</div>`
   ).join('');
   document.body.appendChild(pop);
   setTimeout(() => {
@@ -5207,8 +5551,8 @@ function renderVOCView(brand, channel, start, end, prevStart, prevEnd) {
         tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label+': '+ctx.raw+'건'; } } },
       },
       scales: {
-        x: { grid:{display:false}, ticks:{font:{size:9},color:'var(--text-mute)',maxTicksLimit:14} },
-        y: { beginAtZero:true, grid:{color:'var(--canvas)'}, ticks:{font:{size:9},color:'var(--text-mute)'} },
+        x: { grid:{display:false}, ticks:{font:{size:9},color:cssVar('--text-mute'),maxTicksLimit:14} },
+        y: { beginAtZero:true, grid:{color:cssVar('--canvas')}, ticks:{font:{size:9},color:cssVar('--text-mute')} },
       },
     },
   });
@@ -5344,8 +5688,8 @@ function renderDefectView(brand, start, end, prevStart, prevEnd) {
         tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label+': '+ctx.raw+'건'; } } },
       },
       scales: {
-        x: { grid:{display:false}, ticks:{font:{size:9},color:'var(--text-mute)',maxTicksLimit:14} },
-        y: { beginAtZero:true, grid:{color:'var(--canvas)'}, ticks:{font:{size:9},color:'var(--text-mute)'} },
+        x: { grid:{display:false}, ticks:{font:{size:9},color:cssVar('--text-mute'),maxTicksLimit:14} },
+        y: { beginAtZero:true, grid:{color:cssVar('--canvas')}, ticks:{font:{size:9},color:cssVar('--text-mute')} },
       },
     },
   });
@@ -5449,7 +5793,7 @@ function openExcelMenu(mountId, groupById, ev) {
   document.querySelectorAll('.excel-popup').forEach(el => el.remove());
   const anchor = ev && ev.currentTarget ? ev.currentTarget : null;
   const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 80, left: 400 };
-  const mid = JSON.stringify(mountId), gid = JSON.stringify(groupById);
+  const mid = jsAttr(mountId), gid = jsAttr(groupById);
   const pop = document.createElement('div');
   pop.className = 'excel-popup';
   pop.style.cssText = 'position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;' +
@@ -5678,7 +6022,7 @@ function rptJumpToLatest() {
 }
 
 function rptSetPeriod(p)       { setReportPeriod(p); }
-function rptApplySearch()      { reportState.searchQuery = (document.getElementById('rpt-search')||{}).value||''; if (reportState.activeId) renderReportTable(getReportChats()); }
+function rptApplySearch()      { reportState.searchQuery = (document.getElementById('rpt-search')||{}).value||''; reportState.page = 0; if (reportState.activeId) renderReportTable(getReportChats()); }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    차트 탭 — 추가 시각화
@@ -5752,7 +6096,7 @@ function renderChartSuggestions() {
   const el = document.getElementById('chart-suggestions');
   if (el) {
     el.innerHTML = CHART_SUGGESTIONS.map(t =>
-      `<button onclick="setChartPrompt(${JSON.stringify(t).replace(/"/g, '&quot;')})" title="클릭하여 입력창에 추가"
+      `<button onclick="setChartPrompt(${jsAttr(t)})" title="클릭하여 입력창에 추가"
         style="text-align:left;padding:6px 10px;border:1px solid var(--border);background:var(--canvas);border-radius:6px;font-size:11px;color:var(--text-sub);cursor:pointer;width:100%;line-height:1.4;">${escHtml(t)}</button>`
     ).join('');
   }
@@ -5761,7 +6105,7 @@ function renderChartSuggestions() {
     fe.innerHTML = FIELD_CATALOG.map(f =>
       `<label class="ref-chip${chartRefFields.has(f.key) ? ' on' : ''}">
         <input type="checkbox"${chartRefFields.has(f.key) ? ' checked' : ''}
-          onchange="toggleChartRefField(${JSON.stringify(f.key).replace(/"/g, '&quot;')})">${escHtml(f.label)}</label>`
+          onchange="toggleChartRefField(${jsAttr(f.key)})">${escHtml(f.label)}</label>`
     ).join('');
   }
 }
@@ -6437,7 +6781,7 @@ function renderFilterBuilder(scope) {
       const picked = f.values.length;
       valUI = '<div class="flt-values">' + (opts.length ? opts.map(o =>
         '<label class="flt-chk"><input type="checkbox"' + (f.values.indexOf(o.value) >= 0 ? ' checked' : '') +
-        ' onchange="toggleFilterValue(' + i + ',' + JSON.stringify(o.value).replace(/"/g, '&quot;') + sc + ')">' +
+        ' onchange="toggleFilterValue(' + i + ',' + jsAttr(o.value) + sc + ')">' +
         escHtml(o.label) + ' <span style="color:var(--text-mute);">' + o.count + '</span></label>'
       ).join('') : '<span style="font-size:11px;color:var(--text-mute);">값이 없습니다</span>') + '</div>' +
       (picked ? '<span class="flt-badge">' + picked + '개</span>' : '');
@@ -6571,8 +6915,138 @@ function buildReportFilterUI() {
 
 
 /* ━━━ 리포트 탭 핸들러 ━━━ */
-function rptBack(){renderReportList();}
+/* 리포트 상세 <-> 그룹 목록 화면 전환.
+   예전에는 rptBack() 이 사이드바만 다시 그려서 '뒤로' 가 아무 일도 하지 않았고,
+   rpt-list-view 는 채우는 코드가 아예 없어 목록 화면 자체가 비어 있었다. */
+function showReportDetail() {
+  ['rpt-header', 'rpt-filter-bar', 'rpt-view-area'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = '';
+  });
+  const lv = document.getElementById('rpt-list-view'); if (lv) lv.style.display = 'none';
+}
+
+function rptBack() {
+  reportState.activeId = null;
+  ['rpt-header', 'rpt-filter-bar', 'rpt-view-area'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  const lv = document.getElementById('rpt-list-view');
+  if (lv) lv.style.display = '';
+  buildReportList();
+  renderReportList();
+}
+
+/* 원본의 리포트 그룹 목록 (리포트 / 만든 사람 / 최근 편집한 사람 / 최근 편집 시간) */
+function buildReportList() {
+  const el = document.getElementById('rpt-list-view');
+  if (!el) return;
+  const byGroup = {}, order = [];
+  savedReports.forEach(r => {
+    const g = r.group || '내 리포트';
+    if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+    byGroup[g].push(r);
+  });
+  if (!order.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-mute);font-size:13px;">아직 리포트가 없습니다.</div>';
+    return;
+  }
+  const rows = r => {
+    const n = reportRowCount(r);
+    return '<tr class="rl-row" data-rid="' + escHtml(r.id) + '">' +
+      '<td><div class="rl-name">' + escHtml(r.name) + '</div>' +
+      '<div class="rl-desc">' + escHtml(r.desc || '리포트 설명이 없습니다') + '</div></td>' +
+      '<td class="rl-mut">' + (n == null ? '-' : n.toLocaleString() + '건') + '</td>' +
+      '<td class="rl-mut">' + (r.filters ? normalizeSavedFilters(r.filters).length : 0) + '개</td>' +
+      '<td class="rl-mut">' + escHtml(r.space === 'personal' ? '개인 스페이스' : '팀 스페이스') + '</td>' +
+      '</tr>';
+  };
+  el.innerHTML = order.map(g =>
+    '<div class="rl-group">' +
+      '<div class="rl-ghead"><span class="rl-gname">' + escHtml(g) + '</span>' +
+      '<span class="rl-gcnt">' + byGroup[g].length + '개</span></div>' +
+      '<table class="rl-table"><thead><tr>' +
+      '<th>리포트</th><th style="width:120px;">현재 기간 건수</th>' +
+      '<th style="width:90px;">필터 조건</th><th style="width:130px;">스페이스</th>' +
+      '</tr></thead><tbody>' + byGroup[g].map(rows).join('') + '</tbody></table>' +
+    '</div>').join('');
+  el.querySelectorAll('.rl-row').forEach(tr =>
+    tr.addEventListener('click', () => selectReport(tr.dataset.rid)));
+}
+
+/* 목록에 보여줄 '현재 조회 기간 기준 건수'. 계산이 무거우면(전체 행 큼) 생략한다. */
+function reportRowCount(r) {
+  try {
+    const { start, end } = getReportPeriodDates();
+    const rows = filterPeriod(getAllChatData(), start, end);
+    return evalFilters(rows, normalizeSavedFilters(r.filters)).length;
+  } catch (e) { return null; }
+}
 function rptDownload(){downloadReportExcel();}
+
+/* 현재 리포트 + 조회 기간을 URL 해시에 담아 복사한다.
+   (예전에는 '공유' 버튼에 핸들러가 아예 없어 눌러도 아무 일도 일어나지 않았다) */
+function rptCopyShareLink(btn) {
+  if (!reportState.activeId) return;
+  const { start, end } = getReportPeriodDates();
+  const url = location.origin + location.pathname +
+    '#report=' + encodeURIComponent(reportState.activeId) + '&from=' + ymd(start) + '&to=' + ymd(end);
+  const done = ok => {
+    if (!btn) return;
+    const old = btn.innerHTML;
+    btn.innerHTML = ok ? '&#10003; 복사됨' : '복사 실패';
+    setTimeout(() => { btn.innerHTML = old; }, 1600);
+  };
+  if (navigator.clipboard && location.protocol !== 'file:') {
+    navigator.clipboard.writeText(url).then(() => done(true), () => done(false));
+  } else {
+    // file:// 에서는 Clipboard API 가 막히므로 execCommand 로 대체한다
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove(); done(ok);
+    if (!ok) showCopyFallback(btn, url);   // prompt() 가 막힌 환경(파일 프로토콜 등) 대비
+  }
+}
+
+/* 자동 복사가 막혔을 때 링크를 직접 고를 수 있게 띄운다 */
+function showCopyFallback(btn, url) {
+  document.querySelectorAll('.copy-fallback').forEach(e => e.remove());
+  const box = document.createElement('div');
+  box.className = 'copy-fallback dash-opt-menu';
+  box.style.cssText = 'padding:10px;min-width:340px;';
+  box.innerHTML = '<div style="font-size:11px;color:var(--text-mute);margin-bottom:6px;">' +
+    '자동 복사가 막혀 있습니다. 아래 링크를 선택해 복사하세요.</div>' +
+    '<input type="text" readonly style="width:100%;padding:6px 8px;border:1px solid var(--border);' +
+    'border-radius:6px;font-size:11px;background:var(--canvas);color:var(--text-main);">';
+  document.body.appendChild(box);
+  const inp = box.querySelector('input');
+  inp.value = url;
+  const r = (btn || document.body).getBoundingClientRect();
+  box.style.left = Math.max(8, Math.min(r.left, window.innerWidth - box.offsetWidth - 8)) + 'px';
+  box.style.top = Math.min(r.bottom + 6, window.innerHeight - box.offsetHeight - 8) + 'px';
+  inp.focus(); inp.select();
+  setTimeout(() => {
+    const close = ev => { if (!box.contains(ev.target)) { box.remove(); document.removeEventListener('mousedown', close); } };
+    document.addEventListener('mousedown', close);
+  }, 0);
+}
+
+/* 공유 링크로 들어온 경우 그 리포트/기간을 복원한다 */
+function applyShareHash() {
+  const h = location.hash.replace(/^#/, '');
+  if (!h) return false;
+  const q = {};
+  h.split('&').forEach(p => { const i = p.indexOf('='); if (i > 0) q[p.slice(0, i)] = decodeURIComponent(p.slice(i + 1)); });
+  if (!q.report) return false;
+  const r = savedReports.find(x => x.id === q.report);
+  if (!r) return false;
+  if (q.from && q.to) { reportState.period = 'custom'; reportState.customStart = q.from; reportState.customEnd = q.to; }
+  switchMainTab('report');
+  selectReport(r.id);
+  return true;
+}
 function rptRefreshData(){
   var btn=document.querySelector('[onclick="rptRefreshData()"]');
   if(btn){btn.disabled=true;btn.textContent='새로고침 중...';}
@@ -7224,6 +7698,8 @@ const reportState = {
   filters:[],
   // 사이드바에서 접어 둔 리포트 그룹 이름들
   collapsedGroups:new Set(),
+  // 상담 테이블 페이지 (예전엔 상위 200개 고정이라 나머지를 볼 수 없었다)
+  page:0, pageSize:200,
 };
 
 function getReportPeriodDates(){
@@ -7336,6 +7812,7 @@ function selectReport(id){
 function renderReportContent(){
   const report=savedReports.find(r=>r.id===reportState.activeId);
   if(!report)return;
+  showReportDetail();
   buildReportFilterUI();
   const cur=getReportChats(),prev=getPrevReportChats();
   rptSyncPeriodNotice(cur.length);   // 기간에 데이터가 없으면 안내 (setTimeout 의존 금지)
@@ -7452,12 +7929,55 @@ function renderReportTable(chats){
     return;
   }
   const cntEl=document.getElementById('rpt-total-count');
-  if(cntEl)cntEl.textContent='총 '+chats.length+'개의 상담'+(chats.length>200?' (상위 200개 표시)':'');
+  if(cntEl)cntEl.textContent='총 '+chats.length.toLocaleString()+'개의 상담';
 
-  tbody.innerHTML=chats.slice(0,200).map(c =>
-    '<tr onclick="showRowDetail(\'' + escHtml(c.id||'') + '\')">' +
+  // 예전에는 상위 200개만 그리고 나머지는 볼 방법이 없었다 -> 페이지 이동으로 전건에 닿게 한다
+  const size = reportState.pageSize || 200;
+  const pages = Math.max(1, Math.ceil(chats.length / size));
+  if (reportState.page >= pages) reportState.page = pages - 1;
+  if (reportState.page < 0) reportState.page = 0;
+  const from = reportState.page * size;
+  const view = chats.slice(from, from + size);
+
+  tbody.innerHTML=view.map(c =>
+    '<tr onclick="showRowDetail(' + jsAttr(c.id||'') + ')">' +
     COLS.map(col => '<td>' + col.cell(c) + '</td>').join('') + '</tr>'
   ).join('');
+  renderReportPager(chats.length, pages, from, view.length);
+}
+
+/* 리포트 상담 테이블 전용 페이저 (지표 테이블의 renderPager 와 마크업을 맞춘다) */
+function renderReportPager(total, pages, from, shown) {
+  const wrap = document.getElementById('rpt-table-wrap');
+  if (!wrap) return;
+  let el = document.getElementById('rpt-table-pager');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'rpt-table-pager';
+    el.className = 'table-pager';
+    el.style.cssText = 'padding:10px 20px;';
+    wrap.parentNode.insertBefore(el, wrap.nextSibling);
+  }
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  const p = reportState.page;
+  const b = (label, page, dis, title) =>
+    '<button class="pg-btn"' + (dis ? ' disabled' : '') + ' title="' + title + '"' +
+    ' onclick="gotoReportPage(' + page + ')">' + label + '</button>';
+  el.innerHTML =
+    '<span class="pg-info">' + (from + 1).toLocaleString() + '–' + (from + shown).toLocaleString() +
+    ' / 총 ' + total.toLocaleString() + '개</span>' +
+    b('&#8676;', 0, p === 0, '처음으로') +
+    b('&#8592;', p - 1, p === 0, '이전 페이지') +
+    '<span class="pg-info">' + (p + 1) + ' / ' + pages + '</span>' +
+    b('&#8594;', p + 1, p >= pages - 1, '다음 페이지') +
+    b('&#8677;', pages - 1, p >= pages - 1, '마지막으로');
+}
+
+function gotoReportPage(p) {
+  reportState.page = p;
+  renderReportTable(getReportChats());
+  const v = document.getElementById('rpt-view-table');
+  if (v) v.scrollTop = 0;
 }
 
 function showRowDetail(id){
@@ -7519,7 +8039,7 @@ function renderReportTrend(chats,start,end){
   if(interval==='day'){for(let i=0;i<=days;i++){const d=new Date(start);d.setDate(start.getDate()+i);const e=new Date(d);e.setHours(23,59,59,999);const dc=filterPeriod(chats,d,e);buckets.push({label:(d.getMonth()+1)+'/'+(d.getDate()),count:dc.length,complaint:dc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}}
   else{const tw=Math.ceil(days/7);for(let i=0;i<tw;i++){const ws2=new Date(start);ws2.setDate(start.getDate()+i*7);const we2=new Date(ws2);we2.setDate(ws2.getDate()+6);we2.setHours(23,59,59,999);const wc=filterPeriod(chats,ws2,we2);buckets.push({label:(ws2.getMonth()+1)+'/'+(ws2.getDate()),count:wc.length,complaint:wc.filter(c=>c['profile.csat']!=null&&c['profile.csat']<=2).length});}}
   if(trendTable)trendTable.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:var(--canvas);"><th style="padding:6px 10px;text-align:left;color:var(--text-sub);">기간</th><th style="padding:6px 10px;text-align:right;color:var(--text-sub);">문의수</th><th style="padding:6px 10px;text-align:right;color:var(--text-sub);">불만수</th><th style="padding:6px 10px;text-align:right;color:var(--text-sub);">불만율</th></tr></thead><tbody>'+buckets.map(b=>'<tr><td style="padding:5px 10px;">'+b.label+'</td><td style="padding:5px 10px;text-align:right;">'+b.count+'건</td><td style="padding:5px 10px;text-align:right;color:var(--negative);">'+b.complaint+'건</td><td style="padding:5px 10px;text-align:right;color:var(--text-mute);">'+(b.count?((b.complaint/b.count*100).toFixed(1)+'%'):'—')+'</td></tr>').join('')+'</tbody></table></div>';
-  setTimeout(()=>{const ctx=document.getElementById('rpt-trend-chart');if(ctx){if(reportState.statsCharts['trend'])reportState.statsCharts['trend'].destroy();reportState.statsCharts['trend']=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:buckets.map(b=>b.label),datasets:[{label:'문의수',data:buckets.map(b=>b.count),borderColor:'#2e6be6',backgroundColor:'rgba(99,102,241,0.08)',fill:true,tension:0.3,pointRadius:3},{label:'불만수',data:buckets.map(b=>b.complaint),borderColor:'#c63238',backgroundColor:'rgba(239,68,68,0.05)',fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'var(--canvas)'},ticks:{font:{size:10}}}}}});}}  ,50);
+  setTimeout(()=>{const ctx=document.getElementById('rpt-trend-chart');if(ctx){if(reportState.statsCharts['trend'])reportState.statsCharts['trend'].destroy();reportState.statsCharts['trend']=new Chart(ctx.getContext('2d'),{type:'line',data:{labels:buckets.map(b=>b.label),datasets:[{label:'문의수',data:buckets.map(b=>b.count),borderColor:'#2e6be6',backgroundColor:'rgba(99,102,241,0.08)',fill:true,tension:0.3,pointRadius:3},{label:'불만수',data:buckets.map(b=>b.complaint),borderColor:'#c63238',backgroundColor:'rgba(239,68,68,0.05)',fill:true,tension:0.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10}}}}}});}}  ,50);
 }
 
 /* ---------------------------------------------------------------
@@ -7591,7 +8111,7 @@ function renderLeaderboard(opts) {
         return `<span class="lb-${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '▲' : '▼'}${Math.abs(diff)}</span>`;
       } },
     { head: '순위', cell: (r, i) => i + 1 },
-    { head: opts.label, cell: r => `<span class="cell-filterable" onclick="${opts.filterFn}(${JSON.stringify(r.key).replace(/"/g, '&quot;')})">${escHtml(opts.textOf(r.key))}</span>` },
+    { head: opts.label, cell: r => `<span class="cell-filterable" onclick="${opts.filterFn}(${jsAttr(r.key)})">${escHtml(opts.textOf(r.key))}</span>` },
     { head: '문의 수', cell: r => r.s.count + '건' },
     { head: '첫 응대시간', cell: r => fmtSec(r.s.firstReply) },
     { head: '응답 시간', cell: r => fmtSec(r.s.replyTime) },
@@ -7703,13 +8223,13 @@ function renderStatCharts(chats){
   const clrsD=['var(--primary)','var(--positive)','var(--amber)','#f472b6','var(--accent)','#a78bfa','var(--text-mute)'];
   setTimeout(()=>{
     const cc=document.getElementById('rpt-csat-chart');
-    if(cc){if(reportState.statsCharts['csat'])reportState.statsCharts['csat'].destroy();reportState.statsCharts['csat']=new Chart(cc.getContext('2d'),{type:'bar',data:{labels:['1점','2점','3점','4점','5점'],datasets:[{data:csatDist,backgroundColor:['#c63238','#f97316','#eab308','#84cc16','#0e7a4f'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'var(--canvas)'},ticks:{font:{size:10},stepSize:1}}}}});}
+    if(cc){if(reportState.statsCharts['csat'])reportState.statsCharts['csat'].destroy();reportState.statsCharts['csat']=new Chart(cc.getContext('2d'),{type:'bar',data:{labels:['1점','2점','3점','4점','5점'],datasets:[{data:csatDist,backgroundColor:['#c63238','#f97316','#eab308','#84cc16','#0e7a4f'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10},stepSize:1}}}}});}
     const td=document.getElementById('rpt-tag-donut');
     if(td){if(reportState.statsCharts['tagd'])reportState.statsCharts['tagd'].destroy();reportState.statsCharts['tagd']=new Chart(td.getContext('2d'),{type:'doughnut',data:{labels:top7d.map(t=>t[0]),datasets:[{data:top7d.map(t=>t[1]),backgroundColor:clrsD,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}}}});}
     const hc=document.getElementById('rpt-hour-chart');
-    if(hc){if(reportState.statsCharts['hour'])reportState.statsCharts['hour'].destroy();reportState.statsCharts['hour']=new Chart(hc.getContext('2d'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+'시'),datasets:[{data:hourDist,backgroundColor:'#2e6be6',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,grid:{color:'var(--canvas)'},ticks:{font:{size:10}}}}}});}
+    if(hc){if(reportState.statsCharts['hour'])reportState.statsCharts['hour'].destroy();reportState.statsCharts['hour']=new Chart(hc.getContext('2d'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+'시'),datasets:[{data:hourDist,backgroundColor:'#2e6be6',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:8}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10}}}}}});}
     const dc2=document.getElementById('rpt-dow-chart');
-    if(dc2){if(reportState.statsCharts['day'])reportState.statsCharts['day'].destroy();reportState.statsCharts['day']=new Chart(dc2.getContext('2d'),{type:'bar',data:{labels:['일','월','화','수','목','금','토'],datasets:[{data:dayDist,backgroundColor:['#f472b6','#2e6be6','#2e6be6','#2e6be6','#2e6be6','#2e6be6','#5a8cf5'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:'var(--canvas)'},ticks:{font:{size:10}}}}}});}
+    if(dc2){if(reportState.statsCharts['day'])reportState.statsCharts['day'].destroy();reportState.statsCharts['day']=new Chart(dc2.getContext('2d'),{type:'bar',data:{labels:['일','월','화','수','목','금','토'],datasets:[{data:dayDist,backgroundColor:['#f472b6','#2e6be6','#2e6be6','#2e6be6','#2e6be6','#2e6be6','#5a8cf5'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{beginAtZero:true,grid:{color:cssVar('--canvas')},ticks:{font:{size:10}}}}}});}
   },50);
 }
 
